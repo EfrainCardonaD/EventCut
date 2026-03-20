@@ -18,8 +18,8 @@ const isEventos = computed(() => props.current === 'eventos')
 <template>
   <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center gap-8">
+      <div class="flex flex-wrap items-center justify-between gap-3 py-3">
+        <div class="flex items-center gap-5 sm:gap-7">
           <img
             src="https://ui-avatars.com/api/?name=U&background=f3f4f6&color=6b7280&size=32"
             alt="Avatar Usuario"
@@ -27,7 +27,7 @@ const isEventos = computed(() => props.current === 'eventos')
             @click="emit('navigate', 'inicio')"
           />
 
-          <nav class="hidden md:flex space-x-6">
+          <nav class="hidden md:flex items-center gap-6">
             <button
               type="button"
               @click="emit('navigate', 'inicio')"
@@ -45,7 +45,7 @@ const isEventos = computed(() => props.current === 'eventos')
           </nav>
         </div>
 
-        <div class="flex-1 max-w-md px-4 hidden sm:block">
+        <div class="hidden lg:block flex-1 max-w-lg px-2 lg:px-6">
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,15 +59,23 @@ const isEventos = computed(() => props.current === 'eventos')
             </div>
             <input
               type="text"
-              class="block w-full pl-10 pr-3 py-1.5 border border-gray-200 rounded-full text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand bg-gray-50"
+              class="block w-full pl-10 pr-4 py-2 border border-gray-200 rounded-full text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand bg-gray-50"
               placeholder="Busca el evento"
             />
           </div>
         </div>
 
-        <div class="flex items-center space-x-4">
-          <button type="button" class="text-sm font-medium text-gray-700 hover:text-black hidden sm:block">Crear evento</button>
-          <button type="button" class="bg-brand hover:bg-brand-hover text-white text-sm font-medium py-1.5 px-4 rounded-full transition-colors">
+        <div class="ml-auto flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            class="text-sm font-medium text-gray-700 hover:text-black hidden sm:inline-flex items-center px-3 py-2 rounded-full border border-gray-200 hover:border-gray-300 transition-colors"
+          >
+            Crear evento
+          </button>
+          <button
+            type="button"
+            class="bg-brand hover:bg-brand-hover text-white text-sm font-medium py-2 px-5 rounded-full transition-colors"
+          >
             Iniciar Sesión
           </button>
         </div>

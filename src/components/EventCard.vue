@@ -9,15 +9,15 @@ defineProps({
 
 <template>
   <div
-    class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-6 hover:shadow-md transition-shadow cursor-pointer"
+    class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-5 sm:gap-6 hover:shadow-md transition-shadow cursor-pointer"
   >
     <div class="flex flex-col items-center sm:min-w-[4rem]">
       <span class="text-2xl font-bold text-gray-900 leading-none">{{ evento.dia }}</span>
       <span class="text-sm font-medium text-gray-500 capitalize">{{ evento.mes }}</span>
     </div>
 
-    <div class="flex-1">
-      <div class="flex flex-wrap items-start gap-2 mb-1">
+    <div class="flex-1 space-y-3">
+      <div class="flex flex-wrap items-start gap-2.5">
         <h3 class="text-lg font-semibold text-gray-900 leading-tight">{{ evento.titulo }}</h3>
         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-brand border border-blue-100">
           {{ evento.categoria }}
@@ -30,9 +30,9 @@ defineProps({
         </span>
       </div>
 
-      <p class="text-sm text-gray-500 mb-2">{{ evento.horario }}</p>
+      <p class="text-sm text-gray-500">{{ evento.horario }}</p>
 
-      <p class="text-sm text-gray-600 flex items-center gap-1 mb-3">
+      <p class="text-sm text-gray-600 flex items-center gap-1.5">
         <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
           <path
             fill-rule="evenodd"
@@ -43,7 +43,7 @@ defineProps({
         {{ evento.ubicacion }}
       </p>
 
-      <p class="text-sm text-gray-600 line-clamp-2 mb-3">{{ evento.descripcion }}</p>
+      <p class="text-sm text-gray-600 line-clamp-2">{{ evento.descripcion }}</p>
 
       <div class="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

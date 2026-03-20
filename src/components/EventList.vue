@@ -15,9 +15,9 @@ defineProps({
 
 <template>
   <section>
-    <h2 class="text-xl font-semibold text-gray-800 mb-4">{{ title }}</h2>
+    <h2 class="text-xl font-semibold text-gray-800 mb-5">{{ title }}</h2>
 
-    <div class="space-y-4">
+    <div class="space-y-5">
       <EventCard v-for="evento in events" :key="evento.id" :evento="evento" />
     </div>
   </section>

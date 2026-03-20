@@ -112,7 +112,7 @@ const onNavigate = (view) => {
   <div class="min-h-screen flex flex-col">
     <AppHeader :current="currentView" @navigate="onNavigate" />
 
-    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 w-full">
 
       <!-- VISTA: INICIO (Perfil Institucional) -->
       <div v-if="currentView === 'inicio'">
@@ -122,14 +122,14 @@ const onNavigate = (view) => {
         </div>
 
         <!-- Info del Perfil -->
-        <div class="relative px-4 sm:px-8 -mt-12 flex justify-between items-end">
+        <div class="relative px-4 sm:px-8 -mt-12 flex flex-wrap gap-4 justify-between items-end">
           <div class="flex items-end gap-6">
             <!-- Avatar Institucional -->
             <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl border-4 border-surface bg-white shadow-sm flex items-center justify-center overflow-hidden">
               <img src="https://ui-avatars.com/api/?name=CUT&background=ffffff&color=0FA0E3&size=128&bold=true" alt="Logo CUTonalá" class="w-full h-full object-contain p-2">
             </div>
           </div>
-          <button @click="currentView = 'eventos'" class="bg-brand text-white px-5 py-2 rounded-full text-sm font-medium mb-2 shadow-sm hover:bg-brand-hover transition-colors">
+          <button @click="currentView = 'eventos'" class="bg-brand text-white px-6 py-2.5 rounded-full text-sm font-medium mb-2 shadow-sm hover:bg-brand-hover transition-colors">
             Ver eventos
           </button>
         </div>
@@ -164,17 +164,17 @@ const onNavigate = (view) => {
       </div>
 
       <!-- VISTA: EVENTOS (Cartelera Centralizada) -->
-      <div v-if="currentView === 'eventos'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div v-if="currentView === 'eventos'" class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
 
         <!-- Columna Izquierda: Lista de Eventos -->
-        <div class="lg:col-span-2 space-y-8">
-          <h1 class="text-3xl font-bold text-gray-900 tracking-tight mb-6">Eventos</h1>
+        <div class="lg:col-span-2 space-y-9">
+          <h1 class="text-3xl font-bold text-gray-900 tracking-tight mb-2">Eventos</h1>
 
           <!-- Sección Destacados -->
           <EventList title="Destacados" :events="eventosDestacados" />
 
           <!-- Sección Próximos -->
-          <div class="mt-10">
+          <div class="mt-2">
             <EventList title="Próximos" :events="eventosProximos" />
           </div>
         </div>
