@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    r
     "preview": "npm run build && vite preview --host --port 3000"
   },
   "dependencies": {
