@@ -1,0 +1,699 @@
+<!-- Registro de Cuenta -->
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#ffb86f",
+                        "primary-fixed-dim": "#88ceff",
+                        "on-secondary-fixed": "#001e2f",
+                        "secondary-fixed": "#c8e6ff",
+                        "on-primary-fixed-variant": "#004c6d",
+                        "inverse-surface": "#dfe3e7",
+                        "inverse-on-surface": "#2c3135",
+                        "on-secondary-fixed-variant": "#254a62",
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "surface-variant": "#303539",
+                        "outline": "#88929b",
+                        "error-container": "#93000a",
+                        "on-primary": "#00344d",
+                        "surface-container-highest": "#303539",
+                        "outline-variant": "#3e4850",
+                        "primary-container": "#009bdb",
+                        "background": "#0f1417",
+                        "on-primary-fixed": "#001e2e",
+                        "surface-dim": "#0f1417",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "primary": "#88ceff",
+                        "on-primary-container": "#002e44",
+                        "on-surface-variant": "#bec8d1",
+                        "on-secondary-container": "#98bdd9",
+                        "on-secondary": "#08344b",
+                        "surface": "#0f1417",
+                        "secondary": "#a6cbe8",
+                        "surface-container-high": "#262b2e",
+                        "secondary-container": "#274d65",
+                        "surface-tint": "#88ceff",
+                        "tertiary-fixed": "#ffdcbe",
+                        "on-error": "#690005",
+                        "primary-fixed": "#c8e6ff",
+                        "tertiary-container": "#d17e0f",
+                        "on-tertiary-container": "#412300",
+                        "on-surface": "#dfe3e7",
+                        "surface-bright": "#353a3d",
+                        "secondary-fixed-dim": "#a6cbe8",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#1b2024",
+                        "surface-container-low": "#171c20",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#0a0f12",
+                        "on-background": "#dfe3e7",
+                        "on-tertiary": "#4a2800",
+                        "inverse-primary": "#006590"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0f1417;
+            color: #dfe3e7;
+        }
+    </style>
+</head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col">
+<!-- TopNavBar (Suppressed active navigation for focused task) -->
+<header class="bg-slate-950/80 backdrop-blur-md text-sky-500 font-['Manrope'] antialiased fixed top-0 w-full border-b border-slate-800 shadow-sm z-50 flex justify-between items-center px-6 h-16">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary text-xl" style="font-variation-settings: 'FILL' 1;">hub</span>
+        </div>
+        <span class="text-xl font-bold tracking-tight text-white">CUTonalá Nexus</span>
+    </div>
+    <div class="flex items-center gap-4">
+        <button class="hover:bg-slate-900/50 rounded-full transition-all p-2 active:scale-95 duration-150">
+            <span class="material-symbols-outlined text-slate-400">help_outline</span>
+        </button>
+    </div>
+</header>
+<main class="flex-grow flex items-center justify-center px-6 pt-24 pb-12">
+    <div class="grid grid-cols-1 lg:grid-cols-2 max-w-6xl w-full bg-surface-container rounded-lg overflow-hidden shadow-2xl">
+        <!-- Left Side: Visual/Branding Section -->
+        <div class="hidden lg:block relative p-12 overflow-hidden bg-surface-container-low">
+            <div class="absolute inset-0 z-0 opacity-40">
+                <img alt="University campus architecture" class="w-full h-full object-cover" data-alt="Modern architectural lines of a university building at dusk with glowing windows and deep blue sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDobELnDty0k6RnezzZlz2NmwqPMGEon8SGo16Z0tF_0ahPWBQFV8LpmNQQe8yCVtHtHKdgOVVH0oAQlBjjSp7Z7WxfIj87-ZBXOOyUpqlq6Zi4d7WuSzaI5GQIXaJqz_3flJHbbIEuZEQB09qY-ljVsXKNXl-oSwbGqJwZ52AOYw4B5vFL61WxWP6WxDWr7j_EwJETQ8mYzgaz7ZZfjr1VbZuLZZrYJ7ZbxSHlKkfbZZB8aHqTK2_3-skx0_U2y6FgyNAF9I9o"/>
+            </div>
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                    <h1 class="font-headline text-4xl font-extrabold text-white leading-tight mb-4">
+                        Únete a la <span class="text-primary">Red Académica</span> más avanzada de Tonalá.
+                    </h1>
+                    <p class="text-on-surface-variant text-lg max-w-md">
+                        Gestiona tu trayectoria, conecta con investigadores y accede a recursos exclusivos del campus.
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-surface-container-high/60 backdrop-blur-md p-4 rounded-lg">
+                        <span class="material-symbols-outlined text-primary mb-2">school</span>
+                        <div class="text-sm font-semibold text-white">Académico</div>
+                        <div class="text-xs text-on-surface-variant">Control total de tus materias</div>
+                    </div>
+                    <div class="bg-surface-container-high/60 backdrop-blur-md p-4 rounded-lg">
+                        <span class="material-symbols-outlined text-tertiary mb-2">science</span>
+                        <div class="text-sm font-semibold text-white">Investigación</div>
+                        <div class="text-xs text-on-surface-variant">Portal de proyectos CUALTI</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Right Side: Registration Form -->
+        <div class="p-8 md:p-12 lg:p-16 flex flex-col justify-center">
+            <div class="mb-8">
+                <h2 class="font-headline text-2xl font-bold text-white mb-2">Crea tu cuenta</h2>
+                <p class="text-on-surface-variant text-sm">Ingresa tus datos institucionales para comenzar.</p>
+            </div>
+            <form class="space-y-5">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-on-surface-variant ml-1" for="name">Full Name</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-lg">person</span>
+                        <input class="w-full bg-surface-container-highest border-none rounded-full py-3.5 pl-12 pr-6 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary-container transition-all" id="name" placeholder="Ej. Juan Pérez García" type="text"/>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-on-surface-variant ml-1" for="student_id">Student ID</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-lg">badge</span>
+                            <input class="w-full bg-surface-container-highest border-none rounded-full py-3.5 pl-12 pr-6 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary-container transition-all" id="student_id" placeholder="Código" type="text"/>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-on-surface-variant ml-1" for="email">Institutional Email</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-lg">mail</span>
+                            <input class="w-full bg-surface-container-highest border-none rounded-full py-3.5 pl-12 pr-6 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary-container transition-all" id="email" placeholder="alumno@alumnos.udg.mx" type="email"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-on-surface-variant ml-1" for="password">Password</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-lg">lock</span>
+                        <input class="w-full bg-surface-container-highest border-none rounded-full py-3.5 pl-12 pr-12 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary-container transition-all" id="password" placeholder="••••••••" type="password"/>
+                        <button class="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors" type="button">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-on-surface-variant ml-1" for="confirm_password">Confirm Password</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-lg">lock_reset</span>
+                        <input class="w-full bg-surface-container-highest border-none rounded-full py-3.5 pl-12 pr-6 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary-container transition-all" id="confirm_password" placeholder="••••••••" type="password"/>
+                    </div>
+                </div>
+                <div class="pt-4 flex flex-col gap-4">
+                    <button class="w-full bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-bold py-4 rounded-full transition-all active:scale-[0.98] shadow-lg shadow-primary-container/20" type="submit">
+                        Crear Cuenta
+                    </button>
+                    <a class="text-center text-sm font-medium text-on-surface-variant hover:text-primary transition-colors" href="#">
+                        ¿Ya tienes una cuenta? Inicia sesión
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-950 w-full py-8 border-t border-slate-900 flex flex-col md:flex-row items-center justify-between px-8 gap-4 mt-auto">
+    <div class="text-slate-500 font-['Manrope'] text-xs uppercase tracking-widest">
+        © 2024 Centro Universitario de Tonalá. Nexus Portal.
+    </div>
+    <div class="flex gap-6">
+        <a class="font-['Manrope'] text-xs uppercase tracking-widest text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Privacy Policy</a>
+        <a class="font-['Manrope'] text-xs uppercase tracking-widest text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Terms of Service</a>
+        <a class="font-['Manrope'] text-xs uppercase tracking-widest text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Contact Support</a>
+    </div>
+</footer>
+</body></html>
+
+<!-- Recuperar Contraseña -->
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Recuperar Contraseña | CUTonalá Nexus</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#ffb86f",
+                        "primary-fixed-dim": "#88ceff",
+                        "on-secondary-fixed": "#001e2f",
+                        "secondary-fixed": "#c8e6ff",
+                        "on-primary-fixed-variant": "#004c6d",
+                        "inverse-surface": "#dfe3e7",
+                        "inverse-on-surface": "#2c3135",
+                        "on-secondary-fixed-variant": "#254a62",
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "surface-variant": "#303539",
+                        "outline": "#88929b",
+                        "error-container": "#93000a",
+                        "on-primary": "#00344d",
+                        "surface-container-highest": "#303539",
+                        "outline-variant": "#3e4850",
+                        "primary-container": "#009bdb",
+                        "background": "#0f1417",
+                        "on-primary-fixed": "#001e2e",
+                        "surface-dim": "#0f1417",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "primary": "#88ceff",
+                        "on-primary-container": "#002e44",
+                        "on-surface-variant": "#bec8d1",
+                        "on-secondary-container": "#98bdd9",
+                        "on-secondary": "#08344b",
+                        "surface": "#0f1417",
+                        "secondary": "#a6cbe8",
+                        "surface-container-high": "#262b2e",
+                        "secondary-container": "#274d65",
+                        "surface-tint": "#88ceff",
+                        "tertiary-fixed": "#ffdcbe",
+                        "on-error": "#690005",
+                        "primary-fixed": "#c8e6ff",
+                        "tertiary-container": "#d17e0f",
+                        "on-tertiary-container": "#412300",
+                        "on-surface": "#dfe3e7",
+                        "surface-bright": "#353a3d",
+                        "secondary-fixed-dim": "#a6cbe8",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#1b2024",
+                        "surface-container-low": "#171c20",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#0a0f12",
+                        "on-background": "#dfe3e7",
+                        "on-tertiary": "#4a2800",
+                        "inverse-primary": "#006590"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0f1417;
+            background-image: radial-gradient(circle at 0% 0%, #004c6d 0%, transparent 40%),
+            radial-gradient(circle at 100% 100%, #412300 0%, transparent 40%);
+        }
+    </style>
+</head>
+<body class="font-body text-on-background min-h-screen flex flex-col">
+<header class="bg-slate-950/80 backdrop-blur-md fixed top-0 w-full border-b border-slate-800 shadow-sm z-50 flex justify-between items-center px-6 h-16 w-full font-['Manrope'] antialiased">
+    <div class="text-xl font-bold tracking-tight text-white">CUTonalá Nexus</div>
+    <div class="flex items-center gap-4">
+        <button class="text-slate-400 hover:bg-slate-900/50 rounded-full transition-all p-2 active:scale-95 duration-150">
+            <span class="material-symbols-outlined">help_outline</span>
+        </button>
+    </div>
+</header>
+<main class="flex-grow flex items-center justify-center p-6 mt-16">
+    <div class="w-full max-w-md">
+        <div class="bg-surface-container-high/60 backdrop-blur-xl border border-outline-variant/30 p-8 rounded-lg shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-tertiary/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10">
+                <div class="mb-8 flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center mb-6 border border-primary/20">
+                        <span class="material-symbols-outlined text-primary text-3xl">lock_reset</span>
+                    </div>
+                    <h1 class="font-headline text-3xl font-extrabold text-white tracking-tight mb-3">¿Olvidaste tu contraseña?</h1>
+                    <p class="text-on-surface-variant text-sm leading-relaxed">
+                        Ingresa tu correo institucional para recibir un enlace de recuperación.
+                    </p>
+                </div>
+                <form action="#" class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold uppercase tracking-wider text-primary/80 ml-1" for="email">Institutional Email</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-xl">alternate_email</span>
+                            <input class="w-full bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-full py-4 pl-12 pr-6 text-on-surface placeholder:text-outline/50 transition-all outline-none" id="email" placeholder="ejemplo@alumnos.udg.mx" required="" type="email"/>
+                        </div>
+                    </div>
+                    <button class="w-full bg-primary-container text-on-primary-container font-headline font-bold py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group" type="submit">
+                        Enviar Enlace
+                        <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </button>
+                </form>
+                <div class="mt-8 pt-6 border-t border-outline-variant/30 text-center">
+                    <a class="inline-flex items-center gap-2 text-primary hover:text-primary-fixed-dim transition-colors font-medium" href="/login">
+                        <span class="material-symbols-outlined text-lg">arrow_back</span>
+                        Volver al inicio de sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-surface-container-low p-4 rounded-lg flex items-start gap-4 border border-outline-variant/10">
+                <span class="material-symbols-outlined text-tertiary">info</span>
+                <div>
+                    <p class="text-[10px] uppercase font-bold text-tertiary tracking-widest mb-1">Nota</p>
+                    <p class="text-xs text-on-surface-variant">El enlace de recuperación expira en 24 horas por seguridad.</p>
+                </div>
+            </div>
+            <div class="bg-surface-container-low p-4 rounded-lg flex items-start gap-4 border border-outline-variant/10">
+                <span class="material-symbols-outlined text-secondary">support_agent</span>
+                <div>
+                    <p class="text-[10px] uppercase font-bold text-secondary tracking-widest mb-1">Soporte</p>
+                    <p class="text-xs text-on-surface-variant">¿No recibiste el correo? Revisa tu carpeta de spam o contacta a TI.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer class="bg-slate-950 w-full py-8 mt-auto border-t border-slate-900 flex flex-col md:flex-row items-center justify-between px-8 gap-4 font-['Manrope'] text-xs uppercase tracking-widest">
+    <div class="text-slate-500">© 2024 Centro Universitario de Tonalá. Nexus Portal.</div>
+    <div class="flex gap-6">
+        <a class="text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Privacy Policy</a>
+        <a class="text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Terms of Service</a>
+        <a class="text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Contact Support</a>
+    </div>
+</footer>
+</body></html>
+
+<!-- Verificación de Cuenta -->
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Verificación de Cuenta | CUTonalá Nexus</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#ffb86f",
+                        "primary-fixed-dim": "#88ceff",
+                        "on-secondary-fixed": "#001e2f",
+                        "secondary-fixed": "#c8e6ff",
+                        "on-primary-fixed-variant": "#004c6d",
+                        "inverse-surface": "#dfe3e7",
+                        "inverse-on-surface": "#2c3135",
+                        "on-secondary-fixed-variant": "#254a62",
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "surface-variant": "#303539",
+                        "outline": "#88929b",
+                        "error-container": "#93000a",
+                        "on-primary": "#00344d",
+                        "surface-container-highest": "#303539",
+                        "outline-variant": "#3e4850",
+                        "primary-container": "#009bdb",
+                        "background": "#0f1417",
+                        "on-primary-fixed": "#001e2e",
+                        "surface-dim": "#0f1417",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "primary": "#88ceff",
+                        "on-primary-container": "#002e44",
+                        "on-surface-variant": "#bec8d1",
+                        "on-secondary-container": "#98bdd9",
+                        "on-secondary": "#08344b",
+                        "surface": "#0f1417",
+                        "secondary": "#a6cbe8",
+                        "surface-container-high": "#262b2e",
+                        "secondary-container": "#274d65",
+                        "surface-tint": "#88ceff",
+                        "tertiary-fixed": "#ffdcbe",
+                        "on-error": "#690005",
+                        "primary-fixed": "#c8e6ff",
+                        "tertiary-container": "#d17e0f",
+                        "on-tertiary-container": "#412300",
+                        "on-surface": "#dfe3e7",
+                        "surface-bright": "#353a3d",
+                        "secondary-fixed-dim": "#a6cbe8",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#1b2024",
+                        "surface-container-low": "#171c20",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#0a0f12",
+                        "on-background": "#dfe3e7",
+                        "on-tertiary": "#4a2800",
+                        "inverse-primary": "#006590"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0f1417;
+        }
+        .glass-panel {
+            background: rgba(27, 32, 36, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(136, 146, 155, 0.1);
+        }
+    </style>
+</head>
+<body class="font-body text-on-surface min-h-screen flex flex-col">
+<!-- TopNavBar (Suppressed based on Transactional Rule, but keeping Brand Identity) -->
+<header class="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md px-6 h-16 flex justify-between items-center border-b border-slate-800 shadow-sm font-['Manrope'] antialiased">
+    <div class="text-xl font-bold tracking-tight text-white">CUTonalá Nexus</div>
+    <div class="flex items-center gap-4">
+        <button class="text-slate-400 hover:bg-slate-900/50 p-2 rounded-full transition-all active:scale-95 duration-150">
+            <span class="material-symbols-outlined">help_outline</span>
+        </button>
+    </div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex items-center justify-center px-4 pt-20 pb-12">
+    <div class="max-w-md w-full">
+        <!-- Verification Card -->
+        <div class="glass-panel rounded-xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
+            <!-- Decorative background elements -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-tertiary/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10">
+                <!-- Icon/Logo -->
+                <div class="w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center mb-8 mx-auto">
+                    <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">mark_email_unread</span>
+                </div>
+                <!-- Heading -->
+                <h1 class="font-headline text-2xl md:text-3xl font-extrabold text-center text-white mb-4 tracking-tight">Verifica tu identidad</h1>
+                <p class="text-on-surface-variant text-center mb-10 leading-relaxed font-body">
+                    Hemos enviado un código de verificación a tu <span class="text-primary-fixed-dim font-semibold">correo institucional</span>. Por favor, introdúcelo debajo para continuar.
+                </p>
+                <!-- Code Input Group -->
+                <form action="#" class="space-y-8">
+                    <div class="flex justify-between gap-2 md:gap-3">
+                        <input class="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold bg-surface-container-highest border-none rounded-lg focus:ring-2 focus:ring-primary text-white outline-none transition-all" maxlength="1" type="text" value="5"/>
+                        <input class="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold bg-surface-container-highest border-none rounded-lg focus:ring-2 focus:ring-primary text-white outline-none transition-all" maxlength="1" placeholder="·" type="text"/>
+                        <input class="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold bg-surface-container-highest border-none rounded-lg focus:ring-2 focus:ring-primary text-white outline-none transition-all" maxlength="1" placeholder="·" type="text"/>
+                        <span class="flex items-center text-outline-variant">-</span>
+                        <input class="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold bg-surface-container-highest border-none rounded-lg focus:ring-2 focus:ring-primary text-white outline-none transition-all" maxlength="1" placeholder="·" type="text"/>
+                        <input class="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold bg-surface-container-highest border-none rounded-lg focus:ring-2 focus:ring-primary text-white outline-none transition-all" maxlength="1" placeholder="·" type="text"/>
+                        <input class="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold bg-surface-container-highest border-none rounded-lg focus:ring-2 focus:ring-primary text-white outline-none transition-all" maxlength="1" placeholder="·" type="text"/>
+                    </div>
+                    <!-- Action Button -->
+                    <button class="w-full bg-primary-container hover:brightness-110 active:scale-[0.98] text-on-primary-container font-bold py-4 rounded-full transition-all flex items-center justify-center gap-2 group" type="submit">
+                        <span>Verificar Cuenta</span>
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </button>
+                </form>
+                <!-- Footer Link -->
+                <div class="mt-8 text-center">
+                    <p class="text-on-surface-variant text-sm">
+                        ¿No recibiste el código?
+                        <a class="text-tertiary font-semibold hover:underline decoration-2 underline-offset-4 ml-1" href="#">Reenviar</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- Contextual Information (Bento Style Sub-info) -->
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-surface-container-low p-4 rounded-lg flex items-start gap-3">
+                <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">security</span>
+                <div>
+                    <h4 class="text-xs font-bold text-secondary uppercase tracking-wider mb-1">Seguridad</h4>
+                    <p class="text-xs text-on-surface-variant">Tu sesión está protegida con encriptación de grado bancario.</p>
+                </div>
+            </div>
+            <div class="bg-surface-container-low p-4 rounded-lg flex items-start gap-3">
+                <span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">timer</span>
+                <div>
+                    <h4 class="text-xs font-bold text-tertiary uppercase tracking-wider mb-1">Expiración</h4>
+                    <p class="text-xs text-on-surface-variant">El código enviado expira en los próximos 10 minutos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 mt-auto border-t border-slate-900 bg-slate-950 flex flex-col md:flex-row items-center justify-between px-8 gap-4 font-['Manrope'] text-xs uppercase tracking-widest cursor-pointer">
+    <div class="text-slate-500">© 2024 Centro Universitario de Tonalá. Nexus Portal.</div>
+    <div class="flex gap-6">
+        <a class="text-slate-500 hover:text-sky-300 transition-colors">Privacy Policy</a>
+        <a class="text-slate-500 hover:text-sky-300 transition-colors">Terms of Service</a>
+        <a class="text-slate-500 hover:text-sky-300 transition-colors">Contact Support</a>
+    </div>
+</footer>
+</body></html>
+
+<!-- Inicio de Sesión -->
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Login | CUTonalá Nexus</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#ffb86f",
+                        "primary-fixed-dim": "#88ceff",
+                        "on-secondary-fixed": "#001e2f",
+                        "secondary-fixed": "#c8e6ff",
+                        "on-primary-fixed-variant": "#004c6d",
+                        "inverse-surface": "#dfe3e7",
+                        "inverse-on-surface": "#2c3135",
+                        "on-secondary-fixed-variant": "#254a62",
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "surface-variant": "#303539",
+                        "outline": "#88929b",
+                        "error-container": "#93000a",
+                        "on-primary": "#00344d",
+                        "surface-container-highest": "#303539",
+                        "outline-variant": "#3e4850",
+                        "primary-container": "#009bdb",
+                        "background": "#0f1417",
+                        "on-primary-fixed": "#001e2e",
+                        "surface-dim": "#0f1417",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "primary": "#88ceff",
+                        "on-primary-container": "#002e44",
+                        "on-surface-variant": "#bec8d1",
+                        "on-secondary-container": "#98bdd9",
+                        "on-secondary": "#08344b",
+                        "surface": "#0f1417",
+                        "secondary": "#a6cbe8",
+                        "surface-container-high": "#262b2e",
+                        "secondary-container": "#274d65",
+                        "surface-tint": "#88ceff",
+                        "tertiary-fixed": "#ffdcbe",
+                        "on-error": "#690005",
+                        "primary-fixed": "#c8e6ff",
+                        "tertiary-container": "#d17e0f",
+                        "on-tertiary-container": "#412300",
+                        "on-surface": "#dfe3e7",
+                        "surface-bright": "#353a3d",
+                        "secondary-fixed-dim": "#a6cbe8",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#1b2024",
+                        "surface-container-low": "#171c20",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#0a0f12",
+                        "on-background": "#dfe3e7",
+                        "on-tertiary": "#4a2800",
+                        "inverse-primary": "#006590"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(15, 20, 23, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(136, 206, 255, 0.1);
+        }
+        .abstract-blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col relative overflow-hidden">
+<!-- Background Artistic Shapes -->
+<div class="abstract-blob w-[500px] h-[500px] bg-primary-container -top-48 -left-24 rounded-full"></div>
+<div class="abstract-blob w-[400px] h-[400px] bg-tertiary-container -bottom-24 -right-12 rounded-full"></div>
+<div class="abstract-blob w-[300px] h-[300px] bg-secondary-container top-1/2 left-1/3 rounded-full opacity-20"></div>
+<!-- Navigation Suppressed for Login Focus -->
+<main class="flex-grow flex items-center justify-center p-6 z-10">
+    <div class="w-full max-w-[440px]">
+        <!-- Brand Anchor -->
+        <div class="text-center mb-8">
+            <h1 class="font-headline font-extrabold text-4xl tracking-tight text-white mb-2">
+                CUTonalá <span class="text-primary">Nexus</span>
+            </h1>
+            <p class="text-on-surface-variant font-medium">Gestión Universitaria Inteligente</p>
+        </div>
+        <!-- Login Card -->
+        <div class="glass-panel p-8 md:p-10 rounded-lg shadow-2xl">
+            <form class="space-y-6">
+                <div>
+                    <label class="block text-sm font-label font-medium text-on-surface-variant mb-2 px-1" for="email">Email</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">mail</span>
+                        <input class="w-full bg-surface-container-highest border-none rounded-full py-3.5 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all" id="email" placeholder="tu@alumno.udg.mx" type="email"/>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-2 px-1">
+                        <label class="text-sm font-label font-medium text-on-surface-variant" for="password">Password</label>
+                        <a class="text-xs text-primary hover:text-primary-fixed-dim transition-colors" href="#">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">lock</span>
+                        <input class="w-full bg-surface-container-highest border-none rounded-full py-3.5 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all" id="password" placeholder="••••••••" type="password"/>
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <button class="w-full bg-primary-container hover:bg-primary text-on-primary-container font-headline font-bold py-4 rounded-full shadow-lg shadow-primary-container/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2" type="submit">
+                        Iniciar Sesión
+                        <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                    </button>
+                </div>
+            </form>
+            <div class="mt-8 pt-6 border-t border-outline-variant flex flex-col items-center gap-4">
+                <p class="text-on-surface-variant text-sm">O ingresa con</p>
+                <div class="flex gap-4">
+                    <button class="p-3 rounded-full bg-surface-container-high hover:bg-surface-variant transition-colors group">
+                        <img alt="Google" class="w-5 h-5 opacity-70 group-hover:opacity-100" data-alt="minimalist google search icon logo on transparent background for authentication provider ui component" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtv3xSIbFX4p_UF5OwBot8U9SBsBoZkTFR7_o00zXJzskpUdzYlIB28lSR3S4wTKnHHdlrQtIejnni-aM3Vgt9PWvmc7AmktxgphmDELuT8ZBAbRCNcQJCha5ksxZKvWNvN1HFol_1QH0ei0fE57m1OE_3tlS2cILcwkCTsPiCd0YDjYVJf3y6udFxymwujFIpfnQHPpP8XoFAaRot0SiMlHpveouGMD2vdJb-Ft2O-YRTkm5ZCLW0qynCJz-_DXP2QZ-ubgjM"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Contextual Footer -->
+        <div class="text-center mt-8">
+            <p class="text-on-surface-variant">
+                ¿No tienes cuenta?
+                <a class="text-primary font-semibold hover:underline decoration-2 underline-offset-4" href="#">Regístrate</a>
+            </p>
+        </div>
+    </div>
+</main>
+<!-- Global Footer -->
+<footer class="bg-slate-950 w-full py-8 mt-auto border-t border-slate-900 flex flex-col md:flex-row items-center justify-between px-8 gap-4 z-10">
+    <div class="font-['Manrope'] text-xs uppercase tracking-widest text-slate-500">
+        © 2024 Centro Universitario de Tonalá. Nexus Portal.
+    </div>
+    <div class="flex gap-6">
+        <a class="font-['Manrope'] text-xs uppercase tracking-widest text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Privacy Policy</a>
+        <a class="font-['Manrope'] text-xs uppercase tracking-widest text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Terms of Service</a>
+        <a class="font-['Manrope'] text-xs uppercase tracking-widest text-slate-500 hover:text-sky-300 transition-colors cursor-pointer" href="#">Contact Support</a>
+    </div>
+</footer>
+<!-- Decorative University Elements -->
+<div class="fixed top-12 right-12 opacity-5 pointer-events-none select-none">
+    <img alt="Architecture" class="w-64 h-64 object-cover rounded-full grayscale mix-blend-overlay" data-alt="architectural close-up of a modern university building facade with geometric glass panels and shadows during late afternoon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJtkzmYqCIrNIKP0rlmZ5x5ELTmVa5JD0qx5oKYh3K0ixJM5xQF4dOWVd5Yf619TVmwK20bJ9m-FuCyef4-2HJPOvxIxxm3uShFn_zmg2CtWniR7ZrmkG_sAYDYmEn7YNIec6yhsjct8UITHndt6pKOz9SsH0UnbfYhdUS1ISejBxgRjuTUQNBApNyjlLKx397Zid6D0ZDE72vL5St3lUkVaT93w1z4XBBAI5jjgsIFeyA_aieaMxeqhar6CaIWCk_ZJS3915Q"/>
+</div>
+</body></html>

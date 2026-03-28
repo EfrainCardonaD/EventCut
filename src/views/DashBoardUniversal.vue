@@ -35,8 +35,8 @@ onMounted(() => {
             class="w-8 h-8 object-contain"
           />
         </div>
-        <span class="font-headline font-black text-sky-600 dark:text-[#009bdb] tracking-tight text-xl md:text-2xl hidden sm:block"
-          >CampusEvents</span
+        <span class="text-sm font-semibold uppercase tracking-[0.25em] text-brand text-sky-600 dark:text-[#009bdb] md:text-2xl hidden sm:block"
+          >EVENTCUT</span
         >
 
         <!-- Desktop Links -->
