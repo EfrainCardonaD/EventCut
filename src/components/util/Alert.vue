@@ -162,31 +162,31 @@ onMounted(() => {
 
 // Clases visuales minimalistas
 const alertClasses = computed(() => {
-  return 'relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900'
+  return 'relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950'
 })
 
 const accentClasses = computed(() => {
   const variants = {
-    success: 'bg-emerald-500 dark:bg-emerald-400',
-    error: 'bg-red-500 dark:bg-red-500',
-    warning: 'bg-amber-500 dark:bg-amber-400',
-    info: 'bg-blue-500 dark:bg-blue-400'
+    success: 'bg-secondary-500 dark:bg-secondary-400',
+    error: 'bg-tertiary-600 dark:bg-tertiary-500',
+    warning: 'bg-tertiary-500 dark:bg-tertiary-400',
+    info: 'bg-primary-500 dark:bg-primary-400'
   }
   return variants[props.type] || variants.info
 })
 
 const iconColorClasses = computed(() => {
   const variants = {
-    success: 'text-emerald-500 dark:text-emerald-400',
-    error: 'text-red-500 dark:text-red-500',
-    warning: 'text-amber-500 dark:text-amber-400',
-    info: 'text-blue-500 dark:text-blue-400'
+    success: 'text-secondary-500 dark:text-secondary-400',
+    error: 'text-tertiary-600 dark:text-tertiary-500',
+    warning: 'text-tertiary-500 dark:text-tertiary-400',
+    info: 'text-primary-500 dark:text-primary-400'
   }
   return variants[props.type] || variants.info
 })
 
 const closeButtonClasses = computed(() => {
-  return 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800'
+  return 'text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800'
 })
 
 const wrapperClasses = computed(() => {
@@ -248,10 +248,10 @@ const onActionClick = () => {
         </div>
 
         <div class="flex-1 min-w-0" :aria-live="type === 'error' ? 'assertive' : 'polite'">
-          <h3 v-if="title" class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+          <h3 v-if="title" class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
             {{ title }}
           </h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed break-words whitespace-pre-line">
+          <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words whitespace-pre-line">
             {{ message }}
           </p>
           <button
@@ -269,7 +269,7 @@ const onActionClick = () => {
             v-if="dismissible"
             @click="close"
             type="button"
-            class="flex-shrink-0 p-1.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
+            class="flex-shrink-0 p-1.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700"
             :class="closeButtonClasses"
             aria-label="Cerrar alerta"
         >
@@ -279,7 +279,7 @@ const onActionClick = () => {
         </button>
       </div>
 
-      <div v-if="duration > 0" class="absolute bottom-0 left-0 h-[2px] w-full bg-gray-100 dark:bg-gray-800">
+      <div v-if="duration > 0" class="absolute bottom-0 left-0 h-[2px] w-full bg-slate-100 dark:bg-slate-800">
         <div class="h-full transition-all duration-75" :class="accentClasses" :style="{ width: progress + '%' }"></div>
       </div>
     </div>

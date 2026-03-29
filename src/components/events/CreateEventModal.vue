@@ -179,7 +179,7 @@ const onSubmit = () => {
         leave-from-class="opacity-100 translate-y-0 scale-100"
         leave-to-class="opacity-0 translate-y-2 scale-95"
       >
-        <div v-if="modelValue" class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-[#171c20]">
+          <div v-if="modelValue" class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
       <div class="mb-4 flex items-center justify-between">
         <h3 class="font-headline text-xl font-extrabold text-slate-900 dark:text-white">Crear evento</h3>
         <button class="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" @click="closeModal">
@@ -195,7 +195,7 @@ const onSubmit = () => {
             type="text"
             maxlength="150"
             required
-            class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
             placeholder="Hackathon Ingenieria 2026"
           />
         </label>
@@ -206,7 +206,7 @@ const onSubmit = () => {
             v-model="form.description"
             rows="4"
             required
-            class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
             placeholder="Maraton de desarrollo colaborativo para estudiantes y egresados"
           ></textarea>
         </label>
@@ -216,7 +216,7 @@ const onSubmit = () => {
           <select
             v-model="form.category_id"
             required
-            class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
           >
             <option value="" disabled>Selecciona una categoria</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
@@ -230,7 +230,7 @@ const onSubmit = () => {
             type="text"
             maxlength="200"
             required
-            class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
             placeholder="Auditorio Principal"
           />
         </label>
@@ -241,7 +241,7 @@ const onSubmit = () => {
             v-model="form.startLocal"
             type="datetime-local"
             required
-            class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
           />
         </label>
 
@@ -251,7 +251,7 @@ const onSubmit = () => {
             v-model="form.endLocal"
             type="datetime-local"
             required
-            class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
           />
         </label>
 
@@ -261,7 +261,7 @@ const onSubmit = () => {
             type="file"
             accept="image/*"
             required
-            class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+              class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
             @change="onFileChange"
           />
         </label>

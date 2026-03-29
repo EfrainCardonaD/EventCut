@@ -54,7 +54,7 @@ const submit = async () => {
 </script>
 
 <template>
-  <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-100 dark:bg-[#10161b]">
+  <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-100 dark:bg-slate-950">
     <SpinnerOverlay :show="loading" text="Validando credenciales..." />
     <Alert
       v-model="toast.show"

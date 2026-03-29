@@ -193,7 +193,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-slate-50 text-slate-900 transition-colors duration-300 selection:bg-sky-500/30 dark:bg-[#0f1418] dark:text-[#dfe3e8]">
+  <div class="bg-slate-50 text-slate-900 transition-colors duration-300 selection:bg-sky-500/30 dark:bg-slate-950 dark:text-slate-100">
     <SpinnerOverlay :show="isLoggingOut || isLoadingEvents" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando eventos...'" />
 
     <Alert
@@ -230,16 +230,16 @@ onMounted(async () => {
     />
 
     <header
-      class="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-4 shadow-sm backdrop-blur-xl transition-colors duration-300 dark:border-slate-800/60 dark:bg-[#0f1418]/80 dark:shadow-none md:h-20 md:px-8"
+      class="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-4 shadow-sm backdrop-blur-xl transition-colors duration-300 dark:border-slate-800/60 dark:bg-slate-950/80 dark:shadow-none md:h-20 md:px-8"
     >
       <div class="flex items-center gap-3 md:gap-8">
-        <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sky-600 dark:border-slate-700 dark:bg-[#1b2024] dark:text-sky-400">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:text-sky-400">
           <span class="material-symbols-outlined">event</span>
         </div>
-        <span class="hidden text-sm font-semibold uppercase tracking-[0.25em] text-sky-600 dark:text-[#009bdb] sm:block md:text-2xl">EVENTCUT</span>
+        <span class="hidden text-sm font-semibold uppercase tracking-[0.25em] text-sky-600 dark:text-sky-500 sm:block md:text-2xl">EVENTCUT</span>
 
         <nav class="ml-4 hidden gap-6 text-sm font-bold tracking-tight md:flex lg:text-base">
-          <RouterLink to="/app" class="border-b-2 border-sky-600 pb-1 text-sky-600 dark:border-[#009bdb] dark:text-[#88ceff]">Eventos</RouterLink>
+          <RouterLink to="/app" class="border-b-2 border-sky-600 pb-1 text-sky-600 dark:border-sky-500 dark:text-sky-300">Eventos</RouterLink>
           <RouterLink
             to="/app/calendario"
             class="pb-1 text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -255,18 +255,18 @@ onMounted(async () => {
             v-model="searchQuery"
             type="text"
             placeholder="Buscar eventos por titulo, descripcion o sede"
-            class="w-80 rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-800 dark:bg-[#1b2024] dark:text-slate-200 dark:focus:border-[#009bdb]"
+            class="w-80 rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-sky-500"
           />
           <span class="material-symbols-outlined pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xl text-slate-400">search</span>
         </div>
 
         <button
           type="button"
-          class="rounded-full p-2 text-slate-500 transition-all hover:bg-slate-100 active:scale-95 dark:text-slate-400 dark:hover:bg-white/5"
+          class="inline-flex size-10 items-center justify-center rounded-full p-2 text-slate-500 transition-all hover:bg-slate-100 active:scale-95 dark:text-slate-400 dark:hover:bg-white/5"
           aria-label="Toggle Theme"
           @click="onToggleTheme"
         >
-          <span class="material-symbols-outlined">{{ themeIcon }}</span>
+          <span class="material-symbols-outlined text-[22px] leading-none">{{ themeIcon }}</span>
         </button>
 
         <div class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-slate-200 font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
@@ -276,7 +276,7 @@ onMounted(async () => {
     </header>
 
     <aside
-      class="fixed left-0 top-20 z-40 hidden h-[calc(100vh-5rem)] w-64 flex-col gap-4 border-r border-slate-200 bg-slate-50 py-6 transition-colors duration-300 dark:border-slate-800/50 dark:bg-[#171c20] md:flex"
+      class="fixed left-0 top-20 z-40 hidden h-[calc(100vh-5rem)] w-64 flex-col gap-4 border-r border-slate-200 bg-slate-50 py-6 transition-colors duration-300 dark:border-slate-800/50 dark:bg-slate-900 md:flex"
     >
       <div class="px-6 mb-2">
         <h2 class="font-headline font-bold text-slate-800 dark:text-slate-200">Mi Panel</h2>
@@ -285,7 +285,7 @@ onMounted(async () => {
 
       <div class="px-4">
         <button
-          class="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3.5 font-bold text-white shadow-md transition-all hover:bg-sky-700 active:scale-95 dark:bg-sky-500 dark:text-[#00344d] dark:hover:bg-sky-400"
+          class="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3.5 font-bold text-white shadow-md transition-all hover:bg-sky-700 active:scale-95 dark:bg-sky-500 dark:text-sky-950 dark:hover:bg-sky-400"
           @click="createModalOpen = true"
         >
           <span class="material-symbols-outlined">add</span>
@@ -309,13 +309,13 @@ onMounted(async () => {
       <div class="p-4 md:p-8">
         <div class="mb-4">
           <div class="relative -mx-4 md:mx-0">
-            <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-5 bg-gradient-to-r from-slate-50 to-transparent dark:from-[#0f1418] md:hidden"></div>
-            <div class="pointer-events-none absolute inset-y-0 right-0 z-10 w-5 bg-gradient-to-l from-slate-50 to-transparent dark:from-[#0f1418] md:hidden"></div>
+            <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-5 bg-gradient-to-r from-slate-50 to-transparent dark:from-slate-950 md:hidden"></div>
+            <div class="pointer-events-none absolute inset-y-0 right-0 z-10 w-5 bg-gradient-to-l from-slate-50 to-transparent dark:from-slate-950 md:hidden"></div>
 
-            <div class="flex items-center gap-2 overflow-x-auto px-4 pb-2 no-scrollbar snap-x snap-mandatory md:px-0">
+            <div class="flex items-center gap-2 overflow-x-auto px-4 pb-2 snap-x snap-mandatory md:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <button
                 class="snap-start whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold shadow-sm sm:px-5 sm:text-sm"
-                :class="selectedCategory === null ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-[#002e44]' : 'bg-white text-slate-600 border border-slate-200 dark:bg-[#1b2024] dark:border-slate-800 dark:text-slate-300'"
+                :class="selectedCategory === null ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-sky-950' : 'bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300'"
                 @click="selectedCategory = null"
               >
                 Todas
@@ -323,8 +323,8 @@ onMounted(async () => {
               <button
                 v-for="category in categories"
                 :key="category.id"
-                class="snap-start whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 transition-colors hover:bg-slate-50 sm:px-5 sm:text-sm dark:border-slate-800 dark:bg-[#1b2024] dark:text-slate-300 dark:hover:bg-slate-800"
-                :class="selectedCategory === category.id ? '!bg-sky-600 !text-white dark:!bg-sky-500 dark:!text-[#002e44]' : ''"
+                class="snap-start whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 transition-colors hover:bg-slate-50 sm:px-5 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                :class="selectedCategory === category.id ? '!bg-sky-600 !text-white dark:!bg-sky-500 dark:!text-sky-950' : ''"
                 @click="selectedCategory = category.id"
               >
                 {{ category.name }}
@@ -405,7 +405,7 @@ onMounted(async () => {
     </main>
 
     <aside
-      class="fixed right-0 top-20 hidden h-[calc(100vh-5rem)] w-[22rem] flex-col border-l border-slate-200 bg-white p-6 shadow-sm transition-colors duration-300 dark:border-slate-800/50 dark:bg-[#13181c] dark:shadow-none xl:flex"
+      class="fixed right-0 top-20 hidden h-[calc(100vh-5rem)] w-[22rem] flex-col border-l border-slate-200 bg-white p-6 shadow-sm transition-colors duration-300 dark:border-slate-800/50 dark:bg-slate-950 dark:shadow-none xl:flex"
     >
       <CalendarWidget :month-key="monthKey" :selected-date="selectedDate" :events-by-date="eventsByDate" @change-month="onChangeMonth" @select-date="onSelectDate" />
 
@@ -424,7 +424,7 @@ onMounted(async () => {
           <div
             v-for="event in agendaEvents"
             :key="event.id"
-            class="cursor-pointer rounded-xl border-l-4 border-sky-500 bg-slate-50 p-3 transition-colors hover:bg-slate-100 dark:bg-[#1b2024] dark:hover:bg-[#22282c]"
+            class="cursor-pointer rounded-xl border-l-4 border-sky-500 bg-slate-50 p-3 transition-colors hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800"
             @click="openEventModal(event)"
           >
             <p class="mb-1 text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
@@ -441,17 +441,17 @@ onMounted(async () => {
     </aside>
 
     <nav
-      class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-[#0f1418]/90 md:hidden"
+      class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/90 md:hidden"
     >
-      <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-sky-600 dark:text-[#88ceff]">
-        <div class="mb-1 rounded-full bg-sky-100 px-4 py-1 dark:bg-[#009bdb]/20">
+      <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-sky-600 dark:text-sky-300">
+        <div class="mb-1 rounded-full bg-sky-100 px-4 py-1 dark:bg-sky-500/20">
           <span class="material-symbols-outlined icon-filled">event</span>
         </div>
         <span class="text-[10px] font-medium">Eventos</span>
       </RouterLink>
       <RouterLink
         to="/app/calendario"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-[#88ceff]"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
       >
         <div class="mb-1 px-4 py-1">
           <span class="material-symbols-outlined">calendar_month</span>
@@ -461,7 +461,7 @@ onMounted(async () => {
 
       <button
         type="button"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-[#88ceff]"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
         @click="onToggleMobileSearch"
       >
         <span class="mb-1 px-4 py-1">
@@ -472,7 +472,7 @@ onMounted(async () => {
 
       <button
         type="button"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-[#88ceff]"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
         @click="mobileScheduleOpen = true"
       >
         <span class="mb-1 px-4 py-1">
@@ -483,7 +483,7 @@ onMounted(async () => {
 
       <button
         type="button"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-[#88ceff]"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
         @click="createModalOpen = true"
       >
         <span class="mb-1 px-4 py-1">
@@ -495,14 +495,14 @@ onMounted(async () => {
 
     <div
       v-if="mobileSearchOpen"
-      class="fixed bottom-24 left-3 right-3 z-50 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur md:hidden dark:border-slate-800 dark:bg-[#13181c]/95"
+      class="fixed bottom-24 left-3 right-3 z-50 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur md:hidden dark:border-slate-800 dark:bg-slate-950/95"
     >
       <div class="relative">
         <input
           v-model="searchQuery"
           type="text"
           placeholder="Buscar eventos por titulo, descripcion o sede"
-          class="w-full rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-800 dark:bg-[#1b2024] dark:text-slate-200 dark:focus:border-[#009bdb]"
+          class="w-full rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-sky-500"
         />
         <button
           type="button"

@@ -16,24 +16,100 @@
   --color-primary-900: oklch(30% 0.08 235);
   --color-primary-950: oklch(22% 0.05 235);
 
-  --color-secondary-500: oklch(59% 0.07 241);
+  --color-secondary-50: oklch(97% 0.02 245);
+  --color-secondary-100: oklch(94% 0.03 245);
+  --color-secondary-200: oklch(88% 0.05 245);
+  --color-secondary-300: oklch(80% 0.08 245);
+  --color-secondary-400: oklch(71% 0.11 245);
+  --color-secondary-500: oklch(62% 0.13 245);
+  --color-secondary-600: oklch(54% 0.13 245);
+  --color-secondary-700: oklch(46% 0.11 245);
+  --color-secondary-800: oklch(38% 0.08 245);
+  --color-secondary-900: oklch(30% 0.06 245);
+  --color-secondary-950: oklch(22% 0.04 245);
+
+  --color-tertiary-50: oklch(98% 0.02 68);
+  --color-tertiary-100: oklch(95% 0.05 68);
+  --color-tertiary-200: oklch(90% 0.09 68);
+  --color-tertiary-300: oklch(84% 0.13 68);
+  --color-tertiary-400: oklch(76% 0.16 68);
   --color-tertiary-500: oklch(68% 0.16 66);
+  --color-tertiary-600: oklch(60% 0.15 66);
+  --color-tertiary-700: oklch(52% 0.13 66);
+  --color-tertiary-800: oklch(44% 0.11 66);
+  --color-tertiary-900: oklch(36% 0.08 66);
+  --color-tertiary-950: oklch(28% 0.06 66);
+
+  --color-neutral-50: oklch(98% 0.003 250);
+  --color-neutral-100: oklch(95% 0.005 250);
+  --color-neutral-200: oklch(90% 0.008 250);
+  --color-neutral-300: oklch(82% 0.01 250);
+  --color-neutral-400: oklch(70% 0.012 250);
   --color-neutral-500: oklch(58% 0.01 246);
+  --color-neutral-600: oklch(48% 0.009 246);
+  --color-neutral-700: oklch(39% 0.008 246);
+  --color-neutral-800: oklch(30% 0.007 246);
+  --color-neutral-900: oklch(24% 0.006 246);
+  --color-neutral-950: oklch(18% 0.005 246);
+
+  --color-slate-50: var(--color-neutral-50);
+  --color-slate-100: var(--color-neutral-100);
+  --color-slate-200: var(--color-neutral-200);
+  --color-slate-300: var(--color-neutral-300);
+  --color-slate-400: var(--color-neutral-400);
+  --color-slate-500: var(--color-neutral-500);
+  --color-slate-600: var(--color-neutral-600);
+  --color-slate-700: var(--color-neutral-700);
+  --color-slate-800: var(--color-neutral-800);
+  --color-slate-900: var(--color-neutral-900);
+  --color-slate-950: var(--color-neutral-950);
+
 
   --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-headline: 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Tokens semánticos de apoyo para base global */
+
+  /* Brand */
+  --color-brand: var(--color-primary-600);
+  --color-brand-hover: var(--color-primary-700);
+  --color-brand-contrast: white;
+
+  /* Base (Light) */
+  --color-bg: rgb(248 250 252);
+  --color-fg: rgb(15 23 42);
+  --color-surface: rgb(255 255 255);
+  --color-surface-muted: rgb(241 245 249);
+  --color-border: rgb(226 232 240);
+
+  /* Base (Dark) */
+  --dark-color-bg: #0f1418;
+  --dark-color-fg: #dfe3e8;
+  --dark-color-surface: #0b0fz;
+  --dark-color-surface-muted: #1b2024;
+  --dark-color-border: color-mix(in srgb, #dfe3e8 12%, transparent);
+
+  /* Focus / selection */
+  --color-ring: var(--color-primary-500);
+  --color-selection: color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+
+  /* Gradientes de marca (ajusta aquí y se armoniza todo) */
+  --color-gradient-from: var(--color-primary-600);
+  --color-gradient-to: oklch(56% 0.18 275);
+  --dark-color-gradient-from: var(--color-primary-400);
+  --dark-color-gradient-to: oklch(60% 0.16 275);
 }
 
 @layer base {
   html {
-    background-color: rgb(248 250 252);
-    color: rgb(15 23 42);
+    background-color: var(--color-bg);
+    color: var(--color-fg);
   }
 
   html.dark {
-    background-color: #0f1418;
-    color: #dfe3e8;
+    background-color: var(--dark-color-bg);
+    color: var(--dark-color-fg);
   }
 
   body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; }
@@ -50,34 +126,10 @@
 
   /* Selection matches legacy HTML */
   ::selection {
-    background: color-mix(in srgb, oklch(62% 0.16 235) 30%, transparent);
+    background: var(--color-selection);
   }
 }
 
-@layer utilities {
-  /* Reusables referenced by landing/zero */
-  .text-gradient {
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  /* Utility for hiding scrollbars but allowing scroll */
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-  /* Custom Scrollbar for desktop panels */
-  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #3e4850; }
-
-  /* Helpers por compatibilidad: si en algún lugar usamos brand como alias de primary */
-  .text-brand { color: var(--color-primary-600); }
-  .bg-brand { background-color: var(--color-primary-600); }
-  .border-brand { border-color: var(--color-primary-600); }
-  .bg-brand-hover { background-color: var(--color-primary-700); }
-}
 
 #app {
   min-height: 100vh;

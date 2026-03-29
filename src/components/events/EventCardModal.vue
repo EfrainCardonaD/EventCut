@@ -210,7 +210,7 @@ const onConfirmDelete = () => {
           leave-from-class="opacity-100 translate-y-0 scale-100"
           leave-to-class="opacity-0 translate-y-2 scale-95"
         >
-          <div v-if="modelValue && event" class="flex max-h-[94vh] w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#171c20]">
+              <div v-if="modelValue && event" class="flex max-h-[94vh] w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
         <header class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800 sm:px-6">
           <div class="min-w-0">
             <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600 dark:text-sky-400">{{ categoryName }}</p>
@@ -233,7 +233,7 @@ const onConfirmDelete = () => {
 
         <div class="overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <div class="grid grid-cols-1 gap-4 xl:gap-6" :class="editMode && canManage ? 'xl:grid-cols-[1.15fr,0.85fr]' : ''">
-            <section class="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-[#11161a] sm:p-4">
+              <section class="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
           <img
             :src="imagePreview || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80'"
             :alt="event.title"
@@ -241,25 +241,25 @@ const onConfirmDelete = () => {
           />
 
           <div class="mt-4 grid grid-cols-1 gap-2 text-sm text-slate-600 dark:text-slate-300">
-            <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-[#1a2025]">
+              <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
               <span class="material-symbols-outlined mt-0.5 text-base">schedule</span>
               <span><span class="font-semibold">Inicio:</span> {{ startLabel }}</span>
             </p>
-            <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-[#1a2025]">
+              <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
               <span class="material-symbols-outlined mt-0.5 text-base">event</span>
               <span><span class="font-semibold">Fin:</span> {{ endLabel }}</span>
             </p>
-            <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-[#1a2025]">
+              <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
               <span class="material-symbols-outlined mt-0.5 text-base">location_on</span>
               <span>{{ event.location || 'Ubicacion por confirmar' }}</span>
             </p>
-            <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-[#1a2025]">
+              <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
               <span class="material-symbols-outlined mt-0.5 text-base">star</span>
               <span><span class="font-semibold">Score:</span> {{ event.score || 0 }}</span>
             </p>
           </div>
 
-          <p class="mt-4 rounded-2xl bg-white p-3 text-sm leading-relaxed text-slate-700 dark:bg-[#1a2025] dark:text-slate-300 sm:p-4">
+            <p class="mt-4 rounded-2xl bg-white p-3 text-sm leading-relaxed text-slate-700 dark:bg-slate-900 dark:text-slate-300 sm:p-4">
             {{ event.description || 'Sin descripcion disponible para este evento.' }}
           </p>
             </section>
@@ -274,7 +274,7 @@ const onConfirmDelete = () => {
                 v-model="form.title"
                 type="text"
                 maxlength="150"
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
 
@@ -283,7 +283,7 @@ const onConfirmDelete = () => {
               <textarea
                 v-model="form.description"
                 rows="3"
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
               ></textarea>
             </label>
 
@@ -291,7 +291,7 @@ const onConfirmDelete = () => {
               Categoria
               <select
                 v-model="form.category_id"
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
               >
                 <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
               </select>
@@ -303,7 +303,7 @@ const onConfirmDelete = () => {
                 v-model="form.location"
                 type="text"
                 maxlength="200"
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
 
@@ -312,7 +312,7 @@ const onConfirmDelete = () => {
               <input
                 v-model="form.startLocal"
                 type="datetime-local"
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
 
@@ -321,7 +321,7 @@ const onConfirmDelete = () => {
               <input
                 v-model="form.endLocal"
                 type="datetime-local"
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
 
@@ -330,7 +330,7 @@ const onConfirmDelete = () => {
               <input
                 type="file"
                 accept="image/*"
-                class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-[#11161a]"
+                  class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
                 @change="onFileChange"
               />
             </label>

@@ -60,7 +60,7 @@ const onToggleFavorite = (event) => {
 
 <template>
   <article
-    class="bg-white dark:bg-[#1b2024] rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm hover:shadow-md dark:hover:border-sky-500/50 transition-all flex gap-4 md:gap-5 group cursor-pointer active:scale-[0.99]"
+      class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm hover:shadow-md dark:hover:border-sky-500/50 transition-all flex gap-4 md:gap-5 group cursor-pointer active:scale-[0.99]"
     :class="compact ? 'p-3' : 'p-4 md:p-5'"
     @click="onSelect"
   >
@@ -68,7 +68,7 @@ const onToggleFavorite = (event) => {
       <div class="w-full aspect-square rounded-xl overflow-hidden mb-2 hidden sm:block">
         <img :src="cardImage" :alt="event.title" class="w-full h-full object-cover" />
       </div>
-      <div class="flex flex-col items-center justify-center bg-slate-50 dark:bg-[#171c20] rounded-xl border border-slate-100 dark:border-slate-800 py-2 h-full sm:h-auto">
+        <div class="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 py-2 h-full sm:h-auto">
         <span class="text-sky-600 dark:text-sky-400 font-headline font-black text-xl md:text-2xl leading-none">{{ dayLabel }}</span>
         <span class="text-slate-500 font-bold text-[10px] uppercase tracking-widest mt-1">{{ monthLabel }}</span>
       </div>
@@ -93,8 +93,16 @@ const onToggleFavorite = (event) => {
       </div>
     </div>
 
-    <button class="self-start text-slate-400 hover:text-sky-500 transition-colors p-1" aria-label="Marcar favorito" @click="onToggleFavorite">
-      <span class="material-symbols-outlined" :class="event.isFavorite ? 'icon-filled text-sky-500' : ''">{{ event.isFavorite ? 'bookmark' : 'bookmark_border' }}</span>
+    <button
+      class="self-start rounded-full p-1.5 text-slate-400 transition-colors hover:bg-tertiary-50 hover:text-tertiary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary-300/60 dark:hover:bg-tertiary-500/10"
+      :class="event.isFavorite ? 'text-tertiary-600 dark:text-tertiary-400' : 'dark:text-slate-500'"
+      aria-label="Marcar favorito"
+      @click="onToggleFavorite"
+    >
+      <span
+        class="material-symbols-outlined"
+        :class="event.isFavorite ? 'icon-filled' : ''"
+      >{{ event.isFavorite ? 'bookmark' : 'bookmark_border' }}</span>
     </button>
   </article>
 </template>

@@ -67,12 +67,12 @@ const isLarge = computed(() => props.sizePreset === 'large')
 
 const sectionClass = computed(() => {
   if (isCompact.value) {
-    return 'rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800/70 dark:bg-[#13181c]'
+    return 'rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800/70 dark:bg-slate-950'
   }
 
   return isLarge.value
-    ? 'h-full rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800/70 dark:bg-[#13181c] md:p-5'
-    : 'rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800/70 dark:bg-[#13181c]'
+      ? 'h-full rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800/70 dark:bg-slate-950 md:p-5'
+      : 'rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800/70 dark:bg-slate-950'
 })
 
 const titleClass = computed(() => {
@@ -134,8 +134,8 @@ const markerClass = computed(() => {
 const getDayClass = (day) => {
   return [
     dayButtonClass.value,
-    day.inCurrentMonth ? 'hover:bg-slate-100 dark:hover:bg-[#1b2024]' : 'text-slate-300 dark:text-slate-600',
-    day.isSelected ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-500/20 dark:bg-sky-500 dark:text-[#002e44]' : '',
+    day.inCurrentMonth ? 'hover:bg-slate-100 dark:hover:bg-slate-900' : 'text-slate-300 dark:text-slate-600',
+    day.isSelected ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-500/20 dark:bg-sky-500 dark:text-sky-950' : '',
   ]
 }
 
@@ -156,10 +156,10 @@ const selectDate = (dateKey) => {
     <header class="mb-4 flex items-center justify-between">
       <h3 :class="titleClass">{{ monthTitle }}</h3>
       <span class="flex gap-1">
-        <button class="rounded-full p-1.5 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-[#1b2024]" @click="changeMonth(-1)">
+          <button class="rounded-full p-1.5 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-900" @click="changeMonth(-1)">
           <span :class="chevronClass">chevron_left</span>
         </button>
-        <button class="rounded-full p-1.5 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-[#1b2024]" @click="changeMonth(1)">
+          <button class="rounded-full p-1.5 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-900" @click="changeMonth(1)">
           <span :class="chevronClass">chevron_right</span>
         </button>
       </span>
