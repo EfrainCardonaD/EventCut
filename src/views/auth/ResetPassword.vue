@@ -88,7 +88,7 @@ const submit = async () => {
           <input
             v-model="form.token"
             type="text"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="Token recibido por correo"
           />
           <FieldError :error="errors.token" />
@@ -100,7 +100,7 @@ const submit = async () => {
             v-model="form.newPassword"
             type="password"
             autocomplete="new-password"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="••••••••"
           />
           <FieldError :error="errors.newPassword" />
@@ -112,7 +112,7 @@ const submit = async () => {
             v-model="form.confirmPassword"
             type="password"
             autocomplete="new-password"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="••••••••"
           />
           <FieldError :error="errors.confirmPassword" />
@@ -130,7 +130,7 @@ const submit = async () => {
       <div class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400 space-y-2">
         <p>
           Necesitas un token?
-          <RouterLink to="/auth/forgot" class="font-medium text-primary-600 hover:underline">Solicitar recuperacion</RouterLink>
+          <RouterLink to="/auth/forgot" class="micro-accent-link font-medium text-tertiary-700 hover:underline dark:text-tertiary-300">Solicitar recuperacion</RouterLink>
         </p>
       </div>
     </div>

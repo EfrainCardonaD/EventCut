@@ -257,7 +257,7 @@ const onActionClick = () => {
           <button
               v-if="actionLabel"
               type="button"
-              class="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 disabled:opacity-60"
+              class="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-tertiary-600 hover:text-tertiary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary-400/50 disabled:opacity-60 dark:text-tertiary-300 dark:hover:text-tertiary-200"
               :disabled="actionDisabled"
               @click="onActionClick"
           >

@@ -76,7 +76,7 @@ const submit = async () => {
             v-model="form.username"
             type="text"
             autocomplete="username"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="juan.perez o juan.perez@universidad.edu.mx"
           />
           <FieldError :error="errors.username" />
@@ -88,7 +88,7 @@ const submit = async () => {
             v-model="form.password"
             type="password"
             autocomplete="current-password"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="••••••••"
           />
           <FieldError :error="errors.password" />
@@ -104,7 +104,7 @@ const submit = async () => {
       </form>
 
       <div class="mt-6 flex items-center justify-between text-sm">
-        <RouterLink to="/auth/forgot" class="text-primary-600 hover:underline">Olvide mi contrasena</RouterLink>
+        <RouterLink to="/auth/forgot" class="micro-accent-link font-medium text-tertiary-700 hover:underline dark:text-tertiary-300">Olvide mi contrasena</RouterLink>
         <RouterLink to="/auth/register" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">Crear cuenta</RouterLink>
       </div>
     </div>

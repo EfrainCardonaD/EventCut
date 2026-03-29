@@ -274,7 +274,7 @@ const onConfirmDelete = () => {
                 v-model="form.title"
                 type="text"
                 maxlength="150"
-                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
 
@@ -283,7 +283,7 @@ const onConfirmDelete = () => {
               <textarea
                 v-model="form.description"
                 rows="3"
-                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               ></textarea>
             </label>
 
@@ -291,7 +291,7 @@ const onConfirmDelete = () => {
               Categoria
               <select
                 v-model="form.category_id"
-                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               >
                 <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
               </select>
@@ -303,7 +303,7 @@ const onConfirmDelete = () => {
                 v-model="form.location"
                 type="text"
                 maxlength="200"
-                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
 
@@ -312,7 +312,7 @@ const onConfirmDelete = () => {
               <input
                 v-model="form.startLocal"
                 type="datetime-local"
-                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
 
@@ -321,7 +321,7 @@ const onConfirmDelete = () => {
               <input
                 v-model="form.endLocal"
                 type="datetime-local"
-                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
 
@@ -330,7 +330,7 @@ const onConfirmDelete = () => {
               <input
                 type="file"
                 accept="image/*"
-                  class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 dark:border-slate-700 dark:bg-slate-950"
+                  class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
                 @change="onFileChange"
               />
             </label>
@@ -349,7 +349,7 @@ const onConfirmDelete = () => {
 
               <button
                 type="button"
-                class="rounded-full bg-sky-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                class="rounded-full bg-tertiary-500 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-tertiary-600 disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="isSaving || isDeleting"
                 @click="onSave"
               >

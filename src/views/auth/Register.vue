@@ -101,7 +101,7 @@ const submit = async () => {
           <input
             v-model="form.username"
             type="text"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="juan.perez"
           />
           <FieldError :error="errors.username" />
@@ -113,7 +113,7 @@ const submit = async () => {
             v-model="form.email"
             type="email"
             autocomplete="email"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="juan.perez@universidad.edu.mx"
           />
           <FieldError :error="errors.email" />
@@ -124,7 +124,7 @@ const submit = async () => {
           <input
             v-model="form.firstName"
             type="text"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="Juan"
           />
           <FieldError :error="errors.firstName" />
@@ -135,7 +135,7 @@ const submit = async () => {
           <input
             v-model="form.lastName"
             type="text"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="Perez"
           />
           <FieldError :error="errors.lastName" />
@@ -147,7 +147,7 @@ const submit = async () => {
             v-model="form.password"
             type="password"
             autocomplete="new-password"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="••••••••"
           />
           <FieldError :error="errors.password" />
@@ -164,7 +164,7 @@ const submit = async () => {
 
       <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
         Ya tienes cuenta?
-        <RouterLink to="/auth/login" class="font-medium text-primary-600 hover:underline">Inicia sesion</RouterLink>
+        <RouterLink to="/auth/login" class="micro-accent-link font-medium text-tertiary-700 hover:underline dark:text-tertiary-300">Inicia sesion</RouterLink>
       </p>
     </div>
   </section>

@@ -65,14 +65,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           <span class="sr-only">Icono de confirmacion</span>
         </div>
 
-        <p :id="titleId" class="text-slate-900 dark:text-white mb-3.5"><span class="text-primary-600 dark:text-primary-500">{{ titleUser || '¿Estás seguro?' }}</span>, {{ message || '¿Deseas continuar con esta acción?' }}</p>
+        <p :id="titleId" class="text-slate-900 dark:text-white mb-3.5"><span :class="danger ? 'text-tertiary-700 dark:text-tertiary-400' : 'text-tertiary-600 dark:text-tertiary-300'">{{ titleUser || '¿Estás seguro?' }}</span>, {{ message || '¿Deseas continuar con esta acción?' }}</p>
         <p :id="descriptionId" v-if="description" class="mb-4 font-light text-slate-500 dark:text-slate-300">{{ description }}</p>
 
         <div class="flex justify-center items-center space-x-4">
-          <button ref="cancelButtonRef" type="button" @click="close" class="py-2 px-3 text-sm font-medium text-slate-500 bg-white rounded-lg border border-slate-200 hover:bg-slate-100 focus:ring-4 focus:outline-none focus:ring-primary-300 hover:text-slate-900 focus:z-10 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-500 dark:hover:text-white dark:hover:bg-slate-600 dark:focus:ring-slate-600">
+          <button ref="cancelButtonRef" type="button" @click="close" class="py-2 px-3 text-sm font-medium text-slate-500 bg-white rounded-lg border border-slate-200 hover:bg-slate-100 focus:ring-4 focus:outline-none focus:ring-tertiary-200 hover:text-slate-900 focus:z-10 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-500 dark:hover:text-white dark:hover:bg-slate-600 dark:focus:ring-tertiary-500/40">
             {{ cancelText }}
           </button>
-          <button type="button" @click="confirm" :class="['py-2 px-3 text-sm font-medium text-white rounded-lg focus:ring-4 focus:outline-none', danger ? 'bg-tertiary-600 hover:bg-tertiary-700 focus:ring-tertiary-300 dark:bg-tertiary-500 dark:hover:bg-tertiary-600 dark:focus:ring-tertiary-900' : 'bg-primary-600 hover:bg-primary-700 focus:ring-primary-300 dark:bg-primary-500']">
+          <button type="button" @click="confirm" :class="['py-2 px-3 text-sm font-medium text-white rounded-lg focus:ring-4 focus:outline-none', danger ? 'bg-tertiary-600 hover:bg-tertiary-700 focus:ring-tertiary-300 dark:bg-tertiary-500 dark:hover:bg-tertiary-600 dark:focus:ring-tertiary-900' : 'bg-tertiary-500 hover:bg-tertiary-600 focus:ring-tertiary-300 dark:bg-tertiary-500 dark:hover:bg-tertiary-600 dark:focus:ring-tertiary-900']">
             {{ confirmText }}
           </button>
         </div>

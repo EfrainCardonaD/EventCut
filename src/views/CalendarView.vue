@@ -152,7 +152,7 @@ onMounted(async () => {
           </div>
           <RouterLink
             to="/app"
-            class="inline-flex w-fit rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            class="micro-accent-surface inline-flex w-fit rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Volver al dashboard
           </RouterLink>
@@ -162,7 +162,7 @@ onMounted(async () => {
           <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             Seleccionado: {{ selectedDateLabel }}
           </span>
-          <span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
+          <span class="micro-accent-chip rounded-full px-3 py-1 text-xs font-semibold">
             {{ selectedDayCount }} eventos este dia
           </span>
           <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
@@ -223,7 +223,7 @@ onMounted(async () => {
     <nav
       class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/90 md:hidden"
     >
-      <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300">
+      <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300">
         <span class="mb-1 rounded-full px-4 py-1">
           <span class="material-symbols-outlined">event</span>
         </span>
@@ -239,7 +239,7 @@ onMounted(async () => {
 
       <button
         type="button"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
         @click="mobileScheduleOpen = true"
       >
         <span class="mb-1 rounded-full px-4 py-1">
@@ -254,7 +254,7 @@ onMounted(async () => {
         <div class="mb-2 flex justify-end">
           <button
             type="button"
-            class="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+            class="rounded-full bg-white/10 p-2 text-white hover:bg-tertiary-500/30"
             aria-label="Cerrar agenda"
             @click="mobileScheduleOpen = false"
           >

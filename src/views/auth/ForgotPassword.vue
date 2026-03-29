@@ -63,7 +63,7 @@ const submit = async () => {
             v-model="form.email"
             type="email"
             autocomplete="email"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="juan.perez@universidad.edu.mx"
           />
           <FieldError :error="errors.email" />
@@ -81,10 +81,10 @@ const submit = async () => {
       <div class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400 space-y-2">
         <p>
           Ya tienes token?
-          <RouterLink to="/auth/reset" class="font-medium text-primary-600 hover:underline">Restablecer ahora</RouterLink>
+          <RouterLink to="/auth/reset" class="micro-accent-link font-medium text-tertiary-700 hover:underline dark:text-tertiary-300">Restablecer ahora</RouterLink>
         </p>
         <p>
-          <RouterLink to="/auth/login" class="font-medium text-primary-600 hover:underline">Volver a iniciar sesion</RouterLink>
+          <RouterLink to="/auth/login" class="micro-accent-link font-medium text-tertiary-700 hover:underline dark:text-tertiary-300">Volver a iniciar sesion</RouterLink>
         </p>
       </div>
     </div>

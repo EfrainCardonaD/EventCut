@@ -26,7 +26,7 @@ defineProps({
       </div>
 -->
       <div v-if="!compact">
-        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600 group-hover:text-primary-700 transition-colors">EventCut</p>
+        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-tertiary-700 group-hover:text-tertiary-800 transition-colors dark:text-tertiary-300 dark:group-hover:text-tertiary-200">EventCut</p>
       </div>
     </RouterLink>
 

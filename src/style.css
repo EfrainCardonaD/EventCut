@@ -91,8 +91,13 @@
   --dark-color-border: color-mix(in srgb, #dfe3e8 12%, transparent);
 
   /* Focus / selection */
-  --color-ring: var(--color-primary-500);
-  --color-selection: color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+  --color-ring: var(--color-tertiary-400);
+  --color-selection: color-mix(in srgb, var(--color-tertiary-400) 30%, transparent);
+
+  /* Micro-accent tertiary (global, low intensity) */
+  --color-micro-accent: color-mix(in srgb, var(--color-tertiary-500) 14%, transparent);
+  --color-micro-accent-strong: color-mix(in srgb, var(--color-tertiary-500) 24%, transparent);
+  --color-micro-accent-text: var(--color-tertiary-700);
 
   /* Gradientes de marca (ajusta aquí y se armoniza todo) */
   --color-gradient-from: var(--color-primary-600);
@@ -127,6 +132,67 @@
   /* Selection matches legacy HTML */
   ::selection {
     background: var(--color-selection);
+  }
+
+  :where(a, button, input, select, textarea, [role='button'], [tabindex]):focus-visible {
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ring) 35%, transparent);
+  }
+
+  :where(input, select, textarea):focus-visible {
+    border-color: var(--color-tertiary-500);
+  }
+
+  :where(input, textarea) {
+    caret-color: var(--color-tertiary-600);
+  }
+
+  :where(a:hover) {
+    text-decoration-color: color-mix(in srgb, var(--color-tertiary-500) 45%, transparent);
+  }
+}
+
+@layer components {
+  .micro-accent-chip {
+    background: var(--color-micro-accent);
+    color: var(--color-micro-accent-text);
+    border: 1px solid color-mix(in srgb, var(--color-tertiary-400) 35%, transparent);
+  }
+
+  .micro-accent-soft {
+    background: var(--color-micro-accent);
+  }
+
+  .micro-accent-link {
+    transition: color 160ms ease;
+  }
+
+  .micro-accent-link:hover {
+    color: var(--color-tertiary-600);
+  }
+
+  .micro-accent-surface {
+    transition: background-color 160ms ease, border-color 160ms ease;
+  }
+
+  .micro-accent-surface:hover {
+    background: var(--color-micro-accent);
+    border-color: color-mix(in srgb, var(--color-tertiary-400) 40%, var(--color-border));
+  }
+
+  .dark .micro-accent-chip,
+  .dark .micro-accent-soft,
+  .dark .micro-accent-surface:hover {
+    background: color-mix(in srgb, var(--color-tertiary-400) 18%, transparent);
+  }
+
+  .dark .micro-accent-chip {
+    color: var(--color-tertiary-300);
+    border-color: color-mix(in srgb, var(--color-tertiary-300) 35%, transparent);
+  }
+
+  .dark .micro-accent-link:hover {
+    color: var(--color-tertiary-300);
   }
 }
 

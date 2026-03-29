@@ -19,7 +19,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-neutral-50 text-neutral-900 transition-colors duration-300 selection:bg-primary-500/30 overflow-x-hidden dark:bg-neutral-950 dark:text-neutral-100">
+  <div class="bg-neutral-50 text-neutral-900 transition-colors duration-300 selection:bg-tertiary-400/30 overflow-x-hidden dark:bg-neutral-950 dark:text-neutral-100">
     <!-- TOP NAVIGATION BAR (Simplified for Landing) -->
     <header
       class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-200 transition-colors duration-300 dark:bg-neutral-950/80 dark:border-neutral-800/60"
@@ -36,19 +36,19 @@ onMounted(() => {
               class="w-8 h-8 object-contain"
             />
           </div>
-          <span class="text-sm font-semibold uppercase tracking-[0.25em] text-primary-600 md:text-2xl hidden sm:block">EVENTCUT</span>
+          <span class="text-sm font-semibold uppercase tracking-[0.25em] text-tertiary-700 md:text-2xl hidden sm:block dark:text-tertiary-300">EVENTCUT</span>
         </div>
 
         <!-- Desktop Nav Links -->
         <nav class="hidden md:flex gap-8 font-headline font-semibold text-sm">
           <a
             href="#caracteristicas"
-            class="text-neutral-600 transition-colors hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400"
+            class="micro-accent-link text-neutral-600 transition-colors dark:text-neutral-300"
             >Características</a
           >
           <a
             href="#comunidad"
-            class="text-neutral-600 transition-colors hover:text-primary-600 dark:text-neutral-300 dark:hover:text-primary-400"
+            class="micro-accent-link text-neutral-600 transition-colors dark:text-neutral-300"
             >Comunidad</a
           >
         </nav>
@@ -66,7 +66,7 @@ onMounted(() => {
 
           <RouterLink
             to="/auth/login"
-            class="hidden sm:block font-headline font-bold text-sm text-neutral-700 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            class="hidden sm:block font-headline font-bold text-sm text-neutral-700 dark:text-neutral-200 transition-colors hover:text-tertiary-600 dark:hover:text-tertiary-300"
           >
             Iniciar Sesión
           </RouterLink>
@@ -95,9 +95,9 @@ onMounted(() => {
           <!-- Value Proposition (Left) -->
           <div class="text-center lg:text-left">
             <div
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100 border border-primary-200 text-primary-700 text-xs font-bold uppercase tracking-widest mb-6 dark:bg-primary-500/10 dark:border-primary-500/20 dark:text-primary-300"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-tertiary-100 border border-tertiary-200 text-tertiary-700 text-xs font-bold uppercase tracking-widest mb-6 dark:bg-tertiary-500/10 dark:border-tertiary-500/20 dark:text-tertiary-300"
             >
-              <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></span>
+              <span class="w-2 h-2 rounded-full bg-tertiary-500 animate-pulse"></span>
               Plataforma Oficial CUTonalá
             </div>
 
@@ -288,14 +288,14 @@ onMounted(() => {
         </p>
         <RouterLink
           to="/auth/register"
-          class="inline-flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400 text-white dark:text-sky-950 px-10 py-4 rounded-full font-bold text-lg shadow-xl shadow-sky-500/20 active:scale-95 transition-all"
+            class="inline-flex items-center justify-center gap-2 bg-tertiary-500 hover:bg-tertiary-600 dark:bg-tertiary-500 dark:hover:bg-tertiary-400 text-white dark:text-tertiary-950 px-10 py-4 rounded-full font-bold text-lg shadow-xl shadow-tertiary-500/20 active:scale-95 transition-all"
         >
           Crear cuenta gratis
           <span class="material-symbols-outlined">how_to_reg</span>
         </RouterLink>
         <p class="mt-6 text-sm text-slate-500 dark:text-slate-500">
           ¿Ya tienes una cuenta?
-          <RouterLink to="/auth/login" class="text-sky-600 dark:text-sky-400 font-bold hover:underline">Inicia sesión aquí</RouterLink>.
+          <RouterLink to="/auth/login" class="micro-accent-link font-bold text-tertiary-700 hover:underline dark:text-tertiary-300">Inicia sesión aquí</RouterLink>.
         </p>
       </div>
     </section>
@@ -310,9 +310,9 @@ onMounted(() => {
         </div>
 
         <div class="flex gap-6 text-sm font-medium">
-          <a href="#" class="text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors">Soporte técnico</a>
-          <a href="#" class="text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors">Privacidad</a>
-          <a href="#" class="text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 transition-colors">Términos</a>
+          <a href="#" class="micro-accent-link text-slate-500 transition-colors">Soporte técnico</a>
+          <a href="#" class="micro-accent-link text-slate-500 transition-colors">Privacidad</a>
+          <a href="#" class="micro-accent-link text-slate-500 transition-colors">Términos</a>
         </div>
       </div>
     </footer>

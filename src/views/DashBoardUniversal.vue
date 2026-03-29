@@ -193,7 +193,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-slate-50 text-slate-900 transition-colors duration-300 selection:bg-sky-500/30 dark:bg-slate-950 dark:text-slate-100">
+  <div class="bg-slate-50 text-slate-900 transition-colors duration-300 selection:bg-tertiary-400/30 dark:bg-slate-950 dark:text-slate-100">
     <SpinnerOverlay :show="isLoggingOut || isLoadingEvents" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando eventos...'" />
 
     <Alert
@@ -255,7 +255,7 @@ onMounted(async () => {
             v-model="searchQuery"
             type="text"
             placeholder="Buscar eventos por titulo, descripcion o sede"
-            class="w-80 rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-sky-500"
+            class="w-80 rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-tertiary-500"
           />
           <span class="material-symbols-outlined pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xl text-slate-400">search</span>
         </div>
@@ -363,7 +363,7 @@ onMounted(async () => {
         <section>
           <div class="mb-6 flex items-end justify-between">
             <h2 class="font-headline text-xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-2xl">Proximos eventos</h2>
-            <RouterLink to="/app/calendario" class="text-sm font-bold text-sky-600 hover:underline dark:text-sky-400">Ver calendario</RouterLink>
+            <RouterLink to="/app/calendario" class="micro-accent-link text-sm font-bold text-sky-600 hover:underline dark:text-sky-400">Ver calendario</RouterLink>
           </div>
 
           <div v-if="upcomingEvents.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -384,7 +384,7 @@ onMounted(async () => {
         <section class="mt-10">
           <div class="mb-6 flex items-end justify-between">
             <h2 class="font-headline text-xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-2xl">Mis favoritos</h2>
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ favoriteEvents.length }} guardados</span>
+            <span class="micro-accent-chip rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider">{{ favoriteEvents.length }} guardados</span>
           </div>
 
           <div v-if="favoriteEvents.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -424,10 +424,10 @@ onMounted(async () => {
           <div
             v-for="event in agendaEvents"
             :key="event.id"
-            class="cursor-pointer rounded-xl border-l-4 border-sky-500 bg-slate-50 p-3 transition-colors hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800"
+            class="micro-accent-surface cursor-pointer rounded-xl border-l-4 border-tertiary-400 bg-slate-50 p-3 transition-colors hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800"
             @click="openEventModal(event)"
           >
-            <p class="mb-1 text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+            <p class="mb-1 text-[10px] font-bold uppercase tracking-wider text-tertiary-700 dark:text-tertiary-300">
               {{ new Intl.DateTimeFormat('es-MX', { year: '2-digit', month: '2-digit', day: '2-digit' }).format(new Date(event.start_datetime)) }} / {{ new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(event.start_datetime)) }} - {{ new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(event.end_datetime)) }}
             </p>
             <h5 class="mb-0.5 text-sm font-bold leading-tight text-slate-800 dark:text-white">{{ event.title }}</h5>
@@ -451,7 +451,7 @@ onMounted(async () => {
       </RouterLink>
       <RouterLink
         to="/app/calendario"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
       >
         <div class="mb-1 px-4 py-1">
           <span class="material-symbols-outlined">calendar_month</span>
@@ -461,7 +461,7 @@ onMounted(async () => {
 
       <button
         type="button"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
         @click="onToggleMobileSearch"
       >
         <span class="mb-1 px-4 py-1">
@@ -472,7 +472,7 @@ onMounted(async () => {
 
       <button
         type="button"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
         @click="mobileScheduleOpen = true"
       >
         <span class="mb-1 px-4 py-1">
@@ -483,7 +483,7 @@ onMounted(async () => {
 
       <button
         type="button"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
         @click="createModalOpen = true"
       >
         <span class="mb-1 px-4 py-1">
@@ -502,7 +502,7 @@ onMounted(async () => {
           v-model="searchQuery"
           type="text"
           placeholder="Buscar eventos por titulo, descripcion o sede"
-          class="w-full rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-sky-500"
+          class="w-full rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-tertiary-500"
         />
         <button
           type="button"
