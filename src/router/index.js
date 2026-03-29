@@ -7,9 +7,13 @@ import MainLayout from '@/layouts/MainLayout.vue'
 
 import LandingView from '@/views/LandingView.vue'
 import DashBoardUniversal from '@/views/DashBoardUniversal.vue'
+import CalendarView from '@/views/CalendarView.vue'
 import Login from '@/views/auth/Login.vue'
 import Register from '@/views/auth/Register.vue'
 import ForgotPassword from '@/views/auth/ForgotPassword.vue'
+import ResetPassword from '@/views/auth/ResetPassword.vue'
+import ResendVerification from '@/views/auth/ResendVerification.vue'
+import VerifyEmail from '@/views/auth/VerifyEmail.vue'
 import NotFound from '@/components/error/NotFound.vue'
 
 const routes = [
@@ -28,12 +32,17 @@ const routes = [
   {
     path: '/app',
     component: MainLayout,
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
-        name: 'App',
+        name: 'AppHome',
         component: DashBoardUniversal,
+      },
+      {
+        path: 'calendario',
+        name: 'CalendarView',
+        component: CalendarView,
       },
     ],
   },
@@ -46,19 +55,44 @@ const routes = [
         path: 'login',
         name: 'Login',
         component: Login,
-        alias: ['/login'],
+        alias: ['/login', '/iniciar-sesion'],
       },
       {
         path: 'register',
         name: 'Register',
         component: Register,
-        alias: ['/register'],
+        alias: ['/register', '/registro'],
       },
       {
         path: 'forgot',
         name: 'ForgotPassword',
         component: ForgotPassword,
-        alias: ['/forgot'],
+        alias: ['/forgot', '/recuperar-contrasena', '/recuperar-contraseña', '/recueprar-contraseña'],
+      },
+      {
+        path: 'reset',
+        name: 'ResetPassword',
+        component: ResetPassword,
+        alias: ['/reset-password'],
+      },
+      {
+        path: 'verify/resend',
+        name: 'ResendVerification',
+        component: ResendVerification,
+        alias: ['/verify/resend', '/verificacion', '/verificascion'],
+      },
+      {
+        path: 'verify/email',
+        name: 'VerifyEmail',
+        component: VerifyEmail,
+        alias: ['/verify/email'],
+      },
+      {
+        path: 'verify/email/:token',
+        name: 'VerifyEmailToken',
+        component: VerifyEmail,
+        props: true,
+        alias: ['/verify/email/:token'],
       },
     ],
   },
@@ -75,6 +109,30 @@ const routes = [
     redirect: '/auth/forgot',
   },
   {
+    path: '/reset-password',
+    redirect: '/auth/reset',
+  },
+  {
+    path: '/verify/resend',
+    redirect: '/auth/verify/resend',
+  },
+  {
+    path: '/verify/email',
+    redirect: '/auth/verify/email',
+  },
+  {
+    path: '/verify/email/:token',
+    redirect: (to) => `/auth/verify/email/${to.params.token}`,
+  },
+  {
+    path: '/verify-email',
+    redirect: (to) => ({ path: '/auth/verify/email', query: to.query }),
+  },
+  {
+    path: '/dashboard',
+    redirect: '/app',
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: NotFound,
@@ -87,26 +145,27 @@ const router = createRouter({
 })
 
 // Guard de navegación global
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  if (!authStore.hasBootstrapped) {
+    await authStore.bootstrapSession()
+  }
+
   const isAuthenticated = authStore.isAuthenticated
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const isGuest = to.matched.some((record) => record.meta.guest)
-  const requiredRole = to.meta.role
+  const requiredRoles = to.meta.roles || (to.meta.role ? [to.meta.role] : [])
 
-  // 1. Proteger rutas privadas
   if (requiresAuth && !isAuthenticated) {
-    return next('/auth/login')
+    return next({ path: '/auth/login', query: { redirect: to.fullPath } })
   }
 
-  // 2. Redirigir usuarios logueados que intentan acceder al login/registro
   if (isGuest && isAuthenticated) {
-    return next('/')
+    return next('/app')
   }
 
-  // 3. Validación de Roles (si se usa RBAC en el futuro)
-  if (requiredRole && authStore.role !== requiredRole) {
-    return next('/')
+  if (requiredRoles.length > 0 && !authStore.hasAnyRole(requiredRoles)) {
+    return next('/app')
   }
 
   next()

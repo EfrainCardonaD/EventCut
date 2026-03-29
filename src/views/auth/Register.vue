@@ -1,51 +1,171 @@
 ﻿<script setup>
 import { reactive, ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AuthViewHeader from '@/components/auth/AuthViewHeader.vue'
+import Alert from '@/components/util/Alert.vue'
+import FieldError from '@/components/util/FieldError.vue'
+import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
+
 const router = useRouter()
 const auth = useAuthStore()
-const form = reactive({ username: '', email: '', firstName: '', lastName: '', password: '' })
+
+const form = reactive({
+  username: '',
+  email: '',
+  firstName: '',
+  lastName: '',
+  password: '',
+})
+
 const loading = ref(false)
-const feedback = reactive({ type: '', message: '' })
+const errors = reactive({
+  username: '',
+  email: '',
+  firstName: '',
+  lastName: '',
+  password: '',
+})
+const toast = reactive({ show: false, type: 'info', title: '', message: '' })
+
+const showToast = (type, title, message) => {
+  toast.type = type
+  toast.title = title
+  toast.message = message
+  toast.show = true
+}
+
+const isStrongPassword = (password) => {
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/.test(password)
+}
+
+const validate = () => {
+  errors.username = form.username.trim().length >= 3 ? '' : 'El usuario debe tener al menos 3 caracteres.'
+  errors.email = /\S+@\S+\.\S+/.test(form.email) ? '' : 'Ingresa un correo institucional valido.'
+  errors.firstName = form.firstName.trim() ? '' : 'Ingresa tu nombre.'
+  errors.lastName = form.lastName.trim() ? '' : 'Ingresa tu apellido.'
+  errors.password = isStrongPassword(form.password)
+    ? ''
+    : 'Usa 8+ caracteres con mayuscula, minuscula, numero y simbolo.'
+
+  return Object.values(errors).every((value) => !value)
+}
+
 const submit = async () => {
-  feedback.type = ''
-  feedback.message = ''
-  if (!form.username || !form.email || !form.firstName || !form.lastName || !form.password) {
-    feedback.type = 'error'
-    feedback.message = 'Completa todos los campos para continuar con el registro.'
-    return
-  }
+  if (!validate()) return
+
   loading.value = true
   try {
-    const result = await auth.register(form)
+    const result = await auth.register({
+      username: form.username.trim(),
+      email: form.email.trim().toLowerCase(),
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      password: form.password,
+    })
+
     if (result.success) {
-      await router.push('/auth/login')
+      await router.push({ path: '/auth/verify/resend', query: { email: form.email.trim().toLowerCase() } })
       return
     }
-    feedback.type = 'error'
-    feedback.message = result.error || 'No se pudo completar el registro.'
+
+    showToast('error', 'No se pudo registrar', result.error || 'Revisa los datos e intenta nuevamente.')
   } finally {
     loading.value = false
   }
 }
 </script>
+
 <template>
-  <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-gray-50 dark:bg-gray-900">
-    <div class="w-full max-w-2xl rounded-3xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-      <div class="mb-6 text-center">
-        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-brand">EventCut</p>
-        <h1 class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">Crear cuenta</h1>
-      </div>
-      <div v-if="feedback.message" class="mb-5 rounded-2xl border px-4 py-3 text-sm" :class="feedback.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'">{{ feedback.message }}</div>
+  <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-100 dark:bg-[#10161b]">
+    <SpinnerOverlay :show="loading" text="Creando cuenta..." />
+    <Alert
+      v-model="toast.show"
+      toast
+      position="top-right"
+      :type="toast.type"
+      :title="toast.title"
+      :message="toast.message"
+      :duration="6000"
+    />
+
+    <div class="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <AuthViewHeader
+        title="Crear cuenta"
+        subtitle="Registrate con correo institucional para acceder a eventos del CUT."
+      />
+
       <form class="grid gap-4 md:grid-cols-2" @submit.prevent="submit">
-        <label class="block"><span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Usuario</span><input v-model="form.username" type="text" class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white" placeholder="eventcut_admin" /></label>
-        <label class="block"><span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Correo</span><input v-model="form.email" type="email" class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white" placeholder="admin@cutonala.mx" /></label>
-        <label class="block"><span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</span><input v-model="form.firstName" type="text" class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white" placeholder="Ana" /></label>
-        <label class="block"><span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Apellido</span><input v-model="form.lastName" type="text" class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white" placeholder="González" /></label>
-        <label class="block md:col-span-2"><span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña</span><input v-model="form.password" type="password" class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white" placeholder="••••••••" /></label>
-        <button type="submit" :disabled="loading" class="md:col-span-2 flex w-full items-center justify-center rounded-2xl bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70">{{ loading ? 'Registrando…' : 'Crear cuenta' }}</button>
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Usuario</span>
+          <input
+            v-model="form.username"
+            type="text"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="juan.perez"
+          />
+          <FieldError :error="errors.username" />
+        </label>
+
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Correo</span>
+          <input
+            v-model="form.email"
+            type="email"
+            autocomplete="email"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="juan.perez@universidad.edu.mx"
+          />
+          <FieldError :error="errors.email" />
+        </label>
+
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre</span>
+          <input
+            v-model="form.firstName"
+            type="text"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="Juan"
+          />
+          <FieldError :error="errors.firstName" />
+        </label>
+
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Apellido</span>
+          <input
+            v-model="form.lastName"
+            type="text"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="Perez"
+          />
+          <FieldError :error="errors.lastName" />
+        </label>
+
+        <label class="block md:col-span-2">
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Contrasena</span>
+          <input
+            v-model="form.password"
+            type="password"
+            autocomplete="new-password"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="••••••••"
+          />
+          <FieldError :error="errors.password" />
+        </label>
+
+        <button
+          type="submit"
+          :disabled="loading"
+          class="md:col-span-2 flex w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {{ loading ? 'Registrando...' : 'Crear cuenta' }}
+        </button>
       </form>
-      <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">¿Ya tienes cuenta? <RouterLink to="/auth/login" class="font-medium text-brand hover:underline">Inicia sesión</RouterLink></p>
+
+      <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+        Ya tienes cuenta?
+        <RouterLink to="/auth/login" class="font-medium text-primary-600 hover:underline">Inicia sesion</RouterLink>
+      </p>
     </div>
   </section>
 </template>

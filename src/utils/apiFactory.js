@@ -1,140 +1,159 @@
 import axios from 'axios';
-import { useAuthStore } from '../stores/auth'; // Ajusta a tu ruta real
-import router from '../router'; // Ajusta a tu ruta real
+import { useAuthStore } from '../stores/auth';
+import router from '../router';
 
-const AUTH_PREFIX = '/api/auth';
+const NON_REFRESHABLE_PATHS = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/refresh',
+  '/api/auth/forgot',
+  '/api/auth/reset',
+  '/api/auth/verify/email/confirm',
+  '/api/auth/verify/email/resend',
+];
 
-// --- Helpers de red (backend caído / CORS / timeout) ---
-// Nota: Axios cuando no hay respuesta (server down / CORS) deja error.response undefined.
+const isExcludedFromRefresh = (url = '') => {
+  const normalizedUrl = String(url).toLowerCase();
+  return NON_REFRESHABLE_PATHS.some((path) => normalizedUrl.includes(path));
+};
+
+const extractBackendMessage = (error) => {
+  if (error?.response?.data?.message) return error.response.data.message;
+  if (error?.response?.data?.detail && typeof error.response.data.detail === 'string') {
+    return error.response.data.detail;
+  }
+  return null;
+};
+
+// Axios deja `error.response` undefined cuando hay problemas de red/CORS/timeout.
 export const isNetworkOrConnectionError = (error) => {
-    if (!error) return false;
-    // Axios v1: error.code puede venir como 'ECONNABORTED' en timeout
-    const code = error.code;
-    if (code === 'ECONNABORTED') return true;
+  if (!error) return false;
+  const code = error.code;
+  if (code === 'ECONNABORTED' || code === 'ERR_NETWORK') return true;
 
-    const message = (error.message || '').toLowerCase();
-    // 'Network Error' es común cuando hay CORS o conexión rechazada
-    if (message.includes('network error')) return true;
-    if (message.includes('connection refused')) return true;
-    if (message.includes('err_connection_refused')) return true;
+  const message = (error.message || '').toLowerCase();
+  if (message.includes('network error')) return true;
+  if (message.includes('connection refused')) return true;
+  if (message.includes('err_connection_refused')) return true;
 
-    // Si no existe response, casi siempre es un problema de red/conectividad
-    if (!error.response) return true;
-
-    return false;
+  return !error.response;
 };
 
 export const getFriendlyApiErrorMessage = (error, fallbackMessage) => {
-    if (isNetworkOrConnectionError(error)) {
-        return 'No se pudo conectar con el servidor. Verifica que el backend esté activo e inténtalo de nuevo.';
-    }
+  if (isNetworkOrConnectionError(error)) {
+    return 'No se pudo conectar con el servidor. Verifica que el backend esté activo e inténtalo de nuevo.';
+  }
 
-    // Respuesta HTTP con body
-    const backendMsg = error?.response?.data?.message;
-    if (backendMsg) return backendMsg;
+  const backendMessage = extractBackendMessage(error);
+  if (backendMessage) return backendMessage;
 
-    return fallbackMessage || 'Ocurrió un error inesperado.';
+  return fallbackMessage || 'Ocurrió un error inesperado.';
 };
 
 export const createApiClient = (baseURL) => {
-    const api = axios.create({
-        baseURL,
-        withCredentials: true,
-        // Evita que la UI se quede “colgada” cuando el backend está caído
-        timeout: 12000,
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
+  const api = axios.create({
+    baseURL,
+    withCredentials: true,
+    timeout: 12000,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+  });
+
+  let isRefreshing = false;
+  let failedQueue = [];
+
+  const processQueue = (error, token = null) => {
+    failedQueue.forEach((promiseController) => {
+      if (error) promiseController.reject(error);
+      else promiseController.resolve(token);
     });
+    failedQueue = [];
+  };
 
-    let isRefreshing = false;
-    let failedQueue = [];
+  api.interceptors.request.use(
+    async (config) => {
+      const authStore = useAuthStore();
+      const requestPath = config.url || '';
 
-    const processQueue = (error, token = null) => {
-        failedQueue.forEach(prom => {
-            if (error) prom.reject(error);
-            else prom.resolve(token);
-        });
-        failedQueue = [];
-    };
+      const shouldSkipProactiveRefresh =
+        Boolean(config._skipProactiveRefresh || config._skipAuthRefresh) || isExcludedFromRefresh(requestPath);
 
-    // Interceptor de Solicitud: Inyectar Token desde Pinia
-    api.interceptors.request.use(
-        (config) => {
-            const authStore = useAuthStore();
-            const token = authStore.token;
+      if (!shouldSkipProactiveRefresh) {
+        await authStore.ensureValidAccessToken({ minTtlSeconds: 60 });
+      }
 
-            if (token && !config.headers.Authorization) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-            return config;
-        },
-        (error) => Promise.reject(error)
-    );
+      const accessToken = authStore.token;
+      config.headers = config.headers || {};
 
-    // Interceptor de Respuesta: Manejo de Errores y Refresh Token
-    api.interceptors.response.use(
-        (response) => response,
-        async (error) => {
-            const originalRequest = error.config;
-            const authStore = useAuthStore();
+      if (accessToken && !config.headers.Authorization) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
 
-            // Evitar interceptar errores 401 en las propias rutas de autenticación
-            const isAuthRoute = originalRequest.url?.includes(AUTH_PREFIX);
+      return config;
+    },
+    (error) => Promise.reject(error),
+  );
 
-            if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
+  api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config || {};
+      const authStore = useAuthStore();
+      const requestPath = originalRequest.url || '';
 
-                if (isRefreshing) {
-                    return new Promise((resolve, reject) => {
-                        failedQueue.push({ resolve, reject });
-                    }).then(token => {
-                        originalRequest.headers['Authorization'] = `Bearer ${token}`;
-                        return api(originalRequest);
-                    }).catch(err => Promise.reject(err));
-                }
+      const shouldTryRefresh =
+        error.response?.status === 401 &&
+        !originalRequest._retry &&
+        !originalRequest._skipAuthRefresh &&
+        !isExcludedFromRefresh(requestPath);
 
-                originalRequest._retry = true;
-                isRefreshing = true;
+      if (!shouldTryRefresh) {
+        return Promise.reject(error);
+      }
 
-                try {
-                    const refreshToken = authStore.refreshToken;
-                    if (!refreshToken) throw new Error('No refresh token available');
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((newToken) => {
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return api(originalRequest);
+          })
+          .catch((queueError) => Promise.reject(queueError));
+      }
 
-                    // Llamada limpia a Axios para evitar loops infinitos, apuntando al nuevo endpoint
-                    const response = await axios.post(`${baseURL}${AUTH_PREFIX}/refresh`, {}, {
-                        headers: { Authorization: `Bearer ${refreshToken}` }
-                    });
+      originalRequest._retry = true;
+      isRefreshing = true;
 
-                    // Mapeo adaptado al nuevo contrato: { success: true, data: { token, refreshToken, user } }
-                    if (response.data.success && response.data.data?.token) {
-                        const newAuthData = response.data.data;
-
-                        // Centralizamos la actualización a través de la acción de Pinia
-                        authStore.setAuthData(newAuthData);
-
-                        api.defaults.headers.common['Authorization'] = `Bearer ${newAuthData.token}`;
-                        originalRequest.headers['Authorization'] = `Bearer ${newAuthData.token}`;
-
-                        processQueue(null, newAuthData.token);
-                        return api(originalRequest);
-                    } else {
-                        throw new Error('Refresh fallido: formato de respuesta inesperado');
-                    }
-                } catch (refreshError) {
-                    processQueue(refreshError, null);
-                    // Limpieza centralizada y redirección SPA
-                    authStore.clearAuthData();
-                    router.push('/login');
-                    return Promise.reject(refreshError);
-                } finally {
-                    isRefreshing = false;
-                }
-            }
-
-            return Promise.reject(error);
+      try {
+        const refreshed = await authStore.refreshAccessToken();
+        if (!refreshed || !authStore.token) {
+          throw new Error('Refresh fallido');
         }
-    );
 
-    return api;
+        api.defaults.headers.common.Authorization = `Bearer ${authStore.token}`;
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${authStore.token}`;
+
+        processQueue(null, authStore.token);
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        authStore.clearAuthData();
+
+        if (!router.currentRoute.value.path.startsWith('/auth')) {
+          await router.push({ path: '/auth/login', query: { reason: 'session-expired' } });
+        }
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    },
+  );
+
+  return api;
 };

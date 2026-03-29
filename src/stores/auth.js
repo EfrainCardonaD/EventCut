@@ -1,212 +1,359 @@
 import { defineStore } from 'pinia'
-import api from '../utils/api' // Debe estar configurado con baseURL apuntando al API Gateway (:8080)
+import api from '../utils/api'
 import router from '../router'
 import { getFriendlyApiErrorMessage } from '../utils/apiFactory'
 
-export const useAuthStore = defineStore('auth', {
-    state: () => ({
-        token: localStorage.getItem('jwt_token') || null,
-        refreshToken: localStorage.getItem('refresh_token') || null,
-        user: JSON.parse(localStorage.getItem('user_data')) || null,
-    }),
+const DEFAULT_MIN_TTL_SECONDS = 60
+let refreshInFlightPromise = null
 
-    getters: {
-        isAuthenticated: (state) => !!state.token,
-        username: (state) => state.user?.username || null,
-        email: (state) => state.user?.email || null,
-        role: (state) => state.user?.role || null, // Ej: 'USER', 'ADMIN', 'OPERATOR'
-        isEmailVerified: (state) => state.user?.emailVerified || false,
+const decodeJwtPayload = (token) => {
+  if (!token || typeof token !== 'string') return null
+
+  try {
+    const payloadPart = token.split('.')[1]
+    if (!payloadPart) return null
+
+    const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/')
+    const decoded = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '='))
+    return JSON.parse(decoded)
+  } catch {
+    return null
+  }
+}
+
+const safeParseUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user_data') || 'null')
+  } catch {
+    localStorage.removeItem('user_data')
+    return null
+  }
+}
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    token: localStorage.getItem('jwt_token') || null,
+    refreshToken: localStorage.getItem('refresh_token') || null,
+    user: safeParseUser(),
+    hasBootstrapped: false,
+  }),
+
+  getters: {
+    isAuthenticated: (state) => Boolean(state.token),
+    username: (state) => state.user?.username || null,
+    email: (state) => state.user?.email || null,
+    role: (state) => state.user?.role || null,
+    isEmailVerified: (state) => Boolean(state.user?.emailVerified),
+    fullName: (state) => {
+      if (!state.user) return null
+      return `${state.user.firstName || ''} ${state.user.lastName || ''}`.trim() || state.user.username || null
+    },
+  },
+
+  actions: {
+    normalizeRole(role) {
+      if (!role || typeof role !== 'string') return null
+      return role.replace(/^ROLE_/i, '').toUpperCase()
     },
 
-    actions: {
-        // Almacena el payload estructurado dentro de 'data'
-        setAuthData(authData) {
-            this.token = authData.token
-            this.refreshToken = authData.refreshToken
-            this.user = authData.user
+    normalizeUser(user) {
+      if (!user || typeof user !== 'object') return null
+      return {
+        ...user,
+        role: this.normalizeRole(user.role),
+      }
+    },
 
-            localStorage.setItem('jwt_token', authData.token)
-            localStorage.setItem('refresh_token', authData.refreshToken)
-            localStorage.setItem('user_data', JSON.stringify(authData.user))
-        },
+    setAuthData(authData) {
+      this.token = authData?.token || null
+      this.refreshToken = authData?.refreshToken || null
+      this.user = this.normalizeUser(authData?.user)
 
-        clearAuthData() {
-            this.token = null
-            this.refreshToken = null
-            this.user = null
+      if (this.token) localStorage.setItem('jwt_token', this.token)
+      else localStorage.removeItem('jwt_token')
 
-            localStorage.removeItem('jwt_token')
-            localStorage.removeItem('refresh_token')
-            localStorage.removeItem('user_data')
-        },
+      if (this.refreshToken) localStorage.setItem('refresh_token', this.refreshToken)
+      else localStorage.removeItem('refresh_token')
 
-        async login(username, password) {
-            try {
-                // Endpoint actualizado al API Gateway
-                // Nota negocio: algunos frontends mandan email. El gateway puede mapearlo a username.
-                const response = await api.post('/api/auth/login', { username, password })
+      if (this.user) localStorage.setItem('user_data', JSON.stringify(this.user))
+      else localStorage.removeItem('user_data')
+    },
 
-                if (response.data.success && response.data.data?.token) {
-                    this.setAuthData(response.data.data)
-                    return { success: true, user: response.data.data.user, message: response.data.message }
-                }
+    clearAuthData() {
+      this.token = null
+      this.refreshToken = null
+      this.user = null
 
-                return { success: false, error: 'Respuesta inválida del servidor' }
-            } catch (error) {
-                // Si hay error de conectividad, no mostrar mensaje de credenciales
-                const fallback = 'Error al iniciar sesión. Verifica tus credenciales.'
-                return {
-                    success: false,
-                    error: getFriendlyApiErrorMessage(error, fallback)
-                }
-            }
-        },
+      localStorage.removeItem('jwt_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user_data')
+    },
 
-        async forgotPassword(email) {
-            try {
-                const response = await api.post('/api/auth/forgot', { email })
+    async register(payload) {
+      try {
+        const response = await api.post('/api/auth/register', {
+          username: payload.username,
+          email: payload.email,
+          password: payload.password,
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+        })
 
-                // Regla defensiva: muchos backends responden 200 siempre (anti-enumeración)
-                if (response.status >= 200 && response.status < 300) {
-                    return {
-                        success: true,
-                        message: response.data?.message || 'Proceso iniciado. Si el correo existe, recibirás instrucciones en breve.'
-                    }
-                }
-
-                return { success: false, error: 'Ha ocurrido un error inesperado al solicitar el restablecimiento.' }
-            } catch (error) {
-                return {
-                    success: false,
-                    error: getFriendlyApiErrorMessage(error, 'El servicio de recuperación se encuentra inactivo.')
-                }
-            }
-        },
-
-        async register(userData) {
-            try {
-                // Adaptado al nuevo payload del Auth Service
-                const payload = {
-                    username: userData.username,
-                    email: userData.email,
-                    password: userData.password,
-                    firstName: userData.firstName,
-                    lastName: userData.lastName
-                }
-
-                const response = await api.post('/api/auth/register', payload)
-
-                if (response.status === 201 && response.data.success) {
-                    return { success: true, message: response.data.message, data: response.data.data }
-                }
-                return { success: false, error: 'Error en el registro' }
-            } catch (error) {
-                return {
-                    success: false,
-                    error: getFriendlyApiErrorMessage(error, 'Error inesperado durante el registro')
-                }
-            }
-        },
-
-        async resendVerification(email) {
-            try {
-                const response = await api.post('/api/auth/verify/email/resend', null, {
-                    params: { email }
-                })
-
-                if (response.status >= 200 && response.status < 300) {
-                    return {
-                        success: true,
-                        message: response.data?.message || 'Si el correo existe y no está verificado, enviamos un nuevo enlace.'
-                    }
-                }
-
-                return { success: false, error: 'No se pudo reenviar el correo de verificación.' }
-            } catch (error) {
-                return {
-                    success: false,
-                    error: getFriendlyApiErrorMessage(error, 'El servicio de verificación no está disponible en este momento.')
-                }
-            }
-        },
-
-        async confirmEmailVerification(token) {
-            try {
-                const response = await api.post('/api/auth/verify/email/confirm', { token })
-
-                if (response.status >= 200 && response.status < 300 && response.data?.success) {
-                    return {
-                        success: true,
-                        message: response.data?.message || 'Email verificado exitosamente. Ya puedes iniciar sesión.'
-                    }
-                }
-
-                return {
-                    success: false,
-                    error: response.data?.message || 'No se pudo verificar el correo. El enlace puede ser inválido o haber expirado.'
-                }
-            } catch (error) {
-                return {
-                    success: false,
-                    error: getFriendlyApiErrorMessage(error, 'El servicio de verificación no está disponible en este momento.')
-                }
-            }
-        },
-
-        async logout() {
-            try {
-                if (this.token) {
-                    // Revocación del token actual en el backend
-                    await api.post('/api/auth/logout', {}, {
-                        headers: { Authorization: `Bearer ${this.token}` }
-                    })
-                }
-            } catch (error) {
-                console.warn('Logout en servidor falló, forzando limpieza local', error)
-            } finally {
-                this.clearAuthData()
-                router.push('/login')
-            }
-        },
-
-        async refreshAccessToken() {
-            try {
-                if (!this.refreshToken) throw new Error('No refresh token')
-
-                // El backend exige el refresh token en el header Authorization
-                const response = await api.post('/api/auth/refresh', {}, {
-                    headers: { Authorization: `Bearer ${this.refreshToken}` }
-                })
-
-                if (response.data.success && response.data.data?.token) {
-                    this.setAuthData(response.data.data)
-                    return true
-                }
-                return false
-            } catch (error) {
-                this.clearAuthData()
-                router.push('/login')
-                return false
-            }
-        },
-
-        // Reemplazo de fetchUserResumen para usar la ruta centralizada del User Service
-        async fetchUserData() {
-            try {
-                if (!this.isAuthenticated) return
-
-                // Consumo a través del Gateway hacia user-service
-                const response = await api.get('/api/users/me', {
-                    headers: { Authorization: `Bearer ${this.token}` }
-                })
-
-                if (response.data?.success && response.data.data) {
-                    this.user = { ...this.user, ...response.data.data }
-                    localStorage.setItem('user_data', JSON.stringify(this.user))
-                }
-            } catch (e) {
-                console.error('Error sincronizando perfil de usuario', e)
-            }
+        if (response.status === 201 && response.data?.success) {
+          return {
+            success: true,
+            message: response.data.message || 'Usuario registrado. Revisa tu correo para verificar tu cuenta.',
+            data: response.data.data,
+          }
         }
-    }
+
+        return { success: false, error: 'No se pudo completar el registro.' }
+      } catch (error) {
+        return {
+          success: false,
+          error: getFriendlyApiErrorMessage(error, 'No se pudo completar el registro.'),
+        }
+      }
+    },
+
+    async login(username, password) {
+      try {
+        const response = await api.post('/api/auth/login', { username, password })
+        const authData = response.data?.data
+
+        if (response.data?.success && authData?.token && authData?.refreshToken) {
+          this.setAuthData(authData)
+          return {
+            success: true,
+            user: this.user,
+            message: response.data.message || 'Inicio de sesión exitoso',
+          }
+        }
+
+        return { success: false, error: 'Respuesta inválida del servidor al iniciar sesión.' }
+      } catch (error) {
+        return {
+          success: false,
+          error: getFriendlyApiErrorMessage(error, 'Error al iniciar sesión. Verifica tus credenciales.'),
+        }
+      }
+    },
+
+    async fetchMe() {
+      if (!this.token) {
+        return { success: false, error: 'No hay sesión activa.' }
+      }
+
+      try {
+        const response = await api.get('/api/auth/me')
+
+        if (response.data?.success && response.data?.data) {
+          this.user = this.normalizeUser(response.data.data)
+          localStorage.setItem('user_data', JSON.stringify(this.user))
+          return { success: true, data: this.user }
+        }
+
+        return { success: false, error: 'No se pudo recuperar el perfil del usuario.' }
+      } catch (error) {
+        return {
+          success: false,
+          error: getFriendlyApiErrorMessage(error, 'No se pudo recuperar el perfil del usuario.'),
+        }
+      }
+    },
+
+    async bootstrapSession() {
+      if (this.hasBootstrapped) return
+      this.hasBootstrapped = true
+
+      if (!this.token) return
+
+      const hasValidSession = await this.ensureValidAccessToken()
+      if (!hasValidSession) {
+        this.clearAuthData()
+        return
+      }
+
+      const profile = await this.fetchMe()
+      if (!profile.success) {
+        this.clearAuthData()
+      }
+    },
+
+    async resendVerification(email) {
+      try {
+        const response = await api.post('/api/auth/verify/email/resend', null, { params: { email } })
+
+        if (response.status >= 200 && response.status < 300) {
+          return {
+            success: true,
+            message:
+              response.data?.message ||
+              'Si el correo existe y no está verificado, se ha enviado un nuevo enlace.',
+          }
+        }
+
+        return { success: false, error: 'No se pudo reenviar el correo de verificación.' }
+      } catch (error) {
+        return {
+          success: false,
+          error: getFriendlyApiErrorMessage(error, 'No se pudo reenviar el correo de verificación.'),
+        }
+      }
+    },
+
+    async confirmEmailVerification(token) {
+      try {
+        const response = await api.post('/api/auth/verify/email/confirm', { token })
+
+        if (response.status >= 200 && response.status < 300 && response.data?.success) {
+          return {
+            success: true,
+            message: response.data?.message || 'Email verificado exitosamente. Ya puedes iniciar sesión.',
+          }
+        }
+
+        return {
+          success: false,
+          error: response.data?.message || 'No se pudo verificar el email con el token proporcionado.',
+        }
+      } catch (error) {
+        return {
+          success: false,
+          error: getFriendlyApiErrorMessage(error, 'No se pudo verificar el email con el token proporcionado.'),
+        }
+      }
+    },
+
+    async forgotPassword(email) {
+      try {
+        const response = await api.post('/api/auth/forgot', { email })
+
+        if (response.status >= 200 && response.status < 300) {
+          return {
+            success: true,
+            message:
+              response.data?.message ||
+              'Si el correo existe y está verificado, se ha enviado un enlace de restablecimiento.',
+          }
+        }
+
+        return { success: false, error: 'No fue posible iniciar la recuperación de contraseña.' }
+      } catch (error) {
+        return {
+          success: false,
+          error: getFriendlyApiErrorMessage(error, 'No fue posible iniciar la recuperación de contraseña.'),
+        }
+      }
+    },
+
+    async resetPassword(token, newPassword) {
+      try {
+        const response = await api.post('/api/auth/reset', { token, newPassword })
+
+        if (response.status >= 200 && response.status < 300 && response.data?.success) {
+          return {
+            success: true,
+            message: response.data?.message || 'Contraseña actualizada exitosamente.',
+          }
+        }
+
+        return { success: false, error: 'No se pudo actualizar la contraseña.' }
+      } catch (error) {
+        return {
+          success: false,
+          error: getFriendlyApiErrorMessage(error, 'No se pudo actualizar la contraseña.'),
+        }
+      }
+    },
+
+    async logout(options = { redirect: true }) {
+      try {
+        if (this.token) {
+          await api.post('/api/auth/logout')
+        }
+      } catch (error) {
+        console.warn('No se pudo cerrar sesión en backend, se limpia sesión local.', error)
+      } finally {
+        this.clearAuthData()
+        if (options.redirect !== false) {
+          await router.push('/auth/login')
+        }
+      }
+    },
+
+    getAccessTokenExpiryMs() {
+      const payload = decodeJwtPayload(this.token)
+      if (!payload?.exp) return null
+      return Number(payload.exp) * 1000
+    },
+
+    isAccessTokenExpiringSoon(minTtlSeconds = DEFAULT_MIN_TTL_SECONDS) {
+      if (!this.token) return true
+
+      const expiryMs = this.getAccessTokenExpiryMs()
+      if (!expiryMs) return false
+
+      const nowMs = Date.now()
+      const minTtlMs = Number(minTtlSeconds) * 1000
+      return expiryMs - nowMs <= minTtlMs
+    },
+
+    async ensureValidAccessToken(options = {}) {
+      if (!this.token) return false
+
+      const minTtlSeconds = Number(options.minTtlSeconds || DEFAULT_MIN_TTL_SECONDS)
+      const force = Boolean(options.force)
+
+      if (!force && !this.isAccessTokenExpiringSoon(minTtlSeconds)) {
+        return true
+      }
+
+      return this.refreshAccessToken()
+    },
+
+    async refreshAccessToken() {
+      if (!this.refreshToken) return false
+
+      if (refreshInFlightPromise) {
+        return refreshInFlightPromise
+      }
+
+      refreshInFlightPromise = (async () => {
+        try {
+          const response = await api.post(
+            '/api/auth/refresh',
+            {},
+            {
+              headers: { Authorization: `Bearer ${this.refreshToken}` },
+              _skipAuthRefresh: true,
+              _skipProactiveRefresh: true,
+            },
+          )
+
+          const authData = response.data?.data
+          if (response.data?.success && authData?.token && authData?.refreshToken) {
+            this.setAuthData(authData)
+            return true
+          }
+        } catch {
+          // Si el refresh falla, los interceptores se encargan de limpiar/redirect cuando aplique.
+        } finally {
+          refreshInFlightPromise = null
+        }
+
+        return false
+      })()
+
+      return refreshInFlightPromise
+    },
+
+    hasAnyRole(roles = []) {
+      if (!Array.isArray(roles) || roles.length === 0) return true
+      if (!this.role) return false
+
+      const normalizedCurrent = this.normalizeRole(this.role)
+      return roles.some((role) => normalizedCurrent === this.normalizeRole(role))
+    },
+  },
 })

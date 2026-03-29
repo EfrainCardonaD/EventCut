@@ -1,50 +1,111 @@
 ﻿<script setup>
-import { reactive, ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { computed, reactive, ref } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AuthViewHeader from '@/components/auth/AuthViewHeader.vue'
+import Alert from '@/components/util/Alert.vue'
+import FieldError from '@/components/util/FieldError.vue'
+import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
+
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
+
 const form = reactive({ username: '', password: '' })
 const loading = ref(false)
-const feedback = reactive({ type: '', message: '' })
+const errors = reactive({ username: '', password: '' })
+const toast = reactive({ show: false, type: 'info', title: '', message: '' })
+
+const redirectTarget = computed(() => {
+  const redirect = route.query.redirect
+  if (typeof redirect === 'string' && redirect.startsWith('/')) return redirect
+  return '/app'
+})
+
+const showToast = (type, title, message) => {
+  toast.type = type
+  toast.title = title
+  toast.message = message
+  toast.show = true
+}
+
+const validate = () => {
+  errors.username = form.username ? '' : 'Ingresa tu usuario o correo institucional.'
+  errors.password = form.password ? '' : 'Ingresa tu contraseña.'
+  return !errors.username && !errors.password
+}
+
 const submit = async () => {
-  feedback.type = ''
-  feedback.message = ''
-  if (!form.username || !form.password) {
-    feedback.type = 'error'
-    feedback.message = 'Completa usuario y contraseña para continuar.'
-    return
-  }
+  if (!validate()) return
+
   loading.value = true
   try {
-    const result = await auth.login(form.username, form.password)
+    const result = await auth.login(form.username.trim(), form.password)
     if (result.success) {
-      await router.push('/app')
+      await router.push(redirectTarget.value)
       return
     }
-    feedback.type = 'error'
-    feedback.message = result.error || 'No se pudo iniciar sesión.'
+
+    showToast('error', 'No se pudo iniciar sesión', result.error || 'Verifica tus credenciales e inténtalo de nuevo.')
   } finally {
     loading.value = false
   }
 }
 </script>
+
 <template>
-  <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-gray-50 dark:bg-gray-900">
-    <div class="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-      <div class="mb-6 text-center">
-        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-brand">EventCut</p>
-        <h1 class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">Iniciar sesión</h1>
-      </div>
-      <div v-if="feedback.message" class="mb-5 rounded-2xl border px-4 py-3 text-sm" :class="feedback.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'">{{ feedback.message }}</div>
+  <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-100 dark:bg-[#10161b]">
+    <SpinnerOverlay :show="loading" text="Validando credenciales..." />
+    <Alert
+      v-model="toast.show"
+      toast
+      position="top-right"
+      :type="toast.type"
+      :title="toast.title"
+      :message="toast.message"
+      :duration="5000"
+    />
+
+    <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <AuthViewHeader title="Iniciar sesion" subtitle="Accede con tu usuario o correo institucional." />
+
       <form class="space-y-4" @submit.prevent="submit">
-        <label class="block"><span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Usuario o correo</span><input v-model="form.username" type="text" autocomplete="username" class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white" placeholder="tu.usuario" /></label>
-        <label class="block"><span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña</span><input v-model="form.password" type="password" autocomplete="current-password" class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white" placeholder="••••••••" /></label>
-        <button type="submit" :disabled="loading" class="flex w-full items-center justify-center rounded-2xl bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70">{{ loading ? 'Validando…' : 'Entrar' }}</button>
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Usuario o correo</span>
+          <input
+            v-model="form.username"
+            type="text"
+            autocomplete="username"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="juan.perez o juan.perez@universidad.edu.mx"
+          />
+          <FieldError :error="errors.username" />
+        </label>
+
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Contrasena</span>
+          <input
+            v-model="form.password"
+            type="password"
+            autocomplete="current-password"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="••••••••"
+          />
+          <FieldError :error="errors.password" />
+        </label>
+
+        <button
+          type="submit"
+          :disabled="loading"
+          class="flex w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {{ loading ? 'Validando...' : 'Entrar' }}
+        </button>
       </form>
+
       <div class="mt-6 flex items-center justify-between text-sm">
-        <RouterLink to="/auth/forgot" class="text-brand hover:underline">¿Olvidaste tu contraseña?</RouterLink>
-        <RouterLink to="/auth/register" class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Crear cuenta</RouterLink>
+        <RouterLink to="/auth/forgot" class="text-primary-600 hover:underline">Olvide mi contrasena</RouterLink>
+        <RouterLink to="/auth/register" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">Crear cuenta</RouterLink>
       </div>
     </div>
   </section>

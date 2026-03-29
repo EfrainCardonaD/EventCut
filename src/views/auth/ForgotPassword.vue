@@ -2,46 +2,91 @@
 import { reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AuthViewHeader from '@/components/auth/AuthViewHeader.vue'
+import Alert from '@/components/util/Alert.vue'
+import FieldError from '@/components/util/FieldError.vue'
+import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
+
 const auth = useAuthStore()
+
 const form = reactive({ email: '' })
 const loading = ref(false)
-const feedback = reactive({ type: '', message: '' })
+const errors = reactive({ email: '' })
+const toast = reactive({ show: false, type: 'info', title: '', message: '' })
+
+const showToast = (type, title, message) => {
+  toast.type = type
+  toast.title = title
+  toast.message = message
+  toast.show = true
+}
+
 const submit = async () => {
-  feedback.type = ''
-  feedback.message = ''
-  if (!form.email) {
-    feedback.type = 'error'
-    feedback.message = 'Ingresa un correo para recuperar tu acceso.'
-    return
-  }
+  errors.email = /\S+@\S+\.\S+/.test(form.email) ? '' : 'Ingresa un correo valido.'
+  if (errors.email) return
+
   loading.value = true
   try {
-    const result = await auth.forgotPassword(form.email)
+    const result = await auth.forgotPassword(form.email.trim().toLowerCase())
     if (result.success) {
-      feedback.type = 'success'
-      feedback.message = result.message || 'Revisa tu correo para continuar.'
+      showToast('success', 'Solicitud enviada', result.message || 'Revisa tu correo para continuar el restablecimiento.')
       return
     }
-    feedback.type = 'error'
-    feedback.message = result.error || 'No se pudo iniciar la recuperación.'
+
+    showToast('error', 'No se pudo procesar', result.error || 'Intenta de nuevo en unos minutos.')
   } finally {
     loading.value = false
   }
 }
 </script>
+
 <template>
-  <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-gray-50 dark:bg-gray-900">
-    <div class="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-      <div class="mb-6 text-center">
-        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-brand">EventCut</p>
-        <h1 class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">Recuperar contraseña</h1>
-      </div>
-      <div v-if="feedback.message" class="mb-5 rounded-2xl border px-4 py-3 text-sm" :class="feedback.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'">{{ feedback.message }}</div>
+  <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-100 dark:bg-[#10161b]">
+    <SpinnerOverlay :show="loading" text="Enviando solicitud..." />
+    <Alert
+      v-model="toast.show"
+      toast
+      position="top-right"
+      :type="toast.type"
+      :title="toast.title"
+      :message="toast.message"
+      :duration="6000"
+    />
+
+    <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <AuthViewHeader title="Recuperar contrasena" subtitle="Te enviaremos un enlace de restablecimiento." />
+
       <form class="space-y-4" @submit.prevent="submit">
-        <label class="block"><span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Correo</span><input v-model="form.email" type="email" autocomplete="email" class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-gray-800 dark:bg-gray-900 dark:text-white" placeholder="usuario@cutonala.mx" /></label>
-        <button type="submit" :disabled="loading" class="flex w-full items-center justify-center rounded-2xl bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70">{{ loading ? 'Enviando…' : 'Enviar instrucciones' }}</button>
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Correo</span>
+          <input
+            v-model="form.email"
+            type="email"
+            autocomplete="email"
+            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            placeholder="juan.perez@universidad.edu.mx"
+          />
+          <FieldError :error="errors.email" />
+        </label>
+
+        <button
+          type="submit"
+          :disabled="loading"
+          class="flex w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {{ loading ? 'Enviando...' : 'Enviar instrucciones' }}
+        </button>
       </form>
-      <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400"><RouterLink to="/auth/login" class="font-medium text-brand hover:underline">Volver a iniciar sesión</RouterLink></p>
+
+      <div class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400 space-y-2">
+        <p>
+          Ya tienes token?
+          <RouterLink to="/auth/reset" class="font-medium text-primary-600 hover:underline">Restablecer ahora</RouterLink>
+        </p>
+        <p>
+          <RouterLink to="/auth/login" class="font-medium text-primary-600 hover:underline">Volver a iniciar sesion</RouterLink>
+        </p>
+      </div>
     </div>
   </section>
 </template>

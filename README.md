@@ -25,11 +25,30 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 npm install
 ```
 
+## Variables de entorno (local)
+
+Crear `.env` desde `.env.example` y ajustar:
+
+```dotenv
+VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_EVENTS_API_BASE_URL=http://127.0.0.1:8001
+VITE_EVENTS_UPLOAD_PATH=/api/v1/uploads/images
+```
+
+Notas:
+- `VITE_API_BASE_URL`: auth-service (login, refresh, perfil).
+- `VITE_EVENTS_API_BASE_URL`: events-service (eventos, categorias, favoritos).
+- `VITE_EVENTS_UPLOAD_PATH`: endpoint de carga de imagen para crear eventos.
+
 ### Compile and Hot-Reload for Development
 
 ```sh
 npm run dev
 ```
+
+Rutas principales implementadas:
+- `/app` dashboard dinamico (eventos, filtros, agenda, crear evento con upload)
+- `/app/calendario` vista de calendario con dias clickeables y eventos por fecha
 
 ### Compile and Minify for Production
 
