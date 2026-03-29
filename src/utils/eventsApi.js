@@ -10,6 +10,8 @@ const eventsApi = axios.create({
   timeout: 12000,
   headers: {
     Accept: 'application/json',
+    // Evita el warning/intercept de ngrok en entornos de desarrollo.
+    'ngrok-skip-browser-warning': 'true',
   },
 })
 

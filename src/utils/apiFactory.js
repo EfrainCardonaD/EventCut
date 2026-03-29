@@ -58,6 +58,8 @@ export const createApiClient = (baseURL) => {
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      // Evita el warning/intercept de ngrok en entornos de desarrollo.
+      'ngrok-skip-browser-warning': 'true',
     },
   });
 
