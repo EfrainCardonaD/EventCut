@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { getCategoryAccentStyles } from '@/utils/categoryColors'
 
 const props = defineProps({
   event: {
@@ -20,6 +21,11 @@ const endDate = computed(() => new Date(props.event.end_datetime))
 const dayLabel = computed(() => {
   if (Number.isNaN(startDate.value.getTime())) return '--'
   return `${startDate.value.getDate()}`.padStart(2, '0')
+})
+
+const ownerLabel = computed(() => {
+  const source = props.event || {}
+  return source.owner_display_name || source.ownerDisplayName || source.owner_name || source.ownerName || source.username || ''
 })
 
 const monthLabel = computed(() => {
@@ -51,6 +57,15 @@ const dateTimeLabel = computed(() => {
 
 const cardImage = computed(() => props.event.image_url || 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=900&q=80')
 
+const isDark = computed(() => document.documentElement.classList.contains('dark'))
+
+const categoryAccentStyle = computed(() => {
+  return getCategoryAccentStyles({
+    category: { id: props.event.category_id, name: props.event.category_name },
+    isDark: isDark.value,
+  })
+})
+
 const onSelect = () => emit('select', props.event)
 const onToggleFavorite = (event) => {
   event.stopPropagation()
@@ -75,7 +90,7 @@ const onToggleFavorite = (event) => {
     </div>
 
     <div class="flex flex-col flex-grow justify-center">
-      <span class="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-1">{{ event.category_name || 'Evento' }}</span>
+      <span class="text-[10px] font-bold uppercase tracking-widest mb-1" :style="categoryAccentStyle">{{ event.category_name || 'Evento' }}</span>
       <h4
         class="font-headline font-bold text-base md:text-lg text-slate-800 dark:text-slate-100 mb-2 leading-tight group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors"
       >
@@ -89,6 +104,10 @@ const onToggleFavorite = (event) => {
         <div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
           <span class="material-symbols-outlined text-[14px]">location_on</span>
           {{ event.location || 'Ubicacion por confirmar' }}
+        </div>
+        <div v-if="ownerLabel" class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
+          <span class="material-symbols-outlined text-[14px]">person</span>
+          <span class="truncate">{{ ownerLabel }}</span>
         </div>
       </div>
     </div>

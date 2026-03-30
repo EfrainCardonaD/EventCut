@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import eventsApi from '@/utils/eventsApi'
-import { getApiPayload, mapApiCodeToUxAction, toApiErrorResult } from '@/utils/apiFactory'
-import { createEventWithSignedImageUpload } from '@/utils/eventCreateFactory'
+import { getApiMessage, getApiPayload, mapApiCodeToUxAction, toApiErrorResult } from '@/utils/apiFactory'
+import { createEventWithSignedImageUpload, updateEventWithSignedImageUpload } from '@/utils/eventCreateFactory'
 
 const FAVORITES_CACHE_KEY = 'eventcut.favoriteEventIds'
 
@@ -47,10 +47,28 @@ const localDateKeyFromIso = (isoDateTime) => {
 const normalizeEvent = (rawEvent, favoriteIdsSet) => {
   const serverFavoriteFlag = rawEvent?.favorited ?? rawEvent?.is_favorite ?? rawEvent?.isFavorite
 
+  const ownerFirstName = rawEvent?.owner_first_name ?? rawEvent?.ownerFirstName ?? ''
+  const ownerLastName = rawEvent?.owner_last_name ?? rawEvent?.ownerLastName ?? ''
+  const ownerFullName = [ownerFirstName, ownerLastName].map((part) => String(part || '').trim()).filter(Boolean).join(' ')
+
+  const cleanFirstName = String(ownerFirstName || '').trim()
+  const cleanLastName = String(ownerLastName || '').trim()
+  const lastInitial = cleanLastName ? `${cleanLastName[0].toUpperCase()}.` : ''
+  const ownerDisplayName = [cleanFirstName, lastInitial].filter(Boolean).join(' ')
+
   return {
     ...rawEvent,
     score: Number(rawEvent?.score || 0),
     category_id: rawEvent?.category_id ? Number(rawEvent.category_id) : null,
+    owner_name: rawEvent?.owner_name || rawEvent?.ownerName || ownerFullName || '',
+    owner_display_name:
+      rawEvent?.owner_display_name ||
+      rawEvent?.ownerDisplayName ||
+      ownerDisplayName ||
+      rawEvent?.owner_name ||
+      rawEvent?.ownerName ||
+      ownerFullName ||
+      '',
     isFavorite: typeof serverFavoriteFlag === 'boolean' ? serverFavoriteFlag : favoriteIdsSet.has(rawEvent?.id),
   }
 }
@@ -58,6 +76,14 @@ const normalizeEvent = (rawEvent, favoriteIdsSet) => {
 const toStoreErrorResult = (error, fallbackMessage) => {
   const baseResult = toApiErrorResult(error, fallbackMessage)
   const ux = mapApiCodeToUxAction(baseResult.code)
+
+  if (!ux && baseResult.status === 422) {
+    return {
+      ...baseResult,
+      uxAction: 'SHOW_FIELD_ERRORS',
+      uxMessage: 'Corrige los campos marcados e intenta nuevamente.',
+    }
+  }
 
   if (!ux) return baseResult
 
@@ -126,10 +152,12 @@ export const useEventStore = defineStore('event', {
 
     upcomingEvents() {
       const nowMs = Date.now()
-      return this.filteredEvents.filter((event) => {
+      return this.filteredEvents
+        .filter((event) => {
         const startMs = parseEventDate(event.start_datetime)?.getTime() || 0
         return startMs >= nowMs
-      })
+        })
+        .slice(0, 4)
     },
 
     featuredEvent() {
@@ -379,7 +407,12 @@ export const useEventStore = defineStore('event', {
           await this.hydrateFavoriteEvents()
         }
 
-        return { success: true, favorited }
+        const backendMessage = getApiMessage(response)
+        const message =
+          backendMessage ||
+          (favorited ? 'Evento guardado en favoritos.' : 'Evento eliminado de favoritos.')
+
+        return { success: true, favorited, message }
       } catch (error) {
         return toStoreErrorResult(error, 'No se pudo actualizar tu favorito.')
       }
@@ -423,38 +456,6 @@ export const useEventStore = defineStore('event', {
       this.favoriteEventSnapshots = [...byId.values()]
     },
 
-    async uploadEventImage(file) {
-      if (!file) return { success: true, imageUrl: null }
-
-      const uploadPath = import.meta.env.VITE_EVENTS_UPLOAD_PATH || '/api/v1/events/image-upload-url'
-      const payload = new FormData()
-      payload.append('file', file)
-
-      try {
-        const response = await eventsApi.post(uploadPath, payload, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        })
-
-        const businessPayload = getApiPayload(response) || {}
-
-        const imageUrl =
-          businessPayload.url ||
-          businessPayload.image_url ||
-          null
-
-        if (!imageUrl) {
-          return {
-            success: false,
-            error: 'El servicio devolvio una respuesta de upload sin URL de imagen.',
-          }
-        }
-
-        return { success: true, imageUrl }
-      } catch (error) {
-        return toStoreErrorResult(error, 'No se pudo subir la imagen del evento.')
-      }
-    },
-
     async createEvent(payload) {
       this.isSavingEvent = true
 
@@ -479,27 +480,7 @@ export const useEventStore = defineStore('event', {
       this.isUpdatingEvent = true
 
       try {
-        let imageUrl
-        if (payload.imageFile) {
-          const uploadResult = await this.uploadEventImage(payload.imageFile)
-          if (!uploadResult.success) {
-            return { success: false, error: uploadResult.error }
-          }
-          imageUrl = uploadResult.imageUrl
-        }
-
-        const requestBody = {
-          title: payload.title,
-          description: payload.description,
-          location: payload.location,
-          category_id: Number(payload.category_id),
-          start_datetime: payload.start_datetime,
-          end_datetime: payload.end_datetime,
-        }
-
-        if (imageUrl) requestBody.image_url = imageUrl
-
-        const response = await eventsApi.patch(`/api/v1/events/${eventId}`, requestBody)
+        const { response } = await updateEventWithSignedImageUpload(eventId, payload)
         const normalized = normalizeEvent(getApiPayload(response) || {}, new Set(this.favoriteEventIds))
         if (normalized?.id) {
           this.upsertEventInCollections(normalized)

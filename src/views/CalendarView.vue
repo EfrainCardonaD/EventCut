@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useEventStore } from '@/stores/event'
 import { useAuthStore } from '@/stores/auth'
@@ -11,6 +11,21 @@ import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.v
 import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 
+const normalizeFieldErrors = (details) => {
+  if (!details || typeof details !== 'object' || Array.isArray(details)) return {}
+  return Object.entries(details).reduce((acc, [field, value]) => {
+    if (!field) return acc
+    if (Array.isArray(value)) {
+      acc[field] = value.filter(Boolean)
+      return acc
+    }
+    if (typeof value === 'string' && value.trim()) {
+      acc[field] = [value.trim()]
+    }
+    return acc
+  }, {})
+}
+
 const authStore = useAuthStore()
 const eventStore = useEventStore()
 const { categories, favoriteUpcomingEvents, eventsByDate, selectedDate, monthKey, selectedDayEvents, isLoadingEvents, isUpdatingEvent, isDeletingEvent, error } = storeToRefs(eventStore)
@@ -19,6 +34,13 @@ const eventModalOpen = ref(false)
 const activeEvent = ref(null)
 const mobileScheduleOpen = ref(false)
 const scheduleToastOpen = ref(false)
+const updateSubmitError = ref('')
+const updateFieldErrors = ref({})
+const favoriteToast = ref({ show: false, type: 'info', title: '', message: '' })
+
+const showFavoriteToast = (type, title, message) => {
+  favoriteToast.value = { show: true, type, title, message }
+}
 
 const toastVisible = computed({
   get: () => Boolean(error.value),
@@ -54,7 +76,13 @@ const onSelectDate = (dateKey) => {
 }
 
 const onToggleFavorite = async (event) => {
-  await eventStore.toggleFavorite(event.id)
+  const result = await eventStore.toggleFavorite(event.id)
+  if (!result.success) {
+    showFavoriteToast('error', 'No se pudo guardar favorito', result.error)
+    return
+  }
+
+  showFavoriteToast('success', result.favorited ? 'Favorito guardado' : 'Favorito removido', result.message)
 }
 
 const openEventModal = (event) => {
@@ -82,13 +110,25 @@ const isEventManageable = computed(() => {
 })
 
 const onUpdateEvent = async (payload) => {
-  const result = await eventStore.updateEvent(payload.eventId, payload)
-  if (!result.success) return
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
 
+  const result = await eventStore.updateEvent(payload.eventId, payload)
+  if (!result.success) {
+    if (result.uxAction === 'SHOW_FIELD_ERRORS' || result.status === 422) {
+      updateSubmitError.value = result.error || ''
+      updateFieldErrors.value = normalizeFieldErrors(result.details)
+    }
+    return
+  }
+
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
   const refreshedEvent = eventStore.events.find((event) => event.id === payload.eventId) || eventStore.favoriteEventSnapshots.find((event) => event.id === payload.eventId)
   if (refreshedEvent) {
     activeEvent.value = refreshedEvent
   }
+  eventModalOpen.value = false
 }
 
 const onDeleteEvent = async (eventId) => {
@@ -105,6 +145,12 @@ onMounted(async () => {
   }
 
   await eventStore.fetchEvents({ scope: 'all' })
+})
+
+watch(eventModalOpen, (isOpen) => {
+  if (isOpen) return
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
 })
 </script>
 
@@ -132,6 +178,16 @@ onMounted(async () => {
       :duration="4500"
     />
 
+    <Alert
+      v-model="favoriteToast.show"
+      toast
+      position="top-right"
+      :type="favoriteToast.type"
+      :title="favoriteToast.title"
+      :message="favoriteToast.message"
+      :duration="3500"
+    />
+
     <EventCardModal
       v-model="eventModalOpen"
       :event="activeEvent"
@@ -139,6 +195,8 @@ onMounted(async () => {
       :can-manage="isEventManageable"
       :is-saving="isUpdatingEvent"
       :is-deleting="isDeletingEvent"
+      :submit-error="updateSubmitError"
+      :field-errors="updateFieldErrors"
       @save="onUpdateEvent"
       @delete="onDeleteEvent"
     />

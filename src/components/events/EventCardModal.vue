@@ -3,6 +3,11 @@ import { computed, ref, watch } from 'vue'
 import FieldError from '@/components/util/FieldError.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
+import { isAllowedEventImageType } from '@/utils/eventCreateFactory'
+import { dbToUiModel, uiToDbStrict, parseDbDateTime } from '@/utils/eventDateTimeAdapter'
+import { getCategoryAccentStyles } from '@/utils/categoryColors'
+
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg, image/png, image/webp, image/gif, image/avif'
 
 const props = defineProps({
   modelValue: {
@@ -29,9 +34,20 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  submitError: {
+    type: String,
+    default: '',
+  },
+  fieldErrors: {
+    type: Object,
+    default: () => ({}),
+  },
 })
 
 const emit = defineEmits(['update:modelValue', 'save', 'delete'])
+
+const EDIT_TOTAL_STEPS = 4
+const editStep = ref(1)
 
 const editMode = ref(false)
 const deleteModalOpen = ref(false)
@@ -41,39 +57,60 @@ const form = ref({
   description: '',
   location: '',
   category_id: '',
-  startLocal: '',
-  endLocal: '',
+  date: '',
+  allDay: false,
+  startTime: '',
+  endTime: '',
+  hasEndDate: false,
+  endDate: '',
   imageFile: null,
+  removeImage: false,
 })
 
+const localImagePreview = ref('')
+
+const clearLocalImagePreview = () => {
+  if (localImagePreview.value) {
+    URL.revokeObjectURL(localImagePreview.value)
+  }
+  localImagePreview.value = ''
+}
+
 const imagePreview = computed(() => {
+  if (localImagePreview.value) return localImagePreview.value
+  if (form.value.removeImage) return ''
   if (!props.event?.image_url) return ''
   return props.event.image_url
 })
 
-const toLocalInputDateTime = (isoDateTime) => {
-  if (!isoDateTime) return ''
-  const parsed = new Date(isoDateTime)
-  if (Number.isNaN(parsed.getTime())) return ''
+const toFieldErrorText = (value) => {
+  if (!value) return ''
+  if (Array.isArray(value)) return value.filter(Boolean).join(' ')
+  if (typeof value === 'string') return value
+  return ''
+}
 
-  const year = parsed.getFullYear()
-  const month = `${parsed.getMonth() + 1}`.padStart(2, '0')
-  const day = `${parsed.getDate()}`.padStart(2, '0')
-  const hours = `${parsed.getHours()}`.padStart(2, '0')
-  const minutes = `${parsed.getMinutes()}`.padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
+const getFieldError = (field) => {
+  return toFieldErrorText(props.fieldErrors?.[field])
 }
 
 const syncFormFromEvent = () => {
+  const schedule = dbToUiModel({
+    start_datetime: props.event?.start_datetime,
+    end_datetime: props.event?.end_datetime,
+  })
+
+  editStep.value = 1
   form.value = {
     title: props.event?.title || '',
     description: props.event?.description || '',
     location: props.event?.location || '',
     category_id: props.event?.category_id || '',
-    startLocal: toLocalInputDateTime(props.event?.start_datetime),
-    endLocal: toLocalInputDateTime(props.event?.end_datetime),
+    ...schedule,
     imageFile: null,
+    removeImage: false,
   }
+  clearLocalImagePreview()
   deleteModalOpen.value = false
   localError.value = ''
 }
@@ -83,13 +120,90 @@ watch(
   ([isOpen]) => {
     if (!isOpen) {
       editMode.value = false
+      editStep.value = 1
       deleteModalOpen.value = false
+      clearLocalImagePreview()
       return
     }
     syncFormFromEvent()
   },
   { immediate: true },
 )
+
+watch(
+  () => editMode.value,
+  (enabled) => {
+    if (!enabled) {
+      editStep.value = 1
+      localError.value = ''
+    }
+  },
+)
+
+const editProgressRatio = computed(() => {
+  return Math.min(1, Math.max(0, editStep.value / EDIT_TOTAL_STEPS))
+})
+
+const validateEditStep = (targetStep) => {
+  localError.value = ''
+
+  if (targetStep === 1) {
+    if (!form.value.title.trim() || !form.value.description.trim()) {
+      localError.value = 'Completa el titulo y la descripcion para continuar.'
+      return false
+    }
+    return true
+  }
+
+  if (targetStep === 2) {
+    if (!form.value.category_id || !form.value.location.trim()) {
+      localError.value = 'Selecciona la categoria y captura la ubicacion.'
+      return false
+    }
+    return true
+  }
+
+  if (targetStep === 3) {
+    if (!form.value.date) {
+      localError.value = 'Selecciona la fecha del evento.'
+      return false
+    }
+
+    const scheduleResult = uiToDbStrict({
+      date: form.value.date,
+      allDay: form.value.allDay,
+      startTime: form.value.startTime,
+      endTime: form.value.endTime,
+      hasEndDate: form.value.hasEndDate,
+      endDate: form.value.endDate,
+    })
+
+    if (!scheduleResult.ok) {
+      localError.value = scheduleResult.error
+      return false
+    }
+
+    return true
+  }
+
+  if (targetStep === 4) {
+    return true
+  }
+
+  return true
+}
+
+const goEditPrev = () => {
+  localError.value = ''
+  if (editStep.value > 1) editStep.value -= 1
+}
+
+const goEditNext = () => {
+  if (props.isSaving || props.isDeleting) return
+  const ok = validateEditStep(editStep.value)
+  if (!ok) return
+  if (editStep.value < EDIT_TOTAL_STEPS) editStep.value += 1
+}
 
 const closeModal = () => {
   emit('update:modelValue', false)
@@ -100,8 +214,26 @@ const categoryName = computed(() => {
   return props.event?.category_name || found?.name || 'Evento'
 })
 
+const isDark = computed(() => document.documentElement.classList.contains('dark'))
+
+const categoryAccentStyle = computed(() => {
+  const found = props.categories.find((category) => category.id === props.event?.category_id)
+  return getCategoryAccentStyles({
+    category: { id: props.event?.category_id, name: found?.name || props.event?.category_name },
+    isDark: isDark.value,
+  })
+})
+
+const ownerLabel = computed(() => {
+  const source = props.event || {}
+  return source.owner_display_name || source.ownerDisplayName || source.owner_name || source.ownerName || source.username || ''
+})
+
 const startLabel = computed(() => {
-  const parsed = new Date(props.event?.start_datetime)
+  const parsedValue = parseDbDateTime(props.event?.start_datetime)
+  if (!parsedValue) return 'Fecha no disponible'
+
+  const parsed = new Date(`${parsedValue.date}T${parsedValue.time}`)
   if (Number.isNaN(parsed.getTime())) return 'Fecha no disponible'
   return new Intl.DateTimeFormat('es-MX', {
     weekday: 'long',
@@ -115,7 +247,10 @@ const startLabel = computed(() => {
 })
 
 const endLabel = computed(() => {
-  const parsed = new Date(props.event?.end_datetime)
+  const parsedValue = parseDbDateTime(props.event?.end_datetime)
+  if (!parsedValue) return 'Fecha no disponible'
+
+  const parsed = new Date(`${parsedValue.date}T${parsedValue.time}`)
   if (Number.isNaN(parsed.getTime())) return 'Fecha no disponible'
   return new Intl.DateTimeFormat('es-MX', {
     day: '2-digit',
@@ -127,30 +262,51 @@ const endLabel = computed(() => {
   }).format(parsed)
 })
 
-const normalizeLocalToIso = (localDateTime) => {
-  const date = new Date(localDateTime)
-  return Number.isNaN(date.getTime()) ? null : date.toISOString()
-}
-
 const onFileChange = (event) => {
   const file = event.target.files?.[0]
   if (!file) return
+  if (!isAllowedEventImageType(file.type)) {
+    localError.value = 'Formato no permitido. Usa JPEG, PNG, WEBP, GIF o AVIF.'
+    form.value.imageFile = null
+    clearLocalImagePreview()
+    event.target.value = ''
+    return
+  }
+
+  localError.value = ''
+  form.value.removeImage = false
   form.value.imageFile = file
+  clearLocalImagePreview()
+  localImagePreview.value = URL.createObjectURL(file)
+}
+
+const onToggleRemoveImage = () => {
+  if (!form.value.removeImage) return
+  form.value.imageFile = null
+  clearLocalImagePreview()
 }
 
 const onSave = () => {
   localError.value = ''
 
-  const startIso = normalizeLocalToIso(form.value.startLocal)
-  const endIso = normalizeLocalToIso(form.value.endLocal)
-
-  if (!startIso || !endIso) {
-    localError.value = 'Debes seleccionar fecha y hora validas para inicio y fin.'
-    return
+  for (let s = 1; s <= EDIT_TOTAL_STEPS; s += 1) {
+    if (!validateEditStep(s)) {
+      editStep.value = s
+      return
+    }
   }
 
-  if (new Date(startIso).getTime() >= new Date(endIso).getTime()) {
-    localError.value = 'La fecha de finalizacion debe ser posterior al inicio.'
+  const result = uiToDbStrict({
+    date: form.value.date,
+    allDay: form.value.allDay,
+    startTime: form.value.startTime,
+    endTime: form.value.endTime,
+    hasEndDate: form.value.hasEndDate,
+    endDate: form.value.endDate,
+  })
+
+  if (!result.ok) {
+    localError.value = result.error
     return
   }
 
@@ -160,9 +316,10 @@ const onSave = () => {
     description: form.value.description.trim(),
     location: form.value.location.trim(),
     category_id: Number(form.value.category_id),
-    start_datetime: startIso,
-    end_datetime: endIso,
+    start_datetime: result.value.start_datetime,
+    end_datetime: result.value.end_datetime,
     imageFile: form.value.imageFile,
+    imageAction: form.value.removeImage ? 'remove' : form.value.imageFile ? 'replace' : 'keep',
   })
 }
 
@@ -213,7 +370,7 @@ const onConfirmDelete = () => {
               <div v-if="modelValue && event" class="flex max-h-[94vh] w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
         <header class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 dark:border-slate-800 sm:px-6">
           <div class="min-w-0">
-            <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600 dark:text-sky-400">{{ categoryName }}</p>
+            <p class="mb-1 text-[10px] font-bold uppercase tracking-[0.2em]" :style="categoryAccentStyle">{{ categoryName }}</p>
             <h3 class="font-headline text-xl font-black text-slate-900 dark:text-white sm:text-2xl">{{ event.title }}</h3>
           </div>
           <div class="flex shrink-0 items-center gap-2">
@@ -232,42 +389,85 @@ const onConfirmDelete = () => {
         </header>
 
         <div class="overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-          <div class="grid grid-cols-1 gap-4 xl:gap-6" :class="editMode && canManage ? 'xl:grid-cols-[1.15fr,0.85fr]' : ''">
-              <section class="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
-          <img
-            :src="imagePreview || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80'"
-            :alt="event.title"
-            class="h-48 w-full rounded-2xl object-cover sm:h-64"
-          />
+          <div class="grid grid-cols-1 gap-4 xl:gap-6">
+            <!-- Vista detalle solo cuando NO se edita -->
+            <section v-if="!editMode || !canManage" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
+              <img
+                :src="imagePreview || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80'"
+                :alt="event.title"
+                class="h-48 w-full rounded-2xl object-cover sm:h-64"
+              />
 
-          <div class="mt-4 grid grid-cols-1 gap-2 text-sm text-slate-600 dark:text-slate-300">
-              <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
-              <span class="material-symbols-outlined mt-0.5 text-base">schedule</span>
-              <span><span class="font-semibold">Inicio:</span> {{ startLabel }}</span>
-            </p>
-              <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
-              <span class="material-symbols-outlined mt-0.5 text-base">event</span>
-              <span><span class="font-semibold">Fin:</span> {{ endLabel }}</span>
-            </p>
-              <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
-              <span class="material-symbols-outlined mt-0.5 text-base">location_on</span>
-              <span>{{ event.location || 'Ubicacion por confirmar' }}</span>
-            </p>
-              <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
-              <span class="material-symbols-outlined mt-0.5 text-base">star</span>
-              <span><span class="font-semibold">Score:</span> {{ event.score || 0 }}</span>
-            </p>
-          </div>
+              <div class="mt-4 grid grid-cols-1 gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
+                  <span class="material-symbols-outlined mt-0.5 text-base">schedule</span>
+                  <span><span class="font-semibold">Inicio:</span> {{ startLabel }}</span>
+                </p>
+                <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
+                  <span class="material-symbols-outlined mt-0.5 text-base">event</span>
+                  <span><span class="font-semibold">Fin:</span> {{ endLabel }}</span>
+                </p>
+                <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
+                  <span class="material-symbols-outlined mt-0.5 text-base">location_on</span>
+                  <span>{{ event.location || 'Ubicacion por confirmar' }}</span>
+                </p>
+                <p class="flex items-start gap-2 rounded-xl bg-white p-2 dark:bg-slate-900">
+                  <span class="material-symbols-outlined mt-0.5 text-base">star</span>
+                  <span><span class="font-semibold">Score:</span> {{ event.score || 0 }}</span>
+                </p>
+              </div>
 
-            <p class="mt-4 rounded-2xl bg-white p-3 text-sm leading-relaxed text-slate-700 dark:bg-slate-900 dark:text-slate-300 sm:p-4">
-            {{ event.description || 'Sin descripcion disponible para este evento.' }}
-          </p>
+              <p class="mt-4 rounded-2xl bg-white p-3 text-sm leading-relaxed text-slate-700 dark:bg-slate-900 dark:text-slate-300 sm:p-4">
+                {{ event.description || 'Sin descripcion disponible para este evento.' }}
+              </p>
             </section>
 
-            <section v-if="editMode && canManage" class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700 sm:p-5">
-              <h4 class="mb-4 font-headline text-lg font-extrabold">Editar evento</h4>
+            <!-- Edicion por pasos ocupa todo el ancho -->
+            <section v-if="editMode && canManage" class="relative overflow-hidden rounded-2xl border border-slate-200 p-4 dark:border-slate-700 sm:p-5">
+              <!-- Barra superior: progreso por pasos + indeterminado al guardar/eliminar -->
+              <div class="absolute left-0 top-0 h-2 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                <div
+                  v-if="isSaving || isDeleting"
+                  class="h-full w-1/3 bg-tertiary-600/90 dark:bg-tertiary-400/90 animate-[progressbar_1.1s_ease-in-out_infinite]"
+                ></div>
+                <div
+                  v-else
+                  class="h-full bg-tertiary-600 dark:bg-tertiary-400 origin-left transition-transform duration-300 ease-out"
+                  :style="{ transform: `scaleX(${editProgressRatio})` }"
+                ></div>
+              </div>
+
+              <div class="mb-4 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h4 class="font-headline text-lg font-extrabold">Editar evento</h4>
+                  <p class="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Paso {{ editStep }} de {{ EDIT_TOTAL_STEPS }}</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button
+                    v-if="editStep > 1"
+                    type="button"
+                    class="rounded-full border border-slate-300 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    :disabled="isSaving || isDeleting"
+                    @click="goEditPrev"
+                  >
+                    Atras
+                  </button>
+
+                  <button
+                    v-if="editStep < EDIT_TOTAL_STEPS"
+                    type="button"
+                    class="rounded-full bg-tertiary-500 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-white transition hover:bg-tertiary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="isSaving || isDeleting"
+                    @click="goEditNext"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
 
               <div class="grid grid-cols-1 gap-3">
+            <template v-if="editStep === 1">
             <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Titulo
               <input
@@ -276,6 +476,7 @@ const onConfirmDelete = () => {
                 maxlength="150"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
+              <FieldError :error="getFieldError('title')" />
             </label>
 
             <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -285,60 +486,113 @@ const onConfirmDelete = () => {
                 rows="3"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               ></textarea>
+              <FieldError :error="getFieldError('description')" />
             </label>
 
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Categoria
-              <select
-                v-model="form.category_id"
+            </template>
+
+            <template v-else-if="editStep === 2">
+              <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Categoria
+                <select
+                  v-model="form.category_id"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-              >
-                <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-              </select>
-            </label>
+                >
+                  <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+                </select>
+                <FieldError :error="getFieldError('category_id')" />
+              </label>
 
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Ubicacion
-              <input
-                v-model="form.location"
-                type="text"
-                maxlength="200"
+              <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Ubicacion
+                <input
+                  v-model="form.location"
+                  type="text"
+                  maxlength="200"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-              />
-            </label>
+                />
+                <FieldError :error="getFieldError('location')" />
+              </label>
+            </template>
 
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Inicio (local)
-              <input
-                v-model="form.startLocal"
-                type="datetime-local"
+            <template v-else-if="editStep === 3">
+              <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Fecha del evento
+                <input
+                  v-model="form.date"
+                  type="date"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-              />
-            </label>
+                />
+                <FieldError :error="getFieldError('start_datetime')" />
+              </label>
 
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Fin (local)
-              <input
-                v-model="form.endLocal"
-                type="datetime-local"
+              <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <input
+                  v-model="form.allDay"
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-slate-300 text-tertiary-500 focus:ring-tertiary-500"
+                />
+                <span class="text-tertiary-600 dark:text-tertiary-400">Todo el dia</span>
+              </label>
+
+              <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span class="flex items-center gap-2 text-tertiary-600 dark:text-tertiary-400">Hora inicio (opcional)</span>
+                <input
+                  v-model="form.startTime"
+                  type="time"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-              />
-            </label>
+                />
+              </label>
 
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Nueva imagen (opcional)
-              <input
-                type="file"
-                accept="image/*"
+              <label class="text-xs font-semibold uppercase tracking-wide text-slate-500" :class="form.allDay ? 'opacity-60' : ''">
+                <span class="flex items-center gap-2 text-tertiary-600 dark:text-tertiary-400">Hora fin (opcional)</span>
+                <input
+                  v-model="form.endTime"
+                  type="time"
+                  :disabled="form.allDay"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:disabled:bg-slate-900"
+                />
+                <FieldError :error="getFieldError('end_datetime')" />
+              </label>
+
+              <label v-if="!form.allDay" class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <input v-model="form.hasEndDate" type="checkbox" class="rounded border-slate-300" />
+                <span class="flex items-center gap-2 text-tertiary-600 dark:text-tertiary-400">Añadir fecha de finalizacion</span>
+              </label>
+
+              <label v-if="!form.allDay && form.hasEndDate" class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Fecha fin
+                <input
+                  v-model="form.endDate"
+                  type="date"
+                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
+                />
+              </label>
+            </template>
+
+            <template v-else>
+              <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Nueva imagen (opcional)
+                <input
+                  type="file"
+                  :accept="ACCEPTED_IMAGE_TYPES"
                   class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-                @change="onFileChange"
-              />
-            </label>
+                  @change="onFileChange"
+                />
+                <FieldError :error="getFieldError('image_url')" />
+              </label>
 
-            <FieldError :error="localError" />
+              <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <input v-model="form.removeImage" type="checkbox" class="rounded border-slate-300" @change="onToggleRemoveImage" />
+                Eliminar imagen actual
+              </label>
+            </template>
+
+            <FieldError :error="localError || submitError" />
 
             <div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <button
+                v-if="editStep === EDIT_TOTAL_STEPS"
                 type="button"
                 class="rounded-full border border-red-300 px-4 py-2 text-xs font-bold uppercase tracking-wide text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
                 :disabled="isDeleting || isSaving"
@@ -348,6 +602,7 @@ const onConfirmDelete = () => {
               </button>
 
               <button
+                v-if="editStep === EDIT_TOTAL_STEPS"
                 type="button"
                 class="rounded-full bg-tertiary-500 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-tertiary-600 disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="isSaving || isDeleting"
@@ -366,4 +621,15 @@ const onConfirmDelete = () => {
     </div>
   </Transition>
 </template>
+
+<style scoped>
+@keyframes progressbar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+</style>
 

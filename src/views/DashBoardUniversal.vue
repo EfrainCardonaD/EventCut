@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { toggleTheme } from '@/utils/theme'
 import { useAuthStore } from '@/stores/auth'
@@ -13,6 +13,21 @@ import EventCardModal from '@/components/events/EventCardModal.vue'
 import CalendarWidget from '@/components/events/CalendarWidget.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.vue'
+
+const normalizeFieldErrors = (details) => {
+  if (!details || typeof details !== 'object' || Array.isArray(details)) return {}
+  return Object.entries(details).reduce((acc, [field, value]) => {
+    if (!field) return acc
+    if (Array.isArray(value)) {
+      acc[field] = value.filter(Boolean)
+      return acc
+    }
+    if (typeof value === 'string' && value.trim()) {
+      acc[field] = [value.trim()]
+    }
+    return acc
+  }, {})
+}
 
 const authStore = useAuthStore()
 const eventStore = useEventStore()
@@ -28,6 +43,10 @@ const mobileScheduleOpen = ref(false)
 const eventModalOpen = ref(false)
 const activeEvent = ref(null)
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
+const createSubmitError = ref('')
+const createFieldErrors = ref({})
+const updateSubmitError = ref('')
+const updateFieldErrors = ref({})
 
 const searchQuery = computed({
   get: () => eventStore.searchQuery,
@@ -115,16 +134,28 @@ const onToggleFavorite = async (event) => {
   const result = await eventStore.toggleFavorite(event.id)
   if (!result.success) {
     showToast('error', 'No se pudo guardar favorito', result.error)
+    return
   }
+
+  showToast('success', result.favorited ? 'Favorito guardado' : 'Favorito removido', result.message)
 }
 
 const onCreateEvent = async (payload) => {
+  createSubmitError.value = ''
+  createFieldErrors.value = {}
+
   const result = await eventStore.createEvent(payload)
   if (!result.success) {
+    if (result.uxAction === 'SHOW_FIELD_ERRORS' || result.status === 422) {
+      createSubmitError.value = result.error || ''
+      createFieldErrors.value = normalizeFieldErrors(result.details)
+    }
     showToast('error', 'No se pudo crear el evento', result.error)
     return
   }
 
+  createSubmitError.value = ''
+  createFieldErrors.value = {}
   createModalOpen.value = false
   showToast('success', 'Evento creado', 'Tu evento ya aparece en la cartelera del mes seleccionado.')
 }
@@ -154,14 +185,24 @@ const isEventManageable = computed(() => {
 })
 
 const onUpdateEvent = async (payload) => {
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
+
   const result = await eventStore.updateEvent(payload.eventId, payload)
   if (!result.success) {
+    if (result.uxAction === 'SHOW_FIELD_ERRORS' || result.status === 422) {
+      updateSubmitError.value = result.error || ''
+      updateFieldErrors.value = normalizeFieldErrors(result.details)
+    }
     showToast('error', 'No se pudo actualizar', result.error)
     return
   }
 
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
   const refreshedEvent = eventStore.events.find((event) => event.id === payload.eventId) || eventStore.favoriteEventSnapshots.find((event) => event.id === payload.eventId)
   if (refreshedEvent) activeEvent.value = refreshedEvent
+  eventModalOpen.value = false
   showToast('success', 'Evento actualizado', 'Se guardaron los cambios del evento.')
 }
 
@@ -190,6 +231,18 @@ onMounted(async () => {
     showToast('error', 'Error al sincronizar eventos', error.value)
   }
 })
+
+watch(createModalOpen, (isOpen) => {
+  if (isOpen) return
+  createSubmitError.value = ''
+  createFieldErrors.value = {}
+})
+
+watch(eventModalOpen, (isOpen) => {
+  if (isOpen) return
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
+})
 </script>
 
 <template>
@@ -217,7 +270,14 @@ onMounted(async () => {
       @confirm="onLogout"
     />
 
-    <CreateEventModal v-model="createModalOpen" :categories="categories" :is-saving="isSavingEvent" @submit="onCreateEvent" />
+    <CreateEventModal
+      v-model="createModalOpen"
+      :categories="categories"
+      :is-saving="isSavingEvent"
+      :submit-error="createSubmitError"
+      :field-errors="createFieldErrors"
+      @submit="onCreateEvent"
+    />
     <EventCardModal
       v-model="eventModalOpen"
       :event="activeEvent"
@@ -225,6 +285,8 @@ onMounted(async () => {
       :can-manage="isEventManageable"
       :is-saving="isUpdatingEvent"
       :is-deleting="isDeletingEvent"
+      :submit-error="updateSubmitError"
+      :field-errors="updateFieldErrors"
       @save="onUpdateEvent"
       @delete="onDeleteEvent"
     />

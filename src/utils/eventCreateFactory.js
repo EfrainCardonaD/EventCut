@@ -36,15 +36,23 @@ const createEventPathCandidates = [
   '/api/v1/events',
 ].filter(Boolean)
 
+const updateEventPathTemplateCandidates = [
+  import.meta.env.VITE_EVENTS_UPDATE_PATH_TEMPLATE || '/api/v1/events/{event_id}',
+  '/v1/events/{event_id}',
+  '/api/v1/events/{event_id}',
+].filter(Boolean)
+
 const uniquePaths = (paths) => [...new Set(paths)]
 
-const postWithFallbackPaths = async (paths, body, config = {}) => {
+const requestWithFallbackPaths = async (method, paths, body, config = {}) => {
   const dedupedPaths = uniquePaths(paths)
   let lastError = null
 
   for (const path of dedupedPaths) {
     try {
-      return await eventsApi.post(path, body, config)
+      if (method === 'post') return await eventsApi.post(path, body, config)
+      if (method === 'patch') return await eventsApi.patch(path, body, config)
+      throw new Error(`Metodo no soportado para fallback: ${method}`)
     } catch (error) {
       const status = error?.response?.status
       if (status !== 404) throw error
@@ -78,7 +86,7 @@ export const requestEventImageUploadUrl = async ({ fileType, fileName } = {}) =>
     file_name: fileName || undefined,
   }
 
-  const response = await postWithFallbackPaths(signedUploadPathCandidates, signaturePayload, {
+  const response = await requestWithFallbackPaths('post', signedUploadPathCandidates, signaturePayload, {
     params: {
       content_type: fileType,
     },
@@ -106,7 +114,32 @@ export const uploadEventImageToCloudflare = async ({ uploadUrl, file }) => {
 }
 
 export const registerEventWithImageUrl = async (payload) => {
-  return postWithFallbackPaths(createEventPathCandidates, payload)
+  return requestWithFallbackPaths('post', createEventPathCandidates, payload)
+}
+
+const buildUpdatePathCandidates = (eventId) => {
+  return updateEventPathTemplateCandidates.map((template) => template.replace('{event_id}', String(eventId)))
+}
+
+export const updateEventWithImageUrl = async (eventId, payload) => {
+  return requestWithFallbackPaths('patch', buildUpdatePathCandidates(eventId), payload)
+}
+
+const normalizeEventRequestBody = (formPayload, imageUrlOverride) => {
+  const requestBody = {
+    title: formPayload.title,
+    description: formPayload.description,
+    location: formPayload.location,
+    category_id: Number(formPayload.category_id),
+    start_datetime: formPayload.start_datetime,
+    end_datetime: formPayload.end_datetime,
+  }
+
+  if (typeof imageUrlOverride !== 'undefined') {
+    requestBody.image_url = imageUrlOverride
+  }
+
+  return requestBody
 }
 
 export const createEventWithSignedImageUpload = async (formPayload) => {
@@ -123,15 +156,7 @@ export const createEventWithSignedImageUpload = async (formPayload) => {
     file: formPayload.imageFile,
   })
 
-  const requestBody = {
-    title: formPayload.title,
-    description: formPayload.description,
-    location: formPayload.location,
-    category_id: Number(formPayload.category_id),
-    start_datetime: formPayload.start_datetime,
-    end_datetime: formPayload.end_datetime,
-    image_url: publicUrl,
-  }
+  const requestBody = normalizeEventRequestBody(formPayload, publicUrl)
 
   const response = await registerEventWithImageUrl(requestBody)
 
@@ -139,6 +164,39 @@ export const createEventWithSignedImageUpload = async (formPayload) => {
     response,
     publicUrl,
     createdEvent: getApiPayload(response) || null,
+  }
+}
+
+export const updateEventWithSignedImageUpload = async (eventId, formPayload) => {
+  const imageAction = formPayload?.imageAction || (formPayload?.imageFile ? 'replace' : 'keep')
+  let imageUrlOverride
+
+  if (imageAction === 'replace') {
+    assertEventImageFile(formPayload?.imageFile)
+
+    const { uploadUrl, publicUrl } = await requestEventImageUploadUrl({
+      fileType: formPayload.imageFile.type,
+      fileName: formPayload.imageFile.name,
+    })
+
+    await uploadEventImageToCloudflare({
+      uploadUrl,
+      file: formPayload.imageFile,
+    })
+
+    imageUrlOverride = publicUrl
+  }
+
+  if (imageAction === 'remove') {
+    imageUrlOverride = null
+  }
+
+  const requestBody = normalizeEventRequestBody(formPayload, imageUrlOverride)
+  const response = await updateEventWithImageUrl(eventId, requestBody)
+
+  return {
+    response,
+    updatedEvent: getApiPayload(response) || null,
   }
 }
 
