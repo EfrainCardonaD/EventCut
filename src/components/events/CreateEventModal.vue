@@ -3,6 +3,9 @@ import { computed, ref, watch } from 'vue'
 import FieldError from '@/components/util/FieldError.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
+import { isAllowedEventImageType } from '@/utils/eventCreateFactory'
+
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg, image/png, image/webp, image/gif, image/avif'
 
 const props = defineProps({
   modelValue: {
@@ -108,6 +111,15 @@ const onFileChange = (event) => {
   const file = event.target.files?.[0]
   if (!file) return
 
+  if (!isAllowedEventImageType(file.type)) {
+    form.value.imageFile = null
+    clearImagePreview()
+    validationError.value = 'Formato no permitido. Usa JPEG, PNG, WEBP, GIF o AVIF.'
+    event.target.value = ''
+    return
+  }
+
+  validationError.value = ''
   form.value.imageFile = file
   clearImagePreview()
   imagePreview.value = URL.createObjectURL(file)
@@ -259,7 +271,7 @@ const onSubmit = () => {
           Imagen del evento
           <input
             type="file"
-            accept="image/*"
+            :accept="ACCEPTED_IMAGE_TYPES"
             required
               class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
             @change="onFileChange"

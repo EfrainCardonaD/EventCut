@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import eventsApi from '@/utils/eventsApi'
 import { getFriendlyApiErrorMessage } from '@/utils/apiFactory'
+import { createEventWithSignedImageUpload } from '@/utils/eventCreateFactory'
 
 const FAVORITES_CACHE_KEY = 'eventcut.favoriteEventIds'
 
@@ -409,7 +410,7 @@ export const useEventStore = defineStore('event', {
     async uploadEventImage(file) {
       if (!file) return { success: true, imageUrl: null }
 
-      const uploadPath = import.meta.env.VITE_EVENTS_UPLOAD_PATH || '/api/v1/uploads/images'
+      const uploadPath = import.meta.env.VITE_EVENTS_UPLOAD_PATH || '/api/v1/events/image-upload-url'
       const payload = new FormData()
       payload.append('file', file)
 
@@ -445,22 +446,7 @@ export const useEventStore = defineStore('event', {
       this.isSavingEvent = true
 
       try {
-        const uploadResult = await this.uploadEventImage(payload.imageFile)
-        if (!uploadResult.success) {
-          return { success: false, error: uploadResult.error }
-        }
-
-        const requestBody = {
-          title: payload.title,
-          description: payload.description,
-          location: payload.location,
-          category_id: Number(payload.category_id),
-          start_datetime: payload.start_datetime,
-          end_datetime: payload.end_datetime,
-          image_url: uploadResult.imageUrl,
-        }
-
-        const response = await eventsApi.post('/api/v1/events', requestBody)
+        const { response } = await createEventWithSignedImageUpload(payload)
 
         if (response.status === 201 || response.status === 200) {
           await this.fetchEvents(this.lastEventsQuery || { scope: this.eventsScope })
@@ -469,9 +455,12 @@ export const useEventStore = defineStore('event', {
 
         return { success: false, error: 'No se pudo crear el evento.' }
       } catch (error) {
+        const fallbackMessage =
+          error instanceof Error && error.message ? error.message : 'No se pudo crear el evento.'
+
         return {
           success: false,
-          error: getFriendlyApiErrorMessage(error, 'No se pudo crear el evento.'),
+          error: getFriendlyApiErrorMessage(error, fallbackMessage),
         }
       } finally {
         this.isSavingEvent = false
