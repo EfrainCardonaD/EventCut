@@ -1,4 +1,5 @@
 import eventsApi from '@/utils/eventsApi'
+import { getApiPayload } from '@/utils/apiFactory'
 
 export const ALLOWED_EVENT_IMAGE_TYPES = Object.freeze([
   'image/jpeg',
@@ -56,7 +57,7 @@ const postWithFallbackPaths = async (paths, body, config = {}) => {
 }
 
 const extractSignedUploadUrls = (responseData) => {
-  const source = responseData?.data || responseData || {}
+  const source = responseData || {}
   const uploadUrl = source.upload_url || source.uploadUrl || null
   const publicUrl = source.public_url || source.publicUrl || null
 
@@ -83,7 +84,7 @@ export const requestEventImageUploadUrl = async ({ fileType, fileName } = {}) =>
     },
   })
 
-  return extractSignedUploadUrls(response.data)
+  return extractSignedUploadUrls(getApiPayload(response))
 }
 
 export const uploadEventImageToCloudflare = async ({ uploadUrl, file }) => {
@@ -137,7 +138,7 @@ export const createEventWithSignedImageUpload = async (formPayload) => {
   return {
     response,
     publicUrl,
-    createdEvent: response.data?.data || response.data?.item || response.data || null,
+    createdEvent: getApiPayload(response) || null,
   }
 }
 

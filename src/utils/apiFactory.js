@@ -17,6 +17,68 @@ const isExcludedFromRefresh = (url = '') => {
   return NON_REFRESHABLE_PATHS.some((path) => normalizedUrl.includes(path));
 };
 
+const TRACE_HEADER_KEY = 'X-Trace-Id';
+
+const createTraceId = () => {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `trace-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+};
+
+const toHeaderLookupMap = (headers = {}) => {
+  return Object.entries(headers || {}).reduce((acc, [key, value]) => {
+    acc[String(key).toLowerCase()] = value;
+    return acc;
+  }, {});
+};
+
+export const extractTraceIdFromHeaders = (headers = {}) => {
+  const map = toHeaderLookupMap(headers);
+  const value = map['x-trace-id'];
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+};
+
+const isEnvelopeLike = (payload) => {
+  return Boolean(payload && typeof payload === 'object' && typeof payload.success === 'boolean');
+};
+
+export const getApiPayload = (response) => {
+  if (response?.status === 204) return null;
+
+  const payload = response?.data;
+  if (isEnvelopeLike(payload) && 'data' in payload) {
+    return payload.data;
+  }
+
+  return payload;
+};
+
+export const getApiMessage = (response) => {
+  const payload = response?.data;
+  if (isEnvelopeLike(payload) && typeof payload.message === 'string') {
+    return payload.message;
+  }
+
+  return null;
+};
+
+const getTraceIdFromErrorData = (responseData) => {
+  if (!responseData || typeof responseData !== 'object') return null;
+  return responseData?.data?.trace_id || responseData?.trace_id || null;
+};
+
+const getCodeFromErrorData = (responseData) => {
+  if (!responseData || typeof responseData !== 'object') return null;
+  return responseData?.data?.code || responseData?.code || null;
+};
+
+const getDetailsFromErrorData = (responseData) => {
+  if (!responseData || typeof responseData !== 'object') return null;
+  return responseData?.data?.details ?? responseData?.details ?? null;
+};
+
 const extractBackendMessage = (error) => {
   if (error?.response?.data?.message) return error.response.data.message;
   if (error?.response?.data?.detail && typeof error.response.data.detail === 'string') {
@@ -40,26 +102,77 @@ export const isNetworkOrConnectionError = (error) => {
 };
 
 export const getFriendlyApiErrorMessage = (error, fallbackMessage) => {
-  if (isNetworkOrConnectionError(error)) {
-    return 'No se pudo conectar con el servidor. Verifica que el backend esté activo e inténtalo de nuevo.';
-  }
-
-  const backendMessage = extractBackendMessage(error);
-  if (backendMessage) return backendMessage;
-
-  return fallbackMessage || 'Ocurrió un error inesperado.';
+  return normalizeApiError(error, fallbackMessage).message;
 };
 
-export const createApiClient = (baseURL) => {
+export const normalizeApiError = (error, fallbackMessage) => {
+  const networkFailure = isNetworkOrConnectionError(error);
+  const responseData = error?.response?.data;
+  const status = Number(error?.response?.status || 0) || null;
+  const traceId =
+    getTraceIdFromErrorData(responseData) ||
+    extractTraceIdFromHeaders(error?.response?.headers) ||
+    error?.config?.headers?.[TRACE_HEADER_KEY] ||
+    null;
+
+  const message = networkFailure
+    ? 'No se pudo conectar con el servidor. Verifica que el backend esté activo e inténtalo de nuevo.'
+    : extractBackendMessage(error) || fallbackMessage || 'Ocurrió un error inesperado.';
+
+  return {
+    message,
+    code: getCodeFromErrorData(responseData),
+    details: getDetailsFromErrorData(responseData),
+    traceId,
+    status,
+    isNetworkError: networkFailure,
+  };
+};
+
+export const toApiErrorResult = (error, fallbackMessage) => {
+  const normalized = error?.apiError || normalizeApiError(error, fallbackMessage);
+
+  return {
+    success: false,
+    // El traceId se conserva para telemetria/soporte, pero no se expone al usuario final.
+    error: normalized.message,
+    code: normalized.code,
+    details: normalized.details,
+    traceId: normalized.traceId,
+    status: normalized.status,
+  };
+};
+
+export const mapApiCodeToUxAction = (code) => {
+  switch (code) {
+    case 'TOKEN_EXPIRED':
+      return { action: 'REDIRECT_LOGIN', message: 'Tu sesión expiró. Inicia sesión nuevamente.' };
+    case 'TOKEN_INVALID':
+      return { action: 'CLEAR_SESSION_LOGIN', message: 'Tu sesión ya no es válida. Inicia sesión nuevamente.' };
+    case 'FORBIDDEN':
+      return { action: 'SHOW_TOAST', message: 'No tienes permisos para esta acción.' };
+    case 'AUTH_UNAVAILABLE':
+      return { action: 'RETRY_AVAILABLE', message: 'Servicio de autenticación no disponible. Intenta de nuevo.' };
+    case 'VALIDATION_ERROR':
+      return { action: 'SHOW_FIELD_ERRORS', message: 'Corrige los campos marcados e intenta nuevamente.' };
+    case 'EVENT_NOT_FOUND':
+      return { action: 'GO_TO_LIST', message: 'El evento ya no existe o fue removido.' };
+    default:
+      return null;
+  }
+};
+
+export const createApiClient = (baseURL, options = {}) => {
   const api = axios.create({
     baseURL,
-    withCredentials: true,
-    timeout: 12000,
+    withCredentials: options.withCredentials ?? true,
+    timeout: options.timeout ?? 12000,
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
       // Evita el warning/intercept de ngrok en entornos de desarrollo.
       'ngrok-skip-browser-warning': 'true',
+      ...(options.headers || {}),
     },
   });
 
@@ -89,6 +202,10 @@ export const createApiClient = (baseURL) => {
       const accessToken = authStore.token;
       config.headers = config.headers || {};
 
+      if (!config.headers[TRACE_HEADER_KEY]) {
+        config.headers[TRACE_HEADER_KEY] = createTraceId();
+      }
+
       if (accessToken && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
@@ -99,7 +216,15 @@ export const createApiClient = (baseURL) => {
   );
 
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      response.traceId =
+        extractTraceIdFromHeaders(response.headers) ||
+        response?.config?.headers?.[TRACE_HEADER_KEY] ||
+        null;
+      response.payload = getApiPayload(response);
+      response.apiMessage = getApiMessage(response);
+      return response;
+    },
     async (error) => {
       const originalRequest = error.config || {};
       const authStore = useAuthStore();
@@ -112,6 +237,7 @@ export const createApiClient = (baseURL) => {
         !isExcludedFromRefresh(requestPath);
 
       if (!shouldTryRefresh) {
+        error.apiError = normalizeApiError(error);
         return Promise.reject(error);
       }
 
@@ -143,6 +269,7 @@ export const createApiClient = (baseURL) => {
         processQueue(null, authStore.token);
         return api(originalRequest);
       } catch (refreshError) {
+        refreshError.apiError = normalizeApiError(refreshError, 'Tu sesión expiró. Inicia sesión nuevamente.');
         processQueue(refreshError, null);
         authStore.clearAuthData();
 

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import eventsApi from '@/utils/eventsApi'
-import { getFriendlyApiErrorMessage } from '@/utils/apiFactory'
+import { getApiPayload, mapApiCodeToUxAction, toApiErrorResult } from '@/utils/apiFactory'
 import { createEventWithSignedImageUpload } from '@/utils/eventCreateFactory'
 
 const FAVORITES_CACHE_KEY = 'eventcut.favoriteEventIds'
@@ -52,6 +52,19 @@ const normalizeEvent = (rawEvent, favoriteIdsSet) => {
     score: Number(rawEvent?.score || 0),
     category_id: rawEvent?.category_id ? Number(rawEvent.category_id) : null,
     isFavorite: typeof serverFavoriteFlag === 'boolean' ? serverFavoriteFlag : favoriteIdsSet.has(rawEvent?.id),
+  }
+}
+
+const toStoreErrorResult = (error, fallbackMessage) => {
+  const baseResult = toApiErrorResult(error, fallbackMessage)
+  const ux = mapApiCodeToUxAction(baseResult.code)
+
+  if (!ux) return baseResult
+
+  return {
+    ...baseResult,
+    uxAction: ux.action,
+    uxMessage: ux.message,
   }
 }
 
@@ -245,9 +258,11 @@ export const useEventStore = defineStore('event', {
 
       try {
         const response = await eventsApi.get('/api/v1/categories')
-        this.categories = Array.isArray(response.data) ? response.data : []
+        const payload = getApiPayload(response)
+        this.categories = Array.isArray(payload) ? payload : []
       } catch (error) {
-        this.error = getFriendlyApiErrorMessage(error, 'No se pudieron cargar las categorias.')
+        const apiError = toStoreErrorResult(error, 'No se pudieron cargar las categorias.')
+        this.error = apiError.error
       } finally {
         this.isLoadingCategories = false
       }
@@ -291,8 +306,10 @@ export const useEventStore = defineStore('event', {
             },
           })
 
-          const items = Array.isArray(response.data?.items) ? response.data.items : []
-          total = Number(response.data?.total ?? collectedItems.length + items.length)
+          const payload = getApiPayload(response)
+
+          const items = Array.isArray(payload?.items) ? payload.items : []
+          total = Number(payload?.total ?? collectedItems.length + items.length)
 
           if (!items.length) break
 
@@ -325,7 +342,8 @@ export const useEventStore = defineStore('event', {
         this.total = this.events.length
         await this.hydrateFavoriteEvents()
       } catch (error) {
-        this.error = getFriendlyApiErrorMessage(error, 'No se pudieron cargar los eventos.')
+        const apiError = toStoreErrorResult(error, 'No se pudieron cargar los eventos.')
+        this.error = apiError.error
       } finally {
         this.isLoadingEvents = false
       }
@@ -334,7 +352,8 @@ export const useEventStore = defineStore('event', {
     async toggleFavorite(eventId) {
       try {
         const response = await eventsApi.post(`/api/v1/events/${eventId}/favorite`)
-        const favorited = Boolean(response.data?.favorited)
+        const payload = getApiPayload(response)
+        const favorited = Boolean(payload?.favorited)
 
         const favoriteIds = new Set(this.favoriteEventIds)
         if (favorited) favoriteIds.add(eventId)
@@ -362,10 +381,7 @@ export const useEventStore = defineStore('event', {
 
         return { success: true, favorited }
       } catch (error) {
-        return {
-          success: false,
-          error: getFriendlyApiErrorMessage(error, 'No se pudo actualizar tu favorito.'),
-        }
+        return toStoreErrorResult(error, 'No se pudo actualizar tu favorito.')
       }
     },
 
@@ -387,7 +403,7 @@ export const useEventStore = defineStore('event', {
         missingIds.map(async (eventId) => {
           try {
             const response = await eventsApi.get(`/api/v1/events/${eventId}`)
-            const raw = response.data?.data || response.data?.item || response.data
+            const raw = getApiPayload(response)
             if (!raw?.id) return null
             return {
               ...normalizeEvent(raw, new Set(this.favoriteEventIds)),
@@ -419,11 +435,11 @@ export const useEventStore = defineStore('event', {
           headers: { 'Content-Type': 'multipart/form-data' },
         })
 
+        const businessPayload = getApiPayload(response) || {}
+
         const imageUrl =
-          response.data?.data?.url ||
-          response.data?.data?.image_url ||
-          response.data?.url ||
-          response.data?.image_url ||
+          businessPayload.url ||
+          businessPayload.image_url ||
           null
 
         if (!imageUrl) {
@@ -435,10 +451,7 @@ export const useEventStore = defineStore('event', {
 
         return { success: true, imageUrl }
       } catch (error) {
-        return {
-          success: false,
-          error: getFriendlyApiErrorMessage(error, 'No se pudo subir la imagen del evento.'),
-        }
+        return toStoreErrorResult(error, 'No se pudo subir la imagen del evento.')
       }
     },
 
@@ -455,13 +468,8 @@ export const useEventStore = defineStore('event', {
 
         return { success: false, error: 'No se pudo crear el evento.' }
       } catch (error) {
-        const fallbackMessage =
-          error instanceof Error && error.message ? error.message : 'No se pudo crear el evento.'
-
-        return {
-          success: false,
-          error: getFriendlyApiErrorMessage(error, fallbackMessage),
-        }
+        const fallbackMessage = error instanceof Error && error.message ? error.message : 'No se pudo crear el evento.'
+        return toStoreErrorResult(error, fallbackMessage)
       } finally {
         this.isSavingEvent = false
       }
@@ -492,7 +500,7 @@ export const useEventStore = defineStore('event', {
         if (imageUrl) requestBody.image_url = imageUrl
 
         const response = await eventsApi.patch(`/api/v1/events/${eventId}`, requestBody)
-        const normalized = normalizeEvent(response.data?.data || response.data || {}, new Set(this.favoriteEventIds))
+        const normalized = normalizeEvent(getApiPayload(response) || {}, new Set(this.favoriteEventIds))
         if (normalized?.id) {
           this.upsertEventInCollections(normalized)
         } else {
@@ -501,10 +509,7 @@ export const useEventStore = defineStore('event', {
 
         return { success: true }
       } catch (error) {
-        return {
-          success: false,
-          error: getFriendlyApiErrorMessage(error, 'No se pudo actualizar el evento.'),
-        }
+        return toStoreErrorResult(error, 'No se pudo actualizar el evento.')
       } finally {
         this.isUpdatingEvent = false
       }
@@ -518,10 +523,7 @@ export const useEventStore = defineStore('event', {
         this.removeEventFromCollections(eventId)
         return { success: true }
       } catch (error) {
-        return {
-          success: false,
-          error: getFriendlyApiErrorMessage(error, 'No se pudo eliminar el evento.'),
-        }
+        return toStoreErrorResult(error, 'No se pudo eliminar el evento.')
       } finally {
         this.isDeletingEvent = false
       }
