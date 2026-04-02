@@ -125,17 +125,17 @@ const dayButtonClass = computed(() => {
 
 const markerClass = computed(() => {
   if (isCompact.value) {
-    return 'absolute bottom-0.5 h-1 w-1 rounded-full bg-sky-500'
+    return 'absolute bottom-0.5 h-1 w-1 rounded-full bg-primary-500'
   }
 
-  return isLarge.value ? 'absolute bottom-1 h-1.5 w-1.5 rounded-full bg-sky-500 md:h-2 md:w-2' : 'absolute bottom-1 h-1.5 w-1.5 rounded-full bg-sky-500'
+  return isLarge.value ? 'absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary-500 md:h-2 md:w-2' : 'absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary-500'
 })
 
 const getDayClass = (day) => {
   return [
     dayButtonClass.value,
     day.inCurrentMonth ? 'hover:bg-slate-100 dark:hover:bg-slate-900' : 'text-slate-300 dark:text-slate-600',
-    day.isSelected ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-500/20 dark:bg-sky-500 dark:text-sky-950' : '',
+    day.isSelected ? 'bg-primary-600 text-white font-bold shadow-md shadow-primary-500/20 dark:bg-primary-500 dark:text-primary-950' : '',
   ]
 }
 

@@ -14,6 +14,7 @@ import EventCardModal from '@/components/events/EventCardModal.vue'
 import CalendarWidget from '@/components/events/CalendarWidget.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.vue'
+import RichTextRenderer from '@/components/util/RichTextRenderer.vue'
 import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
 
 const authStore = useAuthStore()
@@ -280,7 +281,14 @@ watch(featuredEvents, async () => {
 </script>
 
 <template>
-  <div class="bg-slate-50 text-slate-900 transition-colors duration-300 selection:bg-tertiary-400/30 dark:bg-slate-950 dark:text-slate-100">
+  <AppHeader
+      v-model="searchQuery"
+      :is-admin-user="isAdminUser"
+      :avatar-initial="avatarInitial"
+      @create-event="createModalOpen = true"
+      @logout="logoutModalOpen = true"
+  />
+  <div class="bg-slate-50 text-slate-900 transition-colors duration-300 selection:bg-tertiary-400/30 dark:bg-slate-950 dark:text-slate-100 p-4  ">
     <SpinnerOverlay :show="isLoggingOut || isLoadingEvents" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando eventos...'" />
 
     <Alert
@@ -326,13 +334,6 @@ watch(featuredEvents, async () => {
       @delete="onDeleteEvent"
     />
 
-    <AppHeader
-      v-model="searchQuery"
-      :is-admin-user="isAdminUser"
-      :avatar-initial="avatarInitial"
-      @create-event="createModalOpen = true"
-      @logout="logoutModalOpen = true"
-    />
 
     <main class="min-h-screen pb-24 pt-20 md:pb-8 xl:pr-[22rem]">
       <div class="p-4 md:p-8">
@@ -344,7 +345,7 @@ watch(featuredEvents, async () => {
             <div class="flex items-center gap-2 overflow-x-auto px-4 pb-2 snap-x snap-mandatory md:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <button
                 class="snap-start whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold shadow-sm sm:px-5 sm:text-sm"
-                :class="selectedCategory === null ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-sky-950' : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300'"
+                :class="selectedCategory === null ? 'bg-primary-600 text-white dark:bg-primary-500 dark:text-primary-950' : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300'"
                 @click="selectedCategory = null"
               >
                 Todas
@@ -353,7 +354,7 @@ watch(featuredEvents, async () => {
                 v-for="category in categories"
                 :key="category.id"
                 class="snap-start whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-600 transition-colors hover:bg-slate-200 sm:px-5 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                :class="selectedCategory === category.id ? '!bg-sky-600 !text-white dark:!bg-sky-500 dark:!text-sky-950' : ''"
+                :class="selectedCategory === category.id ? '!bg-primary-600 !text-white dark:!bg-primary-500 dark:!text-primary-950' : ''"
                 @click="selectedCategory = category.id"
               >
                 {{ category.name }}
@@ -412,11 +413,13 @@ watch(featuredEvents, async () => {
               <div class="absolute inset-0 z-10 flex items-end p-5 md:p-6">
                 <div>
                   <div class="mb-2 flex items-center gap-2 md:mb-3">
-                    <span class="rounded-full bg-sky-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">Score {{ event.score }}</span>
-                    <span class="text-[11px] font-semibold text-sky-100">{{ formatFeaturedDateTime(event) }}</span>
+                    <span class="rounded-full bg-primary-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">Score {{ event.score }}</span>
+                    <span class="text-[11px] font-semibold text-primary-100">{{ formatFeaturedDateTime(event) }}</span>
                   </div>
                   <h3 class="mb-2 line-clamp-2 font-headline text-xl font-black leading-tight text-white md:text-2xl">{{ event.title }}</h3>
-                  <p class="line-clamp-2 max-w-md text-xs text-slate-200 md:text-sm">{{ event.description }}</p>
+                  <div class="line-clamp-2 max-w-md text-xs text-slate-200 md:text-sm">
+                    <RichTextRenderer :content="event.description" :line-clamp="2" />
+                  </div>
                 </div>
               </div>
             </article>
@@ -426,7 +429,7 @@ watch(featuredEvents, async () => {
         <section>
           <div class="mb-6 flex items-end justify-between">
             <h2 class="font-headline text-xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-2xl">Proximos eventos</h2>
-            <RouterLink to="/app/calendario" class="micro-accent-link text-sm font-bold text-sky-600 hover:underline dark:text-sky-400">Ver calendario</RouterLink>
+            <RouterLink to="/app/calendario" class="micro-accent-link text-sm font-bold text-primary-600 hover:underline dark:text-primary-400">Ver calendario</RouterLink>
           </div>
 
           <div v-if="upcomingEvents.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -468,7 +471,7 @@ watch(featuredEvents, async () => {
     </main>
 
     <aside
-      class="fixed right-0 top-20 hidden h-[calc(100vh-5rem)] w-[22rem] flex-col border-l border-slate-200 bg-slate-100 p-6 shadow-sm transition-colors duration-300 dark:border-slate-800/50 dark:bg-slate-900 dark:shadow-none xl:flex"
+      class="fixed right-0 top-20 hidden h-[calc(100vh-5rem)] w-[22rem] flex-col overflow-y-auto overflow-x-hidden border-l border-slate-200 bg-slate-100 p-6 shadow-sm transition-colors duration-300 dark:border-slate-800/50 dark:bg-slate-900 dark:shadow-none xl:flex"
     >
       <CalendarWidget :month-key="monthKey" :selected-date="selectedDate" :events-by-date="eventsByDate" @change-month="onChangeMonth" @select-date="onSelectDate" />
 
@@ -476,7 +479,7 @@ watch(featuredEvents, async () => {
         <MyScheduleTimelineCard :events="favoriteUpcomingEvents" @select="openEventModal" @sync="onSyncSchedule" />
       </div>
 
-      <div class="mt-4 flex-grow overflow-y-auto pr-2">
+      <div class="mt-4 pr-2">
         <h4 class="mb-3 font-headline text-[11px] font-bold uppercase tracking-widest text-slate-500">Agenda de {{ selectedDateLabel }}</h4>
 
         <div v-if="agendaEvents.length === 0" class="rounded-xl border border-dashed border-slate-300 p-4 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -506,8 +509,8 @@ watch(featuredEvents, async () => {
     <nav
       class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/90 md:hidden"
     >
-      <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-sky-600 dark:text-sky-300">
-        <div class="mb-1 rounded-full bg-sky-100 px-4 py-1 dark:bg-sky-500/20">
+      <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-primary-600 dark:text-primary-300">
+        <div class="mb-1 rounded-full bg-primary-100 px-4 py-1 dark:bg-primary-500/20">
           <span class="material-symbols-outlined icon-filled">event</span>
         </div>
         <span class="text-[10px] font-medium">Eventos</span>
@@ -603,7 +606,7 @@ watch(featuredEvents, async () => {
         >
           Ir a panel admin
         </RouterLink>
-        <p v-if="isCommunitiesRoute" class="rounded-xl bg-sky-50 px-3 py-2 text-[11px] font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+        <p v-if="isCommunitiesRoute" class="rounded-xl bg-primary-50 px-3 py-2 text-[11px] font-semibold text-primary-700 dark:bg-primary-950/40 dark:text-primary-300">
           En comunidades, el boton Crear permite seleccionar/usar comunidad para nuevos eventos.
         </p>
       </div>

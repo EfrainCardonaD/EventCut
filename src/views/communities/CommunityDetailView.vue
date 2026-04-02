@@ -11,6 +11,7 @@ import EventCardModal from '@/components/events/EventCardModal.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import CreateCommunityModal from '@/components/communities/CreateCommunityModal.vue'
 import CommunityManageModal from '@/components/communities/CommunityManageModal.vue'
+import RichTextRenderer from '@/components/util/RichTextRenderer.vue'
 import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import SocialNetworkIcon from "@/components/icons/SocialNetworkIcon.vue";
@@ -527,7 +528,7 @@ watch(
               <div class="mt-1 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:items-center sm:justify-end">
                 <button
                   class="w-full rounded-lg px-6 py-2 text-sm font-bold text-white shadow-sm transition-colors active:scale-[0.99] sm:w-auto"
-                  :class="isCommunitySubscribed ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-primary-600 hover:bg-primary-700'"
+                  :class="isCommunitySubscribed ? 'bg-success-600 hover:bg-success-700' : 'bg-primary-600 hover:bg-primary-700'"
                   :disabled="isSubscriptionUpdating"
                   type="button"
                   @click="onToggleSubscription"
@@ -543,7 +544,7 @@ watch(
                 </button>
                 <button
                   v-if="canManageCommunity"
-                  class="w-full rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm transition-colors hover:bg-sky-100 active:scale-[0.99] dark:border-sky-900/40 dark:bg-sky-900/20 dark:text-sky-300 dark:hover:bg-sky-900/30 sm:w-auto"
+                  class="w-full rounded-lg border border-primary-300 bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-700 shadow-sm transition-colors hover:bg-primary-100 active:scale-[0.99] dark:border-primary-900/40 dark:bg-primary-900/20 dark:text-primary-300 dark:hover:bg-primary-900/30 sm:w-auto"
                   type="button"
                   @click="onOpenManageCommunity"
                 >
@@ -554,7 +555,10 @@ watch(
 
             <div class="mt-4">
               <h2 class="mb-2 text-3xl font-bold">{{ detail?.name || 'Comunidad sin nombre' }}</h2>
-              <p class="mb-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">{{ detail?.description || 'Sin descripcion disponible para esta comunidad.' }}</p>
+              <div v-if="detail?.description" class="mb-4">
+                <RichTextRenderer :content="detail.description" max-height="300px" />
+              </div>
+              <p v-else class="mb-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">Sin descripcion disponible para esta comunidad.</p>
 
               <div class="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                 <span class="rounded-full border border-slate-200 bg-slate-100 px-2 py-1 dark:border-slate-800 dark:bg-slate-900">Eventos: {{ detail?.events_count || normalizedEvents.length }}</span>
@@ -573,7 +577,7 @@ watch(
                       :href="link.url"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-sky-500/50 dark:hover:text-sky-400"
+                      class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-primary-300 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-primary-500/50 dark:hover:text-primary-400"
                   >
                     <SocialNetworkIcon :network="link.key" :size="16" class-name="text-current" />
                     {{ link.label }}
@@ -701,7 +705,7 @@ watch(
         <span class="material-symbols-outlined">event</span>
         <span class="text-[10px] font-medium">Eventos</span>
       </RouterLink>
-      <RouterLink to="/app/comunidades" class="flex flex-col items-center p-2 text-sky-600 dark:text-sky-300">
+      <RouterLink to="/app/comunidades" class="flex flex-col items-center p-2 text-primary-600 dark:text-primary-300">
         <span class="material-symbols-outlined">groups</span>
         <span class="text-[10px] font-medium">Comunidades</span>
       </RouterLink>
@@ -732,7 +736,7 @@ watch(
       </div>
     </div>
 
-    <div v-if="error" class="fixed bottom-24 right-4 z-[75] hidden max-w-sm rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 shadow-md dark:border-rose-900/40 dark:bg-rose-950/50 dark:text-rose-200 md:block">
+    <div v-if="error" class="fixed bottom-24 right-4 z-[75] hidden max-w-sm rounded-xl border border-error-200 bg-error-50 p-3 text-xs text-error-700 shadow-md dark:border-error-900/40 dark:bg-error-950/50 dark:text-error-200 md:block">
       {{ error }}
     </div>
   </div>

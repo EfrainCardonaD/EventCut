@@ -7,6 +7,7 @@ import Alert from '@/components/util/Alert.vue'
 import FieldError from '@/components/util/FieldError.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SocialLinksStep from '@/components/util/SocialLinksStep.vue'
+import RichTextEditor from '@/components/util/RichTextEditor.vue'
 import { isAllowedEventImageType } from '@/utils/eventCreateFactory'
 import { uiToDbStrict } from '@/utils/eventDateTimeAdapter'
 import {
@@ -17,6 +18,7 @@ import {
   validateEventSocialLinks,
   validateEventTitle,
 } from '@/utils/eventFormValidation'
+import { normalizeSocialLinksPayload } from '@/utils/socialLinks'
 
 const ACCEPTED_IMAGE_TYPES = 'image/jpeg, image/png, image/webp, image/gif, image/avif'
 
@@ -391,11 +393,7 @@ const onSubmit = () => {
     end_datetime: result.value.end_datetime,
     imageFile: form.value.imageFile,
     community_id: form.value.community_id || undefined,
-    social_links: {
-      whatsapp: form.value.social_links.whatsapp.trim(),
-      facebook: form.value.social_links.facebook.trim(),
-      instagram: form.value.social_links.instagram.trim(),
-    },
+    social_links: normalizeSocialLinksPayload(form.value.social_links),
   })
 }
 </script>
@@ -433,10 +431,10 @@ const onSubmit = () => {
       >
           <div
             v-if="modelValue"
-            class="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+            class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
           >
             <!-- Barra superior: progreso por pasos + indeterminado al guardar -->
-            <div class="absolute left-0 top-0 h-2 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+            <div class="absolute left-0 top-0 z-10 h-2 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
               <div
                 v-if="isSaving"
                 class="h-full w-full origin-left scale-x-1000 animate-spin bg-tertiary-600/90 transition-transform duration-300 ease-out dark:bg-tertiary-400/90"
@@ -447,6 +445,9 @@ const onSubmit = () => {
                 :style="{ transform: `scaleX(${progressRatio})` }"
               ></div>
             </div>
+
+            <!-- Header fijo -->
+            <div class="flex-shrink-0 p-6 pb-0 pt-8">
       <div class="mb-4 flex items-center justify-between">
         <div class="min-w-0">
           <h3 class="font-headline text-xl font-extrabold text-slate-900 dark:text-white">Crear evento</h3>
@@ -456,7 +457,10 @@ const onSubmit = () => {
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
+            </div>
 
+            <!-- Contenido scrollable -->
+            <div class="flex-1 overflow-y-auto px-6 pb-6">
       <form class="grid grid-cols-1 gap-4 md:grid-cols-2" @submit.prevent="onSubmit">
         <!-- Paso 1: Basico -->
         <template v-if="step === 1">
@@ -521,13 +525,14 @@ const onSubmit = () => {
 
           <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
             Descripcion
-            <textarea
-              v-model="form.description"
-              rows="4"
-              required
-              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-              placeholder="Maraton de desarrollo colaborativo para estudiantes y egresados"
-            ></textarea>
+            <div class="mt-1">
+              <RichTextEditor
+                v-model="form.description"
+                placeholder="Maraton de desarrollo colaborativo para estudiantes y egresados"
+                min-height="100px"
+                max-height="250px"
+              />
+            </div>
             <FieldError :error="getFieldError('description')" />
           </label>
         </template>
@@ -720,6 +725,7 @@ const onSubmit = () => {
           </div>
         </div>
       </form>
+            </div>
 
       <Transition
         appear

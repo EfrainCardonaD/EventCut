@@ -5,7 +5,9 @@ import { useAuthStore } from '@/stores/auth'
 import FieldError from '@/components/util/FieldError.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SocialLinksStep from '@/components/util/SocialLinksStep.vue'
+import RichTextEditor from '@/components/util/RichTextEditor.vue'
 import { ALLOWED_COMMUNITY_IMAGE_TYPES, uploadCommunityImageAndGetPublicUrl } from '@/utils/communityImageFactory'
+import { normalizeSocialLinksPayload } from '@/utils/socialLinks'
 
 const props = defineProps({
   modelValue: {
@@ -280,9 +282,10 @@ const onSubmit = async () => {
     facebook: form.value.social_links.facebook.trim(),
     instagram: form.value.social_links.instagram.trim(),
   }
+  const compactSocialLinks = normalizeSocialLinksPayload(socialLinks)
 
-  if (!validatePrefix(socialLinks.whatsapp, ['https://wa.me/'])) {
-    localError.value = 'El link de WhatsApp debe iniciar con https://wa.me/'
+  if (!validatePrefix(socialLinks.whatsapp, ['https://wa.me/', 'https://chat.whatsapp.com/'])) {
+    localError.value = 'El link de WhatsApp debe iniciar con https://wa.me/ o https://chat.whatsapp.com/'
     return
   }
 
@@ -321,7 +324,7 @@ const onSubmit = async () => {
     image_url: imageUrl,
     contact_email: form.value.contact_email.trim(),
     is_accepted_terms: form.value.is_accepted_terms,
-    social_links: Object.values(socialLinks).some(Boolean) ? socialLinks : undefined,
+    social_links: compactSocialLinks || undefined,
   }
 
   emit('submit', payload)
@@ -350,7 +353,9 @@ const onSubmit = async () => {
         @confirm="closeWithoutSaving"
       />
 
-      <div class="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+        <!-- Header fijo -->
+        <div class="flex-shrink-0 p-6 pb-0">
         <div class="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 class="font-headline text-xl font-extrabold text-slate-900 dark:text-white">Crear comunidad</h3>
@@ -387,7 +392,10 @@ const onSubmit = async () => {
             Paso {{ currentStep }} de 2 · Completa la informacion y envia tu comunidad a revision.
           </p>
         </div>
+        </div>
 
+        <!-- Contenido scrollable -->
+        <div class="flex-1 overflow-y-auto px-6 pb-6">
         <form class="grid grid-cols-1 gap-4" @submit.prevent="onSubmit">
           <div v-if="currentStep === 1" class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -405,13 +413,14 @@ const onSubmit = async () => {
 
             <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
               Descripcion
-              <textarea
-                v-model="form.description"
-                rows="4"
-                required
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 focus:ring-4 focus:ring-tertiary-500/10 dark:border-slate-700 dark:bg-slate-950"
-                placeholder="Comunidad para corredores y organizadores de carreras urbanas"
-              ></textarea>
+              <div class="mt-1">
+                <RichTextEditor
+                  v-model="form.description"
+                  placeholder="Comunidad para corredores y organizadores de carreras urbanas"
+                  min-height="100px"
+                  max-height="250px"
+                />
+              </div>
               <FieldError :error="getFieldError('description')" />
             </label>
 
@@ -439,7 +448,7 @@ const onSubmit = async () => {
                   <span class="material-symbols-outlined" style="font-size: 16px">mail</span>
                   {{ form.contact_email || '...' }}
                 </span>
-                <span v-if="!form.contact_email" class="text-xs font-semibold text-red-600">Sin correo en sesion</span>
+                <span v-if="!form.contact_email" class="text-xs font-semibold text-error-600">Sin correo en sesion</span>
               </div>
 
               <FieldError class="mt-2" :error="getFieldError('contact_email')" />
@@ -594,6 +603,7 @@ const onSubmit = async () => {
             </div>
           </div>
         </form>
+        </div>
       </div>
     </div>
   </Transition>

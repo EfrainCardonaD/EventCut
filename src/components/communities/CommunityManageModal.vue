@@ -4,7 +4,9 @@ import { useScrollLock } from '@vueuse/core'
 import FieldError from '@/components/util/FieldError.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SocialLinksStep from '@/components/util/SocialLinksStep.vue'
+import RichTextEditor from '@/components/util/RichTextEditor.vue'
 import { ALLOWED_COMMUNITY_IMAGE_TYPES, isAllowedCommunityImageType } from '@/utils/communityImageFactory'
+import { normalizeSocialLinksPayload } from '@/utils/socialLinks'
 
 const props = defineProps({
   modelValue: {
@@ -232,11 +234,7 @@ const onSubmit = () => {
     imageAction: form.value.imageAction,
     previous_image_url: props.community?.image_url || null,
     contact_email: form.value.contact_email.trim() || null,
-    social_links: {
-      whatsapp: form.value.social_links.whatsapp.trim(),
-      facebook: form.value.social_links.facebook.trim(),
-      instagram: form.value.social_links.instagram.trim(),
-    },
+    social_links: normalizeSocialLinksPayload(form.value.social_links),
   })
 }
 
@@ -277,7 +275,9 @@ const onClose = () => {
         @confirm="onConfirmDelete"
       />
 
-      <div class="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+        <!-- Header fijo -->
+        <div class="flex-shrink-0 p-6 pb-0">
         <div class="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 class="font-headline text-xl font-extrabold text-slate-900 dark:text-white">Gestionar comunidad</h3>
@@ -291,7 +291,10 @@ const onClose = () => {
         <div class="mb-4">
           <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Paso {{ step }} de {{ TOTAL_STEPS }}</p>
         </div>
+        </div>
 
+        <!-- Contenido scrollable -->
+        <div class="flex-1 overflow-y-auto px-6 pb-6">
         <form class="grid grid-cols-1 gap-4 md:grid-cols-2" @submit.prevent="onSubmit">
           <template v-if="step === 1">
           <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -301,7 +304,7 @@ const onClose = () => {
               type="text"
               maxlength="100"
               required
-              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-950"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-950"
               placeholder="Comunidad Backend"
             />
             <FieldError :error="getFieldError('name')" />
@@ -309,13 +312,14 @@ const onClose = () => {
 
           <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
             Descripcion
-            <textarea
-              v-model="form.description"
-              rows="4"
-              required
-              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-950"
-              placeholder="Describe la comunidad"
-            ></textarea>
+            <div class="mt-1">
+              <RichTextEditor
+                v-model="form.description"
+                placeholder="Describe la comunidad"
+                min-height="100px"
+                max-height="250px"
+              />
+            </div>
             <FieldError :error="getFieldError('description')" />
           </label>
 
@@ -324,7 +328,7 @@ const onClose = () => {
             <select
               v-model="form.category_id"
               required
-              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-950"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-950"
             >
               <option value="" disabled>Selecciona una categoria</option>
               <option v-for="category in categories" :key="category.id" :value="String(category.id)">
@@ -339,7 +343,7 @@ const onClose = () => {
             <input
               v-model="form.contact_email"
               type="email"
-              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-950"
+              class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-950"
               placeholder="contacto@comunidad.dev"
             />
             <FieldError :error="getFieldError('contact_email')" />
@@ -359,7 +363,7 @@ const onClose = () => {
             <div
               role="button"
               tabindex="0"
-              class="mt-2 w-full cursor-pointer overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-left transition hover:border-sky-400 hover:bg-sky-50/30 focus:outline-none focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-950 dark:hover:border-sky-500/70"
+              class="mt-2 w-full cursor-pointer overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-left transition hover:border-primary-400 hover:bg-primary-50/30 focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-950 dark:hover:border-primary-500/70"
               @click="onPickImage"
               @keydown.enter.prevent="onPickImage"
               @keydown.space.prevent="onPickImage"
@@ -379,7 +383,7 @@ const onClose = () => {
               </div>
 
               <div v-else class="flex items-start gap-3">
-                <div class="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
+                <div class="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
                   <span class="material-symbols-outlined">cloud_upload</span>
                 </div>
                 <div class="flex-1">
@@ -401,7 +405,7 @@ const onClose = () => {
               </button>
               <button
                 type="button"
-                class="rounded-full border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-200"
+                class="rounded-full border border-error-300 bg-error-50 px-3 py-1.5 text-xs font-bold text-error-700 hover:bg-error-100 dark:border-error-900/40 dark:bg-error-900/20 dark:text-error-200"
                 @click="onRemoveImage"
               >
                 Quitar imagen
@@ -434,7 +438,7 @@ const onClose = () => {
           <div class="md:col-span-2 mt-2 flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
-              class="rounded-full border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-200"
+              class="rounded-full border border-error-300 bg-error-50 px-4 py-2 text-sm font-bold text-error-700 transition hover:bg-error-100 disabled:opacity-60 dark:border-error-900/40 dark:bg-error-900/20 dark:text-error-200"
               :disabled="isDeleting || isSaving"
               @click="onRequestDelete"
             >
@@ -455,7 +459,7 @@ const onClose = () => {
               <button
                 v-if="step < TOTAL_STEPS"
                 type="button"
-                class="rounded-full bg-sky-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                class="rounded-full bg-primary-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="!canSubmit"
                 @click="goNext"
               >
@@ -474,7 +478,7 @@ const onClose = () => {
               <button
                 v-if="step === TOTAL_STEPS"
                 type="submit"
-                class="rounded-full bg-sky-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                class="rounded-full bg-primary-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="!canSubmit"
               >
                 {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
@@ -482,6 +486,7 @@ const onClose = () => {
             </div>
           </div>
         </form>
+        </div>
       </div>
     </div>
   </Transition>

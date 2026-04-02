@@ -1,12 +1,17 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { useAdminStore } from '@/stores/admin'
 import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import AdminActionCard from '@/components/admin/AdminActionCard.vue'
 import AdminActionModal from '@/components/admin/AdminActionModal.vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
 
+const router = useRouter()
+const authStore = useAuthStore()
 const adminStore = useAdminStore()
 const {
   communities,
@@ -33,8 +38,26 @@ const manualUserId = ref('')
 
 const statusOptions = ['PENDING', 'ACTIVE', 'REJECTED']
 
+const isAdminUser = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN']))
+
+const avatarInitial = computed(() => {
+  const firstName = authStore.user?.firstName || ''
+  const lastName = authStore.user?.lastName || ''
+  const fallback = authStore.username || authStore.user?.email || ''
+  const source = `${firstName} ${lastName}`.trim() || fallback || 'U'
+  return source.charAt(0).toUpperCase()
+})
+
 const showToast = (type, title, message) => {
   toast.value = { show: true, type, title, message }
+}
+
+const onHeaderCreateEvent = async () => {
+  await router.push('/app')
+}
+
+const onHeaderLogout = async () => {
+  await authStore.logout({ redirect: true })
 }
 
 const loadModeration = async () => {
@@ -124,7 +147,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 pb-20 pt-20 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:pb-8">
+  <AppHeader
+      :is-admin-user="isAdminUser"
+      :avatar-initial="avatarInitial"
+      :show-search="false"
+      @create-event="onHeaderCreateEvent"
+      @logout="onHeaderLogout"
+  />
+
+  <div class="min-h-screen bg-slate-50 pb-20 pt-20 text-slate-900 dark:bg-slate-950 dark:text-slate-100  p-4 md:p-8 xl:p-16 xl:pr-[10rem] ">
     <SpinnerOverlay :show="isLoadingCommunities || isLoadingBans" text="Cargando panel administrativo..." />
 
     <Alert
@@ -171,11 +202,11 @@ onMounted(async () => {
       @confirm="onConfirmUnban"
     />
 
-    <div class="mx-auto w-full max-w-6xl px-4 md:px-8">
+    <div class="mx-auto w-full max-w-5xl px-4 md:px-8 md:pb-16 md:pt-20 pb-8 pt-8">
       <header class="rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p class="text-xs font-bold uppercase tracking-[0.2em] text-sky-600 dark:text-sky-400">Admin</p>
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">Admin</p>
             <h1 class="mt-1 font-headline text-2xl font-black">Panel de administracion</h1>
             <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Moderacion de comunidades y gestion de baneos en un solo lugar.</p>
           </div>
@@ -188,7 +219,7 @@ onMounted(async () => {
           <button
             type="button"
             class="rounded-full px-4 py-2 text-sm font-bold"
-            :class="tab === 'communities' ? 'bg-sky-600 text-white' : 'border border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'"
+            :class="tab === 'communities' ? 'bg-primary-600 text-white' : 'border border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'"
             @click="tab = 'communities'"
           >
             Moderacion de comunidades
@@ -196,7 +227,7 @@ onMounted(async () => {
           <button
             type="button"
             class="rounded-full px-4 py-2 text-sm font-bold"
-            :class="tab === 'bans' ? 'bg-sky-600 text-white' : 'border border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'"
+            :class="tab === 'bans' ? 'bg-primary-600 text-white' : 'border border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'"
             @click="tab = 'bans'"
           >
             Gestion de baneos
@@ -236,7 +267,7 @@ onMounted(async () => {
               <button
                 v-if="community.status === 'PENDING'"
                 type="button"
-                class="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                class="rounded-full bg-success-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-success-700"
                 :disabled="isUpdatingCommunityStatus"
                 @click="onApprove(community.id)"
               >
@@ -245,7 +276,7 @@ onMounted(async () => {
               <button
                 v-if="community.status === 'PENDING'"
                 type="button"
-                class="rounded-full bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700"
+                class="rounded-full bg-error-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-error-700"
                 :disabled="isUpdatingCommunityStatus"
                 @click="onOpenReject(community.id)"
               >
@@ -269,7 +300,7 @@ onMounted(async () => {
           </label>
           <button
             type="button"
-            class="mt-3 rounded-full bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700"
+            class="mt-3 rounded-full bg-error-600 px-4 py-2 text-sm font-bold text-white hover:bg-error-700"
             :disabled="isBanningUser || !manualUserId.trim()"
             @click="onOpenBan"
           >
@@ -296,7 +327,7 @@ onMounted(async () => {
             <template #actions>
               <button
                 type="button"
-                class="rounded-full bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-700"
+                class="rounded-full bg-primary-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-700"
                 :disabled="isUnbanningUser"
                 @click="onOpenUnban(user.user_id)"
               >
@@ -308,7 +339,7 @@ onMounted(async () => {
       </section>
     </div>
 
-    <div v-if="error" class="fixed bottom-24 right-4 z-[75] hidden max-w-sm rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 shadow-md dark:border-rose-900/40 dark:bg-rose-950/50 dark:text-rose-200 md:block">
+    <div v-if="error" class="fixed bottom-24 right-4 z-[75] hidden max-w-sm rounded-xl border border-error-200 bg-error-50 p-3 text-xs text-error-700 shadow-md dark:border-error-900/40 dark:bg-error-950/50 dark:text-error-200 md:block">
       {{ error }}
     </div>
   </div>

@@ -1,5 +1,6 @@
 import communitiesApi from '@/utils/communitiesApi'
 import { getApiPayload } from '@/utils/apiFactory'
+import { normalizeSocialLinksPayload } from '@/utils/socialLinks'
 
 export const ALLOWED_COMMUNITY_IMAGE_TYPES = Object.freeze([
   'image/jpeg',
@@ -153,12 +154,8 @@ const normalizeCommunityUpdateBody = (formPayload, imageUrlOverride) => {
   }
 
   if (Object.prototype.hasOwnProperty.call(formPayload || {}, 'social_links')) {
-    const socialLinks = {
-      whatsapp: String(formPayload?.social_links?.whatsapp || '').trim(),
-      facebook: String(formPayload?.social_links?.facebook || '').trim(),
-      instagram: String(formPayload?.social_links?.instagram || '').trim(),
-    }
-    requestBody.social_links = Object.values(socialLinks).some(Boolean) ? socialLinks : null
+    const socialLinks = normalizeSocialLinksPayload(formPayload?.social_links)
+    requestBody.social_links = socialLinks || null
   }
 
   if (typeof imageUrlOverride !== 'undefined') {

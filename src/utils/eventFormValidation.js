@@ -51,8 +51,8 @@ export const validateEventSocialLinks = (socialLinks = {}) => {
   const facebook = toTrimmed(socialLinks.facebook)
   const instagram = toTrimmed(socialLinks.instagram)
 
-  if (whatsapp && !whatsapp.startsWith('https://wa.me/')) {
-    return 'El link de WhatsApp debe iniciar con https://wa.me/'
+  if (whatsapp && !whatsapp.startsWith('https://wa.me/') && !whatsapp.startsWith('https://chat.whatsapp.com/')) {
+    return 'El link de WhatsApp debe iniciar con https://wa.me/ o https://chat.whatsapp.com/'
   }
 
   if (facebook && !facebook.startsWith('https://facebook.com/') && !facebook.startsWith('https://www.facebook.com/')) {

@@ -1,6 +1,7 @@
 import eventsApi from '@/utils/eventsApi'
 import { getApiPayload } from '@/utils/apiFactory'
 import { toEventCategoryId, validateEventImageUrlLength } from '@/utils/eventFormValidation'
+import { normalizeSocialLinksPayload } from '@/utils/socialLinks'
 
 export const ALLOWED_EVENT_IMAGE_TYPES = Object.freeze([
   'image/jpeg',
@@ -137,13 +138,7 @@ const normalizeEventRequestBody = (formPayload, imageUrlOverride) => {
     throw new Error(imageUrlLengthError)
   }
 
-  const socialLinks = {
-    whatsapp: String(formPayload?.social_links?.whatsapp || '').trim(),
-    facebook: String(formPayload?.social_links?.facebook || '').trim(),
-    instagram: String(formPayload?.social_links?.instagram || '').trim(),
-  }
-
-  const hasSocialLinks = Object.values(socialLinks).some(Boolean)
+  const socialLinks = normalizeSocialLinksPayload(formPayload?.social_links)
 
   const requestBody = {
     title: String(formPayload?.title || '').trim(),
@@ -158,7 +153,7 @@ const normalizeEventRequestBody = (formPayload, imageUrlOverride) => {
     requestBody.image_url = imageUrlOverride
   }
 
-  if (hasSocialLinks) {
+  if (socialLinks) {
     requestBody.social_links = socialLinks
   }
 

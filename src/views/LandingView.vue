@@ -201,10 +201,10 @@ onMounted(() => {
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <!-- Feature 1 -->
           <div
-            class="bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 hover:shadow-lg dark:hover:border-sky-500/30 transition-all group"
+            class="bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 hover:shadow-lg dark:hover:border-primary-500/30 transition-all group"
           >
-            <div class="w-14 h-14 rounded-2xl bg-sky-100 dark:bg-sky-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <span class="material-symbols-outlined text-sky-600 dark:text-sky-400 text-3xl icon-filled">travel_explore</span>
+            <div class="w-14 h-14 rounded-2xl bg-primary-100 dark:bg-primary-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-primary-600 dark:text-primary-400 text-3xl icon-filled">travel_explore</span>
             </div>
             <h3 class="font-headline font-bold text-xl text-slate-900 dark:text-white mb-3">Descubrimiento Inteligente</h3>
             <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
@@ -214,12 +214,12 @@ onMounted(() => {
 
           <!-- Feature 2 -->
           <div
-            class="bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 hover:shadow-lg dark:hover:border-indigo-500/30 transition-all group"
+            class="bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 hover:shadow-lg dark:hover:border-secondary-500/30 transition-all group"
           >
             <div
-              class="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+              class="w-14 h-14 rounded-2xl bg-secondary-100 dark:bg-secondary-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
             >
-              <span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-3xl icon-filled">calendar_sync</span>
+              <span class="material-symbols-outlined text-secondary-600 dark:text-secondary-400 text-3xl icon-filled">calendar_sync</span>
             </div>
             <h3 class="font-headline font-bold text-xl text-slate-900 dark:text-white mb-3">Sincronización de Agenda</h3>
             <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
@@ -229,12 +229,12 @@ onMounted(() => {
 
           <!-- Feature 3 -->
           <div
-            class="bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 hover:shadow-lg dark:hover:border-emerald-500/30 transition-all group"
+            class="bg-slate-50 dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 hover:shadow-lg dark:hover:border-success-500/30 transition-all group"
           >
             <div
-              class="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+              class="w-14 h-14 rounded-2xl bg-success-100 dark:bg-success-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
             >
-              <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-3xl icon-filled">forum</span>
+              <span class="material-symbols-outlined text-success-600 dark:text-success-400 text-3xl icon-filled">forum</span>
             </div>
             <h3 class="font-headline font-bold text-xl text-slate-900 dark:text-white mb-3">Networking Integrado</h3>
             <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
@@ -249,14 +249,14 @@ onMounted(() => {
     <section id="comunidad" class="py-20 relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
-          class="bg-sky-600 dark:bg-slate-900 rounded-[2.5rem] p-10 md:p-16 text-center lg:text-left flex flex-col lg:flex-row items-center justify-between gap-10 overflow-hidden relative border dark:border-slate-800"
+          class="bg-primary-600 dark:bg-slate-900 rounded-[2.5rem] p-10 md:p-16 text-center lg:text-left flex flex-col lg:flex-row items-center justify-between gap-10 overflow-hidden relative border dark:border-slate-800"
         >
           <!-- Background decoration for dark mode -->
-          <div class="hidden dark:block absolute top-0 right-0 w-full h-full bg-gradient-to-r from-transparent to-sky-900/20 pointer-events-none"></div>
+          <div class="hidden dark:block absolute top-0 right-0 w-full h-full bg-gradient-to-r from-transparent to-primary-900/20 pointer-events-none"></div>
 
           <div class="relative z-10 max-w-xl">
             <h2 class="font-headline font-extrabold text-3xl sm:text-4xl text-white mb-4">La comunidad universitaria te espera.</h2>
-            <p class="text-sky-100 dark:text-slate-300 text-lg">
+            <p class="text-primary-100 dark:text-slate-300 text-lg">
               Centralizamos la información para que la participación aumente. Resultados cuantificables en la adopción del campus.
             </p>
           </div>
@@ -264,15 +264,15 @@ onMounted(() => {
           <div class="relative z-10 flex flex-wrap justify-center lg:justify-end gap-8 md:gap-12 w-full lg:w-auto">
             <div class="text-center">
               <span class="block font-headline font-black text-4xl md:text-5xl text-white mb-1">500+</span>
-              <span class="text-sky-200 dark:text-slate-400 text-sm font-bold uppercase tracking-widest">Eventos Anuales</span>
+              <span class="text-primary-200 dark:text-slate-400 text-sm font-bold uppercase tracking-widest">Eventos Anuales</span>
             </div>
             <div class="text-center">
               <span class="block font-headline font-black text-4xl md:text-5xl text-white mb-1">8k</span>
-              <span class="text-sky-200 dark:text-slate-400 text-sm font-bold uppercase tracking-widest">Usuarios Activos</span>
+              <span class="text-primary-200 dark:text-slate-400 text-sm font-bold uppercase tracking-widest">Usuarios Activos</span>
             </div>
             <div class="text-center">
               <span class="block font-headline font-black text-4xl md:text-5xl text-white mb-1">100%</span>
-              <span class="text-sky-200 dark:text-slate-400 text-sm font-bold uppercase tracking-widest">Gratuito</span>
+              <span class="text-primary-200 dark:text-slate-400 text-sm font-bold uppercase tracking-widest">Gratuito</span>
             </div>
           </div>
         </div>

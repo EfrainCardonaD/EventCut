@@ -290,7 +290,13 @@ watch(monthEvents, () => {
     <CreateEventModal v-model="createModalOpen" :categories="categories" :is-saving="isSavingEvent" :submit-error="createSubmitError" :field-errors="createFieldErrors" @submit="onCreateEvent" @request-create-community="onRequestCreateCommunity" />
     <EventCardModal v-model="eventModalOpen" :event="activeEvent" :categories="categories" :can-manage="isEventManageable" :is-saving="isUpdatingEvent" :is-deleting="isDeletingEvent" :submit-error="updateSubmitError" :field-errors="updateFieldErrors" @save="onUpdateEvent" @delete="onDeleteEvent" />
 
-    <AppHeader @create-event="createModalOpen = true" @logout="logoutModalOpen = true" />
+    <AppHeader
+      v-model="searchQuery"
+      :is-admin-user="isAdminUser"
+      :avatar-initial="avatarInitial"
+      @create-event="createModalOpen = true"
+      @logout="logoutModalOpen = true"
+    />
 
     <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 pb-24 pt-20 md:gap-6 md:px-8 md:pb-6 md:pt-24 lg:min-h-0 lg:pb-8">
 
@@ -369,8 +375,8 @@ watch(monthEvents, () => {
         <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">event</span></span>
         <span class="text-[10px] font-medium">Eventos</span>
       </RouterLink>
-      <RouterLink to="/app/calendario" class="flex flex-col items-center justify-center p-2 text-sky-600 dark:text-sky-300">
-        <span class="mb-1 rounded-full bg-sky-100 px-4 py-1 dark:bg-sky-500/20"><span class="material-symbols-outlined icon-filled">calendar_month</span></span>
+      <RouterLink to="/app/calendario" class="flex flex-col items-center justify-center p-2 text-primary-600 dark:text-primary-300">
+        <span class="mb-1 rounded-full bg-primary-100 px-4 py-1 dark:bg-primary-500/20"><span class="material-symbols-outlined icon-filled">calendar_month</span></span>
         <span class="text-[10px] font-medium">Calendario</span>
       </RouterLink>
       <button type="button" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300" @click="mobileScheduleOpen = true">

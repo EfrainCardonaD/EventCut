@@ -39,17 +39,17 @@ const onSelect = (event) => {
 
 const getConnectorClass = (isLast, isActive) => {
   if (isLast) return 'h-[30px] bg-gradient-to-b from-slate-300 to-transparent dark:from-slate-700'
-  return isActive ? 'bottom-[-6px] bg-sky-500 dark:bg-sky-300' : 'bottom-[-6px] bg-slate-300 dark:bg-slate-700'
+  return isActive ? 'bottom-[-6px] bg-primary-500 dark:bg-primary-300' : 'bottom-[-6px] bg-slate-300 dark:bg-slate-700'
 }
 
 const getDotClass = (isActive) => {
   return isActive
-    ? 'left-[-1px] top-[5px] h-4 w-4 bg-sky-500 dark:bg-sky-300'
+    ? 'left-[-1px] top-[5px] h-4 w-4 bg-primary-500 dark:bg-primary-300'
     : 'left-[1px] top-[6px] h-3.5 w-3.5 bg-slate-400 dark:bg-slate-600'
 }
 
 const getDateClass = (isActive) => {
-  return isActive ? 'text-sky-600 dark:text-sky-300' : 'text-slate-500 dark:text-slate-400'
+  return isActive ? 'text-primary-600 dark:text-primary-300' : 'text-slate-500 dark:text-slate-400'
 }
 </script>
 
@@ -62,8 +62,8 @@ const getDateClass = (isActive) => {
       </div>
 
       <div class="flex min-w-[70px] flex-col items-center justify-center rounded-2xl bg-slate-100 px-3.5 py-1.5 dark:bg-slate-900">
-        <span class="text-base font-bold leading-none text-sky-600 dark:text-sky-300">{{ timelineEvents.length }}</span>
-        <span class="mt-1 text-[9px] font-bold uppercase tracking-[0.15em] text-sky-600 dark:text-sky-300">Events</span>
+        <span class="text-base font-bold leading-none text-primary-600 dark:text-primary-300">{{ timelineEvents.length }}</span>
+        <span class="mt-1 text-[9px] font-bold uppercase tracking-[0.15em] text-primary-600 dark:text-primary-300">Events</span>
       </div>
     </header>
 

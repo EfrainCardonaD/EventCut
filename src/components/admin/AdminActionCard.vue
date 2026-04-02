@@ -27,10 +27,10 @@ const props = defineProps({
         class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
         :class="
           status === 'ACTIVE'
-            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+            ? 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300'
             : status === 'REJECTED'
-              ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
-              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+              ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300'
+              : 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300'
         "
       >
         {{ status }}

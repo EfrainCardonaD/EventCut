@@ -143,7 +143,7 @@ const toggleNetwork = (network) => {
         :placeholder="placeholders.whatsapp"
         @input="setNetworkValue('whatsapp', $event.target.value)"
       />
-      <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Debe iniciar con <code>https://wa.me/</code></p>
+      <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Debe iniciar con <code>https://wa.me/</code> o <code>https://chat.whatsapp.com/</code></p>
       <FieldError :error="getSocialFieldError('whatsapp')" />
     </div>
 

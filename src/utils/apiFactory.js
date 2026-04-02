@@ -109,19 +109,25 @@ export const normalizeApiError = (error, fallbackMessage) => {
   const networkFailure = isNetworkOrConnectionError(error);
   const responseData = error?.response?.data;
   const status = Number(error?.response?.status || 0) || null;
+  const code = getCodeFromErrorData(responseData);
   const traceId =
     getTraceIdFromErrorData(responseData) ||
     extractTraceIdFromHeaders(error?.response?.headers) ||
     error?.config?.headers?.[TRACE_HEADER_KEY] ||
     null;
 
+  const backendMessage = extractBackendMessage(error);
+  const conciseValidationMessage = code === 'VALIDATION_ERROR'
+    ? 'Revisa los campos marcados e intenta nuevamente.'
+    : null;
+
   const message = networkFailure
     ? 'No se pudo conectar con el servidor. Verifica que el backend esté activo e inténtalo de nuevo.'
-    : extractBackendMessage(error) || fallbackMessage || 'Ocurrió un error inesperado.';
+    : conciseValidationMessage || backendMessage || fallbackMessage || 'Ocurrió un error inesperado.';
 
   return {
     message,
-    code: getCodeFromErrorData(responseData),
+    code,
     details: getDetailsFromErrorData(responseData),
     traceId,
     status,

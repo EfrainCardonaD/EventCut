@@ -41,7 +41,7 @@ const isRouteActive = (targetPath) => {
 const linkClass = (targetPath) => {
   const isActive = isRouteActive(targetPath)
   return isActive
-    ? 'border-b-2 border-sky-600 pb-1 text-sky-600 dark:border-sky-500 dark:text-sky-300'
+    ? 'border-b-2 border-primary-600 pb-1 text-primary-600 dark:border-primary-500 dark:text-primary-300'
     : 'pb-1 text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
 }
 
@@ -92,10 +92,10 @@ onBeforeUnmount(() => {
     class="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-4 shadow-sm backdrop-blur-xl transition-colors duration-300 dark:border-slate-800/60 dark:bg-slate-950/80 dark:shadow-none md:h-20 md:px-8"
   >
     <div class="flex items-center gap-3 md:gap-8">
-      <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:text-sky-400">
+      <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-primary-600 dark:border-slate-700 dark:bg-slate-900 dark:text-primary-400">
         <span class="material-symbols-outlined">event</span>
       </div>
-      <span class="hidden text-sm font-semibold uppercase tracking-[0.25em] text-sky-600 dark:text-sky-500 sm:block md:text-2xl">EVENTCUT</span>
+      <span class="hidden text-sm font-semibold uppercase tracking-[0.25em] text-primary-600 dark:text-primary-500 sm:block md:text-2xl">EVENTCUT</span>
 
       <nav class="ml-4 hidden gap-6 text-sm font-bold tracking-tight md:flex lg:text-base">
         <RouterLink to="/app" :class="linkClass('/app')">Eventos</RouterLink>
@@ -124,7 +124,7 @@ onBeforeUnmount(() => {
 
       <button
         type="button"
-        class="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-3 py-2 text-xs font-bold text-white transition-all hover:bg-sky-700 active:scale-95 dark:bg-sky-500 dark:text-sky-950 dark:hover:bg-sky-400 sm:px-4 sm:text-sm"
+        class="inline-flex items-center gap-1.5 rounded-full bg-primary-600 px-3 py-2 text-xs font-bold text-white transition-all hover:bg-primary-700 active:scale-95 dark:bg-primary-500 dark:text-primary-950 dark:hover:bg-primary-400 sm:px-4 sm:text-sm"
         @click="onCreateEvent"
       >
         <span class="material-symbols-outlined text-base leading-none">add</span>
@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
           {{ avatarInitial }}
           <span
             v-if="isAdminUser"
-            class="absolute -bottom-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-white bg-sky-600 text-white dark:border-slate-950 dark:bg-sky-500 dark:text-sky-950"
+            class="absolute -bottom-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-white bg-primary-600 text-white dark:border-slate-950 dark:bg-primary-500 dark:text-primary-950"
             title="Usuario administrador"
           >
             <span class="material-symbols-outlined text-[12px] leading-none">shield</span>
@@ -165,7 +165,7 @@ onBeforeUnmount(() => {
         >
           <button
             type="button"
-            class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-900/20"
+            class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-error-600 transition-colors hover:bg-error-50 dark:text-error-300 dark:hover:bg-error-900/20"
             @click="onLogout"
           >
             <span class="material-symbols-outlined text-[18px]">logout</span>

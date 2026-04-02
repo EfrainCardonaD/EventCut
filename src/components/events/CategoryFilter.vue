@@ -30,7 +30,7 @@ const onSelectCategory = (categoryId) => {
       <div class="flex items-center gap-2 overflow-x-auto px-4 pb-2 snap-x snap-mandatory md:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <button
           class="snap-start whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold shadow-sm sm:px-5 sm:text-sm"
-          :class="modelValue === null ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-sky-950' : 'bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300'"
+          :class="modelValue === null ? 'bg-primary-600 text-white dark:bg-primary-500 dark:text-primary-950' : 'bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300'"
           @click="onSelectAll"
         >
           Todas
@@ -40,7 +40,7 @@ const onSelectCategory = (categoryId) => {
           v-for="category in props.categories"
           :key="category.id"
           class="snap-start whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 transition-colors hover:bg-slate-50 sm:px-5 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-          :class="Number(modelValue) === Number(category.id) ? '!bg-sky-600 !text-white dark:!bg-sky-500 dark:!text-sky-950' : ''"
+          :class="Number(modelValue) === Number(category.id) ? '!bg-primary-600 !text-white dark:!bg-primary-500 dark:!text-primary-950' : ''"
           @click="onSelectCategory(category.id)"
         >
           {{ category.name }}

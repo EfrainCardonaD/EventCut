@@ -7,6 +7,8 @@ import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import SocialNetworkIcon from '@/components/icons/SocialNetworkIcon.vue'
 import SocialLinksStep from '@/components/util/SocialLinksStep.vue'
+import RichTextEditor from '@/components/util/RichTextEditor.vue'
+import RichTextRenderer from '@/components/util/RichTextRenderer.vue'
 import { isAllowedEventImageType } from '@/utils/eventCreateFactory'
 import { dbToUiModel, uiToDbStrict, parseDbDateTime } from '@/utils/eventDateTimeAdapter'
 import { getCategoryAccentStyles } from '@/utils/categoryColors'
@@ -18,6 +20,7 @@ import {
   validateEventSocialLinks,
   validateEventTitle,
 } from '@/utils/eventFormValidation'
+import { normalizeSocialLinksPayload } from '@/utils/socialLinks'
 
 const ACCEPTED_IMAGE_TYPES = 'image/jpeg, image/png, image/webp, image/gif, image/avif'
 
@@ -353,13 +356,8 @@ const creatorDetails = computed(() => {
   return rows.filter((row) => row.value !== null && row.value !== undefined && String(row.value).trim())
 })
 
-const descriptionBlocks = computed(() => {
-  const text = String(props.event?.description || '').trim()
-  if (!text) return []
-  return text
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
+const descriptionContent = computed(() => {
+  return String(props.event?.description || '').trim()
 })
 
 const onFileChange = (event) => {
@@ -420,11 +418,7 @@ const onSave = () => {
     end_datetime: result.value.end_datetime,
     imageFile: form.value.imageFile,
     imageAction: form.value.removeImage ? 'remove' : form.value.imageFile ? 'replace' : 'keep',
-    social_links: {
-      whatsapp: form.value.social_links.whatsapp.trim(),
-      facebook: form.value.social_links.facebook.trim(),
-      instagram: form.value.social_links.instagram.trim(),
-    },
+    social_links: normalizeSocialLinksPayload(form.value.social_links),
   })
 }
 
@@ -501,8 +495,8 @@ const onConfirmDelete = () => {
                 <div class="order-2 space-y-3 xl:col-span-7 xl:order-2">
                   <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                     <h4 class="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Descripcion</h4>
-                    <div v-if="descriptionBlocks.length" class="description-scroll h-[34vh] min-h-[250px] overflow-y-auto pr-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300 sm:h-[40vh] xl:h-[48vh]">
-                      <p v-for="(block, index) in descriptionBlocks" :key="`${event.id}-desc-${index}`" class="mb-3 whitespace-pre-line last:mb-0">{{ block }}</p>
+                    <div v-if="descriptionContent">
+                      <RichTextRenderer :content="descriptionContent" max-height="40vh" />
                     </div>
                     <p v-else class="text-sm text-slate-500 dark:text-slate-400">Sin descripcion disponible para este evento.</p>
                   </div>
@@ -514,7 +508,7 @@ const onConfirmDelete = () => {
                       :href="link.url"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-sky-500/50 dark:hover:text-sky-400"
+                      class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-primary-300 hover:text-primary-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-primary-500/50 dark:hover:text-primary-400"
                     >
                       <SocialNetworkIcon :network="link.key" :size="16" class-name="text-current" />
                       {{ link.label }}
@@ -551,14 +545,14 @@ const onConfirmDelete = () => {
                   <div class="relative">
                     <button
                       type="button"
-                      class="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-left text-xs font-semibold text-sky-700 transition hover:bg-sky-100 dark:border-sky-800/50 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-950/70"
+                      class="inline-flex w-full items-center justify-between gap-2 rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 text-left text-xs font-semibold text-primary-700 transition hover:bg-primary-100 dark:border-primary-800/50 dark:bg-primary-950/40 dark:text-primary-300 dark:hover:bg-primary-950/70"
                       @click="creatorCardOpen = !creatorCardOpen"
                     >
                       <span class="inline-flex items-center gap-2">
-                        <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-600 text-[11px] font-black text-white dark:bg-sky-500 dark:text-sky-950">{{ creatorInitial }}</span>
+                        <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-[11px] font-black text-white dark:bg-primary-500 dark:text-primary-950">{{ creatorInitial }}</span>
                         <span>
                           Creado por
-                          <span class="text-sky-900 dark:text-sky-200">{{ creatorSummary }}</span>
+                          <span class="text-primary-900 dark:text-primary-200">{{ creatorSummary }}</span>
                         </span>
                       </span>
                       <span class="material-symbols-outlined text-sm">{{ creatorCardOpen ? 'expand_less' : 'expand_more' }}</span>
@@ -641,11 +635,14 @@ const onConfirmDelete = () => {
 
             <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Descripcion
-              <textarea
-                v-model="form.description"
-                rows="3"
-                  class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-              ></textarea>
+              <div class="mt-1">
+                <RichTextEditor
+                  v-model="form.description"
+                  placeholder="Describe el evento..."
+                  min-height="80px"
+                  max-height="250px"
+                />
+              </div>
               <FieldError :error="getFieldError('description')" />
             </label>
 
@@ -776,7 +773,7 @@ const onConfirmDelete = () => {
               <button
                 v-if="editStep === EDIT_TOTAL_STEPS"
                 type="button"
-                class="rounded-full border border-red-300 px-4 py-2 text-xs font-bold uppercase tracking-wide text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+                class="rounded-full border border-error-300 px-4 py-2 text-xs font-bold uppercase tracking-wide text-error-600 transition hover:bg-error-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-error-700 dark:text-error-400 dark:hover:bg-error-950/30"
                 :disabled="isDeleting || isSaving"
                 @click="onDelete"
               >

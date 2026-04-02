@@ -85,7 +85,7 @@ const onToggleFavorite = (event) => {
 
 <template>
   <article
-      class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm hover:shadow-md dark:hover:border-sky-500/50 transition-all flex gap-4 md:gap-5 group cursor-pointer active:scale-[0.99]"
+      class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm hover:shadow-md dark:hover:border-primary-500/50 transition-all flex gap-4 md:gap-5 group cursor-pointer active:scale-[0.99]"
     :class="compact ? 'p-3' : 'p-4 md:p-5'"
     @click="onSelect"
   >
@@ -94,7 +94,7 @@ const onToggleFavorite = (event) => {
         <img :src="cardImage" :alt="event.title" class="w-full h-full object-cover" />
       </div>
         <div class="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 py-2 h-full sm:h-auto">
-        <span class="text-sky-600 dark:text-sky-400 font-headline font-black text-xl md:text-2xl leading-none">{{ dayLabel }}</span>
+        <span class="text-primary-600 dark:text-primary-400 font-headline font-black text-xl md:text-2xl leading-none">{{ dayLabel }}</span>
         <span class="text-slate-500 font-bold text-[10px] uppercase tracking-widest mt-1">{{ monthLabel }}</span>
       </div>
     </div>
@@ -102,7 +102,7 @@ const onToggleFavorite = (event) => {
     <div class="flex flex-col flex-grow justify-center">
       <span class="text-[10px] font-bold uppercase tracking-widest mb-1" :style="categoryAccentStyle">{{ event.category_name || 'Evento' }}</span>
       <h4
-        class="font-headline font-bold text-base md:text-lg text-slate-800 dark:text-slate-100 mb-2 leading-tight group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors"
+        class="font-headline font-bold text-base md:text-lg text-slate-800 dark:text-slate-100 mb-2 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"
       >
         {{ event.title }}
       </h4>
@@ -126,7 +126,7 @@ const onToggleFavorite = (event) => {
             :href="link.url"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-500 transition hover:text-sky-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-sky-400"
+            class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-500 transition hover:text-primary-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-primary-400"
             :aria-label="`Abrir ${link.label}`"
             @click.stop
           >
