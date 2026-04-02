@@ -23,6 +23,12 @@ const toStoreErrorResult = (error, fallbackMessage) => {
   }
 }
 
+const normalizeLimit = (value, fallback = 20) => {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  return Math.min(100, Math.trunc(parsed))
+}
+
 export const useAdminStore = defineStore('admin', {
   state: () => ({
     communities: [],
@@ -50,10 +56,13 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
 
       try {
+        const hasStatusParam = Object.prototype.hasOwnProperty.call(params, 'status')
+        const resolvedStatus = hasStatusParam ? params.status : this.communitiesStatusFilter
+
         const response = await adminApi.get('/api/v1/admin/communities', {
           params: {
-            status: params.status || this.communitiesStatusFilter || undefined,
-            limit: Number(params.limit || 20),
+            ...(resolvedStatus ? { status: resolvedStatus } : {}),
+            limit: normalizeLimit(params.limit, 20),
             offset: Number(params.offset || 0),
           },
         })
@@ -74,6 +83,13 @@ export const useAdminStore = defineStore('admin', {
 
     async updateCommunityStatus(communityId, payload) {
       if (!communityId) return { success: false, error: 'Comunidad invalida.' }
+      const allowedActions = ['ACTIVATE', 'REJECT']
+      if (!allowedActions.includes(payload?.action)) {
+        return {
+          success: false,
+          error: 'Accion de estado no soportada por el backend. Usa ACTIVAR o RECHAZAR.',
+        }
+      }
 
       this.isUpdatingCommunityStatus = true
       this.error = null
@@ -81,9 +97,25 @@ export const useAdminStore = defineStore('admin', {
       try {
         const response = await adminApi.patch(`/api/v1/admin/communities/${communityId}/status`, payload)
         const updated = getApiPayload(response)
+        const nextStatusByAction = {
+          ACTIVATE: 'ACTIVE',
+          REJECT: 'REJECTED',
+        }
+        const inferredStatus = nextStatusByAction[payload?.action] || null
+
         this.communities = this.communities.map((community) => {
           if (community.id !== communityId) return community
-          return { ...community, status: updated?.status || community.status }
+          return {
+            ...community,
+            ...updated,
+            status: updated?.status || inferredStatus || community.status,
+            rejection_reason:
+              payload?.action === 'REJECT'
+                ? (updated?.rejection_reason || payload?.rejection_reason || community.rejection_reason || null)
+                : payload?.action === 'ACTIVATE'
+                  ? null
+                  : community.rejection_reason,
+          }
         })
 
         return {
@@ -108,7 +140,7 @@ export const useAdminStore = defineStore('admin', {
       try {
         const response = await adminApi.get('/api/v1/admin/users/banned', {
           params: {
-            limit: Number(params.limit || 20),
+            limit: normalizeLimit(params.limit, 20),
             offset: Number(params.offset || 0),
             include_inactive: Boolean(params.include_inactive ?? this.includeInactiveBans),
           },

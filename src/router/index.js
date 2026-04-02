@@ -4,13 +4,19 @@ import { useAuthStore } from '@/stores/auth'
 import LandingPageLayout from '@/layouts/LandingPageLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import MainLayout from '@/layouts/MainLayout.vue'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 
 import LandingView from '@/views/LandingView.vue'
 import DashBoardUniversal from '@/views/DashBoardUniversal.vue'
 import CalendarView from '@/views/CalendarView.vue'
 import CommunitiesIndex from '@/views/communities/CommunitiesIndex.vue'
 import CommunityDetailView from '@/views/communities/CommunityDetailView.vue'
-import AdminPanelView from '@/views/admin/AdminPanelView.vue'
+import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
+import UsersDirectoryView from '@/views/admin/UsersDirectoryView.vue'
+import BansRegistryView from '@/views/admin/BansRegistryView.vue'
+import CommunitiesModerationView from '@/views/admin/CommunitiesModerationView.vue'
+import EventsAuditView from '@/views/admin/EventsAuditView.vue'
+import CategoriesCatalogView from '@/views/admin/CategoriesCatalogView.vue'
 import Login from '@/views/auth/Login.vue'
 import Register from '@/views/auth/Register.vue'
 import ForgotPassword from '@/views/auth/ForgotPassword.vue'
@@ -57,11 +63,42 @@ const routes = [
         name: 'CommunityDetail',
         component: CommunityDetailView,
       },
+    ],
+  },
+  {
+    path: '/app/admin',
+    component: AdminLayout,
+    meta: { requiresAuth: true, roles: ['ADMIN', 'SECURITY_ADMIN'] },
+    children: [
       {
-        path: 'admin',
-        name: 'AdminPanel',
-        component: AdminPanelView,
-        meta: { roles: ['ADMIN', 'SECURITY_ADMIN'] },
+        path: '',
+        name: 'AdminDashboard',
+        component: AdminDashboardView,
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: UsersDirectoryView,
+      },
+      {
+        path: 'bans',
+        name: 'AdminBans',
+        component: BansRegistryView,
+      },
+      {
+        path: 'communities',
+        name: 'AdminCommunities',
+        component: CommunitiesModerationView,
+      },
+      {
+        path: 'events',
+        name: 'AdminEvents',
+        component: EventsAuditView,
+      },
+      {
+        path: 'categories',
+        name: 'AdminCategories',
+        component: CategoriesCatalogView,
       },
     ],
   },
@@ -173,7 +210,17 @@ router.beforeEach(async (to, from, next) => {
   const isAuthenticated = authStore.isAuthenticated
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const isGuest = to.matched.some((record) => record.meta.guest)
-  const requiredRoles = to.meta.roles || (to.meta.role ? [to.meta.role] : [])
+  
+  // Collect roles from all matched routes (parent + child)
+  const requiredRoles = to.matched.reduce((roles, record) => {
+    if (record.meta.roles) {
+      return [...roles, ...record.meta.roles]
+    }
+    if (record.meta.role) {
+      return [...roles, record.meta.role]
+    }
+    return roles
+  }, [])
 
   if (requiresAuth && !isAuthenticated) {
     return next({ path: '/auth/login', query: { redirect: to.fullPath } })
