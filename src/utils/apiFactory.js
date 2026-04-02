@@ -157,6 +157,24 @@ export const mapApiCodeToUxAction = (code) => {
       return { action: 'SHOW_FIELD_ERRORS', message: 'Corrige los campos marcados e intenta nuevamente.' };
     case 'EVENT_NOT_FOUND':
       return { action: 'GO_TO_LIST', message: 'El evento ya no existe o fue removido.' };
+    case 'USER_BANNED':
+      return { action: 'SHOW_TOAST', message: 'Tu cuenta esta temporalmente bloqueada para realizar esta accion.' };
+    case 'COMMUNITY_NOT_FOUND':
+      return { action: 'SHOW_TOAST', message: 'La comunidad no existe o ya no esta disponible.' };
+    case 'COMMUNITY_NOT_ACTIVE':
+      return { action: 'SHOW_TOAST', message: 'La comunidad aun no esta activa para esta operacion.' };
+    case 'NOT_COMMUNITY_OWNER':
+      return { action: 'SHOW_TOAST', message: 'Solo el propietario de la comunidad puede realizar esta accion.' };
+    case 'NOT_EVENT_OWNER':
+      return { action: 'SHOW_TOAST', message: 'Solo el propietario del evento puede realizar esta accion.' };
+    case 'EVENT_ALREADY_REQUESTED':
+      return { action: 'SHOW_TOAST', message: 'Este evento ya tiene una solicitud pendiente para la comunidad.' };
+    case 'DUPLICATE_COMMUNITY_NAME':
+      return { action: 'SHOW_FIELD_ERRORS', message: 'Ya existe una comunidad activa con ese nombre.' };
+    case 'TERMS_NOT_ACCEPTED':
+      return { action: 'SHOW_FIELD_ERRORS', message: 'Debes aceptar terminos y condiciones para continuar.' };
+    case 'REQUEST_NOT_FOUND':
+      return { action: 'SHOW_TOAST', message: 'La solicitud seleccionada ya no existe.' };
     default:
       return null;
   }

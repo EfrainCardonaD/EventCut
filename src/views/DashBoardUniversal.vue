@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { toggleTheme } from '@/utils/theme'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useEventStore } from '@/stores/event'
 import { parseDateOnlyLocal } from '@/utils/date'
+import AppHeader from '@/components/layout/AppHeader.vue'
 import Alert from '@/components/util/Alert.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
@@ -13,28 +14,15 @@ import EventCardModal from '@/components/events/EventCardModal.vue'
 import CalendarWidget from '@/components/events/CalendarWidget.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.vue'
-
-const normalizeFieldErrors = (details) => {
-  if (!details || typeof details !== 'object' || Array.isArray(details)) return {}
-  return Object.entries(details).reduce((acc, [field, value]) => {
-    if (!field) return acc
-    if (Array.isArray(value)) {
-      acc[field] = value.filter(Boolean)
-      return acc
-    }
-    if (typeof value === 'string' && value.trim()) {
-      acc[field] = [value.trim()]
-    }
-    return acc
-  }, {})
-}
+import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
 
 const authStore = useAuthStore()
 const eventStore = useEventStore()
+const route = useRoute()
+const router = useRouter()
 
-const { categories, upcomingEvents, favoriteEvents, favoriteUpcomingEvents, featuredEvent, eventsByDate, selectedDate, agendaEvents, monthKey, isLoadingEvents, isSavingEvent, isUpdatingEvent, isDeletingEvent, error } = storeToRefs(eventStore)
+const { categories, filteredEvents, upcomingEvents, favoriteEvents, favoriteUpcomingEvents, eventsByDate, selectedDate, agendaEvents, monthKey, isLoadingEvents, isSavingEvent, isUpdatingEvent, isDeletingEvent, error } = storeToRefs(eventStore)
 
-const themeIcon = ref('light_mode')
 const isLoggingOut = ref(false)
 const logoutModalOpen = ref(false)
 const createModalOpen = ref(false)
@@ -47,6 +35,10 @@ const createSubmitError = ref('')
 const createFieldErrors = ref({})
 const updateSubmitError = ref('')
 const updateFieldErrors = ref({})
+const featuredRailRef = ref(null)
+const featuredCanScroll = ref(false)
+const featuredAtStart = ref(true)
+const featuredAtEnd = ref(false)
 
 const searchQuery = computed({
   get: () => eventStore.searchQuery,
@@ -57,6 +49,10 @@ const selectedCategory = computed({
   get: () => eventStore.selectedCategoryId,
   set: (value) => eventStore.setCategory(value),
 })
+
+const isAdminUser = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN']))
+
+const isCommunitiesRoute = computed(() => route.path.startsWith('/app/comunidades'))
 
 const avatarInitial = computed(() => {
   const firstName = authStore.user?.firstName || ''
@@ -77,10 +73,25 @@ const selectedDateLabel = computed(() => {
   }).format(parsed)
 })
 
-const featuredDateTime = computed(() => {
-  if (!featuredEvent.value) return ''
-  const start = new Date(featuredEvent.value.start_datetime)
-  const end = new Date(featuredEvent.value.end_datetime)
+const featuredEvents = computed(() => {
+  const nowMs = Date.now()
+  return [...filteredEvents.value]
+    .filter((event) => {
+      const startMs = new Date(event.start_datetime).getTime()
+      return Number.isFinite(startMs) && startMs >= nowMs
+    })
+    .sort((a, b) => {
+      const scoreDiff = Number(b.score || 0) - Number(a.score || 0)
+      if (scoreDiff !== 0) return scoreDiff
+      return new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime()
+    })
+    .slice(0, 8)
+})
+
+const formatFeaturedDateTime = (event) => {
+  if (!event) return ''
+  const start = new Date(event.start_datetime)
+  const end = new Date(event.end_datetime)
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return ''
 
   const dayFormatter = new Intl.DateTimeFormat('es-MX', {
@@ -96,15 +107,20 @@ const featuredDateTime = computed(() => {
   })
 
   return `${dayFormatter.format(start)} · ${hourFormatter.format(start)} - ${hourFormatter.format(end)}`
-})
-
-const syncIcon = () => {
-  themeIcon.value = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode'
 }
 
-const onToggleTheme = () => {
-  toggleTheme()
-  syncIcon()
+const syncFeaturedRailState = () => {
+  const rail = featuredRailRef.value
+  if (!rail) return
+  featuredCanScroll.value = rail.scrollWidth - rail.clientWidth > 8
+  featuredAtStart.value = rail.scrollLeft <= 8
+  featuredAtEnd.value = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 8
+}
+
+const scrollFeatured = (direction) => {
+  const rail = featuredRailRef.value
+  if (!rail) return
+  rail.scrollBy({ left: direction * Math.max(280, rail.clientWidth * 0.8), behavior: 'smooth' })
 }
 
 const showToast = (type, title, message) => {
@@ -222,14 +238,27 @@ const onSyncSchedule = () => {
   showToast('info', 'Proximamente', 'La sincronizacion con Google Calendar estara disponible en una siguiente iteracion.')
 }
 
+const onRequestCreateCommunity = async () => {
+  createModalOpen.value = false
+  await router.push('/app/comunidades')
+  showToast('info', 'Crear comunidad', 'Selecciona Crear comunidad para registrar una nueva comunidad.')
+}
+
 onMounted(async () => {
-  syncIcon()
-  await eventStore.fetchCategories()
-  await eventStore.fetchEvents({ scope: 'all' })
+   await eventStore.fetchCategories()
+   await eventStore.fetchEvents({ scope: 'all' })
+   await nextTick()
+   syncFeaturedRailState()
 
   if (error.value) {
     showToast('error', 'Error al sincronizar eventos', error.value)
   }
+
+  window.addEventListener('resize', syncFeaturedRailState)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', syncFeaturedRailState)
 })
 
 watch(createModalOpen, (isOpen) => {
@@ -242,6 +271,11 @@ watch(eventModalOpen, (isOpen) => {
   if (isOpen) return
   updateSubmitError.value = ''
   updateFieldErrors.value = {}
+})
+
+watch(featuredEvents, async () => {
+  await nextTick()
+  syncFeaturedRailState()
 })
 </script>
 
@@ -277,6 +311,7 @@ watch(eventModalOpen, (isOpen) => {
       :submit-error="createSubmitError"
       :field-errors="createFieldErrors"
       @submit="onCreateEvent"
+      @request-create-community="onRequestCreateCommunity"
     />
     <EventCardModal
       v-model="eventModalOpen"
@@ -291,83 +326,15 @@ watch(eventModalOpen, (isOpen) => {
       @delete="onDeleteEvent"
     />
 
-    <header
-      class="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-4 shadow-sm backdrop-blur-xl transition-colors duration-300 dark:border-slate-800/60 dark:bg-slate-950/80 dark:shadow-none md:h-20 md:px-8"
-    >
-      <div class="flex items-center gap-3 md:gap-8">
-        <div class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:text-sky-400">
-          <span class="material-symbols-outlined">event</span>
-        </div>
-        <span class="hidden text-sm font-semibold uppercase tracking-[0.25em] text-sky-600 dark:text-sky-500 sm:block md:text-2xl">EVENTCUT</span>
+    <AppHeader
+      v-model="searchQuery"
+      :is-admin-user="isAdminUser"
+      :avatar-initial="avatarInitial"
+      @create-event="createModalOpen = true"
+      @logout="logoutModalOpen = true"
+    />
 
-        <nav class="ml-4 hidden gap-6 text-sm font-bold tracking-tight md:flex lg:text-base">
-          <RouterLink to="/app" class="border-b-2 border-sky-600 pb-1 text-sky-600 dark:border-sky-500 dark:text-sky-300">Eventos</RouterLink>
-          <RouterLink
-            to="/app/calendario"
-            class="pb-1 text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-          >
-            Calendario
-          </RouterLink>
-        </nav>
-      </div>
-
-      <div class="flex items-center gap-2 md:gap-4">
-        <div class="relative mr-2 hidden lg:block">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Buscar eventos por titulo, descripcion o sede"
-            class="w-80 rounded-full border border-transparent bg-slate-100 px-5 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-tertiary-500"
-          />
-          <span class="material-symbols-outlined pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xl text-slate-400">search</span>
-        </div>
-
-        <button
-          type="button"
-          class="inline-flex size-10 items-center justify-center rounded-full p-2 text-slate-500 transition-all hover:bg-slate-100 active:scale-95 dark:text-slate-400 dark:hover:bg-white/5"
-          aria-label="Toggle Theme"
-          @click="onToggleTheme"
-        >
-          <span class="material-symbols-outlined text-[22px] leading-none">{{ themeIcon }}</span>
-        </button>
-
-        <div class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-slate-200 font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-          {{ avatarInitial }}
-        </div>
-      </div>
-    </header>
-
-    <aside
-      class="fixed left-0 top-20 z-40 hidden h-[calc(100vh-5rem)] w-64 flex-col gap-4 border-r border-slate-200 bg-slate-50 py-6 transition-colors duration-300 dark:border-slate-800/50 dark:bg-slate-900 md:flex"
-    >
-      <div class="px-6 mb-2">
-        <h2 class="font-headline font-bold text-slate-800 dark:text-slate-200">Mi Panel</h2>
-        <p class="text-[10px] uppercase tracking-tighter text-slate-500">{{ authStore.fullName || authStore.username || 'Usuario' }}</p>
-      </div>
-
-      <div class="px-4">
-        <button
-          class="flex w-full items-center justify-center gap-2 rounded-full bg-sky-600 py-3.5 font-bold text-white shadow-md transition-all hover:bg-sky-700 active:scale-95 dark:bg-sky-500 dark:text-sky-950 dark:hover:bg-sky-400"
-          @click="createModalOpen = true"
-        >
-          <span class="material-symbols-outlined">add</span>
-          Crear evento
-        </button>
-      </div>
-
-      <div class="mt-auto border-t border-slate-200 px-3 pt-4 dark:border-slate-800">
-        <button
-          type="button"
-          class="flex items-center gap-3 px-4 py-2 text-slate-500 transition-colors hover:text-slate-800 dark:hover:text-slate-300"
-          @click="logoutModalOpen = true"
-        >
-          <span class="material-symbols-outlined text-xl">logout</span>
-          <span class="text-sm">Cerrar sesion</span>
-        </button>
-      </div>
-    </aside>
-
-    <main class="min-h-screen pb-24 pt-20 md:pb-8 md:pl-64 xl:pr-[22rem]">
+    <main class="min-h-screen pb-24 pt-20 md:pb-8 xl:pr-[22rem]">
       <div class="p-4 md:p-8">
         <div class="mb-4">
           <div class="relative -mx-4 md:mx-0">
@@ -377,7 +344,7 @@ watch(eventModalOpen, (isOpen) => {
             <div class="flex items-center gap-2 overflow-x-auto px-4 pb-2 snap-x snap-mandatory md:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <button
                 class="snap-start whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold shadow-sm sm:px-5 sm:text-sm"
-                :class="selectedCategory === null ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-sky-950' : 'bg-white text-slate-600 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300'"
+                :class="selectedCategory === null ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-sky-950' : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300'"
                 @click="selectedCategory = null"
               >
                 Todas
@@ -385,7 +352,7 @@ watch(eventModalOpen, (isOpen) => {
               <button
                 v-for="category in categories"
                 :key="category.id"
-                class="snap-start whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 transition-colors hover:bg-slate-50 sm:px-5 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                class="snap-start whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-600 transition-colors hover:bg-slate-200 sm:px-5 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                 :class="selectedCategory === category.id ? '!bg-sky-600 !text-white dark:!bg-sky-500 dark:!text-sky-950' : ''"
                 @click="selectedCategory = category.id"
               >
@@ -400,26 +367,60 @@ watch(eventModalOpen, (isOpen) => {
           </p>
         </div>
 
-        <section class="mb-8" v-if="featuredEvent">
+        <section class="mb-8" v-if="featuredEvents.length">
           <div class="mb-4 flex items-end justify-between">
             <h2 class="font-headline text-2xl font-extrabold tracking-tight md:text-3xl">Destacado</h2>
+            <div v-if="featuredCanScroll" class="flex items-center gap-2">
+              <button
+                type="button"
+                class="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                :disabled="featuredAtStart"
+                aria-label="Ver destacados anteriores"
+                @click="scrollFeatured(-1)"
+              >
+                <span class="material-symbols-outlined text-base">chevron_left</span>
+              </button>
+              <button
+                type="button"
+                class="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                :disabled="featuredAtEnd"
+                aria-label="Ver siguientes destacados"
+                @click="scrollFeatured(1)"
+              >
+                <span class="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
           </div>
 
-          <article class="relative cursor-pointer overflow-hidden rounded-3xl bg-slate-900 shadow-xl" @click="openEventModal(featuredEvent)">
-            <img :src="featuredEvent.image_url" :alt="featuredEvent.title" class="h-[420px] w-full object-cover opacity-60" />
-            <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
+          <div
+            ref="featuredRailRef"
+            class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:overflow-visible 2xl:grid-cols-3"
+            @scroll="syncFeaturedRailState"
+          >
+            <article
+              v-for="(event, index) in featuredEvents"
+              :key="`featured-${event.id}`"
+              :class="[
+                'group relative h-[260px] w-[85%] shrink-0 snap-start cursor-pointer overflow-hidden rounded-3xl bg-slate-900 shadow-xl sm:w-[65%] md:h-[300px] lg:h-[320px] lg:w-full',
+                index >= 3 ? 'lg:hidden' : '',
+              ]"
+               @click="openEventModal(event)"
+            >
+              <img :src="event.image_url" :alt="event.title" class="h-full w-full object-cover opacity-60 transition duration-300 group-hover:scale-105" />
+              <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
 
-            <div class="absolute inset-0 z-10 flex items-end p-6 md:w-2/3 md:items-center md:p-12">
-              <div>
-                <div class="mb-3 flex items-center gap-3 md:mb-4">
-                  <span class="rounded-full bg-sky-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">Score {{ featuredEvent.score }}</span>
-                  <span class="text-xs font-semibold text-sky-200">{{ featuredDateTime }}</span>
+              <div class="absolute inset-0 z-10 flex items-end p-5 md:p-6">
+                <div>
+                  <div class="mb-2 flex items-center gap-2 md:mb-3">
+                    <span class="rounded-full bg-sky-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">Score {{ event.score }}</span>
+                    <span class="text-[11px] font-semibold text-sky-100">{{ formatFeaturedDateTime(event) }}</span>
+                  </div>
+                  <h3 class="mb-2 line-clamp-2 font-headline text-xl font-black leading-tight text-white md:text-2xl">{{ event.title }}</h3>
+                  <p class="line-clamp-2 max-w-md text-xs text-slate-200 md:text-sm">{{ event.description }}</p>
                 </div>
-                <h3 class="mb-3 font-headline text-3xl font-black leading-tight text-white md:text-5xl">{{ featuredEvent.title }}</h3>
-                <p class="mb-6 max-w-md text-sm text-slate-300 md:text-base">{{ featuredEvent.description }}</p>
               </div>
-            </div>
-          </article>
+            </article>
+          </div>
         </section>
 
         <section>
@@ -467,7 +468,7 @@ watch(eventModalOpen, (isOpen) => {
     </main>
 
     <aside
-      class="fixed right-0 top-20 hidden h-[calc(100vh-5rem)] w-[22rem] flex-col border-l border-slate-200 bg-white p-6 shadow-sm transition-colors duration-300 dark:border-slate-800/50 dark:bg-slate-950 dark:shadow-none xl:flex"
+      class="fixed right-0 top-20 hidden h-[calc(100vh-5rem)] w-[22rem] flex-col border-l border-slate-200 bg-slate-100 p-6 shadow-sm transition-colors duration-300 dark:border-slate-800/50 dark:bg-slate-900 dark:shadow-none xl:flex"
     >
       <CalendarWidget :month-key="monthKey" :selected-date="selectedDate" :events-by-date="eventsByDate" @change-month="onChangeMonth" @select-date="onSelectDate" />
 
@@ -521,6 +522,16 @@ watch(eventModalOpen, (isOpen) => {
         <span class="text-[10px] font-medium">Calendario</span>
       </RouterLink>
 
+      <RouterLink
+        to="/app/comunidades"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
+      >
+        <div class="mb-1 px-4 py-1">
+          <span class="material-symbols-outlined">groups</span>
+        </div>
+        <span class="text-[10px] font-medium">Comunidades</span>
+      </RouterLink>
+
       <button
         type="button"
         class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
@@ -557,7 +568,7 @@ watch(eventModalOpen, (isOpen) => {
 
     <div
       v-if="mobileSearchOpen"
-      class="fixed bottom-24 left-3 right-3 z-50 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur md:hidden dark:border-slate-800 dark:bg-slate-950/95"
+      class="fixed bottom-24 left-3 right-3 z-50 rounded-2xl border border-slate-200 bg-slate-100/95 p-3 shadow-xl backdrop-blur md:hidden dark:border-slate-800 dark:bg-slate-900/95"
     >
       <div class="relative">
         <input
@@ -574,6 +585,27 @@ watch(eventModalOpen, (isOpen) => {
         >
           <span class="material-symbols-outlined text-lg">close</span>
         </button>
+      </div>
+
+      <div class="mt-3 grid grid-cols-1 gap-2 text-xs">
+        <RouterLink
+          to="/app/comunidades"
+          class="rounded-xl border border-slate-200 px-3 py-2 font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300"
+          @click="mobileSearchOpen = false"
+        >
+          Ir a comunidades
+        </RouterLink>
+        <RouterLink
+          v-if="isAdminUser"
+          to="/app/admin"
+          class="rounded-xl border border-slate-200 px-3 py-2 font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300"
+          @click="mobileSearchOpen = false"
+        >
+          Ir a panel admin
+        </RouterLink>
+        <p v-if="isCommunitiesRoute" class="rounded-xl bg-sky-50 px-3 py-2 text-[11px] font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+          En comunidades, el boton Crear permite seleccionar/usar comunidad para nuevos eventos.
+        </p>
       </div>
     </div>
 

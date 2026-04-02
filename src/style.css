@@ -86,7 +86,7 @@
   /* Base (Dark) */
   --dark-color-bg: #0f1418;
   --dark-color-fg: #dfe3e8;
-  --dark-color-surface: #0b0fz;
+  --dark-color-surface: #0b0f13;
   --dark-color-surface-muted: #1b2024;
   --dark-color-border: color-mix(in srgb, #dfe3e8 12%, transparent);
 
@@ -106,98 +106,51 @@
   --dark-color-gradient-to: oklch(60% 0.16 275);
 }
 
+
+
+@tailwind utilities;
+
 @layer base {
-  html {
-    background-color: var(--color-bg);
-    color: var(--color-fg);
-  }
+    /* Soporte para Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: theme('colors.slate.300') transparent;
+    }
 
-  html.dark {
-    background-color: var(--dark-color-bg);
-    color: var(--dark-color-fg);
-  }
+    .dark * {
+        scrollbar-color: theme('colors.slate.700') transparent;
+    }
 
-  body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; }
+    /* Soporte para Chrome, Edge y Safari */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
 
-  h1, h2, h3, h4, h5, h6, .font-headline { font-family: var(--font-headline); }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
 
-  /* Material Symbols setup (used across migrated HTML) */
-  .material-symbols-outlined {
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  }
-  .icon-filled {
-    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  }
+    ::-webkit-scrollbar-thumb {
+        @apply bg-slate-300 rounded-full transition-colors;
+    }
 
-  /* Selection matches legacy HTML */
-  ::selection {
-    background: var(--color-selection);
-  }
+    ::-webkit-scrollbar-thumb:hover {
+        @apply bg-slate-400;
+    }
 
-  :where(a, button, input, select, textarea, [role='button'], [tabindex]):focus-visible {
-    outline: 2px solid transparent;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-ring) 35%, transparent);
-  }
+    .dark ::-webkit-scrollbar-thumb {
+        @apply bg-slate-700;
+    }
 
-  :where(input, select, textarea):focus-visible {
-    border-color: var(--color-tertiary-500);
-  }
-
-  :where(input, textarea) {
-    caret-color: var(--color-tertiary-600);
-  }
-
-  :where(a:hover) {
-    text-decoration-color: color-mix(in srgb, var(--color-tertiary-500) 45%, transparent);
-  }
-}
-
-@layer components {
-  .micro-accent-chip {
-    background: var(--color-micro-accent);
-    color: var(--color-micro-accent-text);
-    border: 1px solid color-mix(in srgb, var(--color-tertiary-400) 35%, transparent);
-  }
-
-  .micro-accent-soft {
-    background: var(--color-micro-accent);
-  }
-
-  .micro-accent-link {
-    transition: color 160ms ease;
-  }
-
-  .micro-accent-link:hover {
-    color: var(--color-tertiary-600);
-  }
-
-  .micro-accent-surface {
-    transition: background-color 160ms ease, border-color 160ms ease;
-  }
-
-  .micro-accent-surface:hover {
-    background: var(--color-micro-accent);
-    border-color: color-mix(in srgb, var(--color-tertiary-400) 40%, var(--color-border));
-  }
-
-  .dark .micro-accent-chip,
-  .dark .micro-accent-soft,
-  .dark .micro-accent-surface:hover {
-    background: color-mix(in srgb, var(--color-tertiary-400) 18%, transparent);
-  }
-
-  .dark .micro-accent-chip {
-    color: var(--color-tertiary-300);
-    border-color: color-mix(in srgb, var(--color-tertiary-300) 35%, transparent);
-  }
-
-  .dark .micro-accent-link:hover {
-    color: var(--color-tertiary-300);
-  }
+    .dark ::-webkit-scrollbar-thumb:hover {
+        @apply bg-slate-600;
+    }
 }
 
 
-#app {
-  min-height: 100vh;
-}
+
+
+
+
 

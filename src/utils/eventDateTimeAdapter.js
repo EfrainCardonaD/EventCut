@@ -10,6 +10,15 @@
 // y su parseo puede variar entre navegadores. Todo se hace por split.
 
 const pad2 = (value) => String(value).padStart(2, '0')
+const MAX_EVENT_DURATION_MS = 30 * 24 * 60 * 60 * 1000
+
+const parseLocalDateTimeParts = (date, timeHms) => {
+  if (!isValidDateOnly(date) || !isValidTimeOnly(timeHms)) return null
+  const [year, month, day] = date.split('-').map(Number)
+  const [hours, minutes, seconds] = normalizeTimeToHms(timeHms, '00:00:00').split(':').map(Number)
+  const parsed = new Date(year, month - 1, day, hours, minutes, seconds)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
 
 export const isValidDateOnly = (date) => {
   return typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
@@ -111,6 +120,21 @@ export const uiToDbStrict = (ux) => {
 
   if (!start || !end) {
     return { ok: false, error: 'No se pudo construir la fecha/hora del evento.' }
+  }
+
+  const startDate = parseLocalDateTimeParts(date, startHms)
+  const endDateTime = parseLocalDateTimeParts(endDate, endHms)
+  if (!startDate || !endDateTime) {
+    return { ok: false, error: 'Debes ingresar una fecha de inicio valida' }
+  }
+
+  const durationMs = endDateTime.getTime() - startDate.getTime()
+  if (durationMs <= 0) {
+    return { ok: false, error: 'La fecha de fin debe ser posterior a la de inicio' }
+  }
+
+  if (durationMs > MAX_EVENT_DURATION_MS) {
+    return { ok: false, error: 'El evento no puede durar mas de 30 dias consecutivos' }
   }
 
   return {

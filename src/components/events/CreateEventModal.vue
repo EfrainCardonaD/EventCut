@@ -1,9 +1,22 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useScrollLock } from '@vueuse/core'
+import { storeToRefs } from 'pinia'
+import { useCommunityStore } from '@/stores/community'
+import Alert from '@/components/util/Alert.vue'
 import FieldError from '@/components/util/FieldError.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
+import SocialLinksStep from '@/components/util/SocialLinksStep.vue'
 import { isAllowedEventImageType } from '@/utils/eventCreateFactory'
 import { uiToDbStrict } from '@/utils/eventDateTimeAdapter'
+import {
+  toEventCategoryId,
+  validateEventCategory,
+  validateEventDescription,
+  validateEventLocation,
+  validateEventSocialLinks,
+  validateEventTitle,
+} from '@/utils/eventFormValidation'
 
 const ACCEPTED_IMAGE_TYPES = 'image/jpeg, image/png, image/webp, image/gif, image/avif'
 
@@ -28,12 +41,32 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  communities: {
+    type: Array,
+    default: () => [],
+  },
+  communityContextId: {
+    type: String,
+    default: '',
+  },
+  allowCommunitySelection: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['update:modelValue', 'submit'])
+const emit = defineEmits(['update:modelValue', 'submit', 'request-create-community'])
+
+const communityStore = useCommunityStore()
+const { activeList: storeCommunities } = storeToRefs(communityStore)
 
 const TOTAL_STEPS = 4
 const step = ref(1)
+const showSocialInput = ref({
+  whatsapp: false,
+  facebook: false,
+  instagram: false,
+})
 
 const form = ref({
   title: '',
@@ -47,11 +80,26 @@ const form = ref({
   hasEndDate: false,
   endDate: '',
   imageFile: null,
+  community_id: '',
+  social_links: {
+    whatsapp: '',
+    facebook: '',
+    instagram: '',
+  },
 })
 
 const imagePreview = ref('')
 const validationError = ref('')
 const closeConfirmOpen = ref(false)
+const communitySelectorOpen = ref(false)
+const communitySearch = ref('')
+const isBodyScrollLocked = useScrollLock(typeof document !== 'undefined' ? document.body : null)
+
+const formErrorMessage = computed(() => {
+  return (validationError.value || props.submitError || '').trim()
+})
+
+const showFormError = computed(() => Boolean(formErrorMessage.value))
 
 const toFieldErrorText = (value) => {
   if (!value) return ''
@@ -64,6 +112,34 @@ const getFieldError = (field) => {
   return toFieldErrorText(props.fieldErrors?.[field])
 }
 
+
+const normalizedCommunities = computed(() => {
+  const source = props.communities.length ? props.communities : storeCommunities.value
+  const unique = new Map()
+
+  for (const community of source) {
+    if (!community?.id) continue
+    unique.set(community.id, community)
+  }
+
+  return [...unique.values()]
+})
+
+const selectedCommunity = computed(() => {
+  if (!form.value.community_id) return null
+  return normalizedCommunities.value.find((community) => community.id === form.value.community_id) || null
+})
+
+const filteredCommunities = computed(() => {
+  const query = communitySearch.value.trim().toLowerCase()
+  if (!query) return normalizedCommunities.value
+
+  return normalizedCommunities.value.filter((community) => {
+    const name = String(community.name || '').toLowerCase()
+    return name.includes(query)
+  })
+})
+
 const isDirty = computed(() => {
   return Boolean(
     form.value.title.trim() ||
@@ -74,20 +150,16 @@ const isDirty = computed(() => {
       form.value.startTime ||
       form.value.endTime ||
       form.value.endDate ||
-      form.value.imageFile,
+      form.value.imageFile ||
+      form.value.social_links.whatsapp.trim() ||
+      form.value.social_links.facebook.trim() ||
+      form.value.social_links.instagram.trim() ||
+      form.value.community_id,
   )
 })
 
 const canSubmit = computed(() => {
-  return (
-    form.value.title.trim() &&
-    form.value.description.trim() &&
-    form.value.location.trim() &&
-    form.value.category_id &&
-    form.value.date &&
-    form.value.imageFile &&
-    !props.isSaving
-  )
+  return !props.isSaving
 })
 
 const closeModal = () => {
@@ -103,6 +175,23 @@ const closeModal = () => {
 const closeWithoutSaving = () => {
   closeConfirmOpen.value = false
   emit('update:modelValue', false)
+}
+
+const openCommunitySelector = async () => {
+  communitySearch.value = ''
+  if (!normalizedCommunities.value.length) {
+    await communityStore.fetchActiveCommunities({ limit: 100 })
+  }
+  communitySelectorOpen.value = true
+}
+
+const onPickCommunity = (communityId) => {
+  form.value.community_id = communityId || ''
+  communitySelectorOpen.value = false
+}
+
+const onRequestCreateCommunity = () => {
+  emit('request-create-community')
 }
 
 const clearImagePreview = () => {
@@ -126,17 +215,39 @@ const resetForm = () => {
     hasEndDate: false,
     endDate: '',
     imageFile: null,
+    community_id: props.communityContextId || '',
+    social_links: {
+      whatsapp: '',
+      facebook: '',
+      instagram: '',
+    },
   }
   clearImagePreview()
   validationError.value = ''
   closeConfirmOpen.value = false
+  communitySelectorOpen.value = false
+  communitySearch.value = ''
+  showSocialInput.value = { whatsapp: false, facebook: false, instagram: false }
 }
 
 watch(
   () => props.modelValue,
   (isOpen) => {
+    isBodyScrollLocked.value = isOpen
     if (!isOpen) resetForm()
     if (isOpen) step.value = 1
+  },
+)
+
+onBeforeUnmount(() => {
+  isBodyScrollLocked.value = false
+})
+
+watch(
+  () => props.communityContextId,
+  (communityId) => {
+    if (!communityId) return
+    form.value.community_id = communityId
   },
 )
 
@@ -153,22 +264,48 @@ const validateStep = (targetStep) => {
   validationError.value = ''
 
   if (targetStep === 1) {
-    if (!form.value.title.trim() || !form.value.description.trim()) {
-      validationError.value = 'Completa el titulo y la descripcion para continuar.'
+    const titleError = validateEventTitle(form.value.title)
+    if (titleError) {
+      validationError.value = titleError
       return false
     }
+
+    const descriptionError = validateEventDescription(form.value.description)
+    if (descriptionError) {
+      validationError.value = descriptionError
+      return false
+    }
+
     return true
   }
 
   if (targetStep === 2) {
-    if (!form.value.category_id || !form.value.location.trim()) {
-      validationError.value = 'Selecciona una categoria y captura la ubicacion.'
+    const categoryError = validateEventCategory(form.value.category_id, props.categories)
+    if (categoryError) {
+      validationError.value = categoryError
       return false
     }
+
+    const locationError = validateEventLocation(form.value.location)
+    if (locationError) {
+      validationError.value = locationError
+      return false
+    }
+
     return true
   }
 
   if (targetStep === 3) {
+    const socialLinksError = validateEventSocialLinks(form.value.social_links)
+    if (socialLinksError) {
+      validationError.value = socialLinksError
+      return false
+    }
+
+    return true
+  }
+
+  if (targetStep === 4) {
     if (!form.value.date) {
       validationError.value = 'Selecciona la fecha del evento.'
       return false
@@ -191,16 +328,9 @@ const validateStep = (targetStep) => {
     return true
   }
 
-  if (targetStep === 4) {
-    if (!form.value.imageFile) {
-      validationError.value = 'Selecciona una imagen para el evento.'
-      return false
-    }
-    return true
-  }
-
   return true
 }
+
 
 const goNext = () => {
   if (props.isSaving) return
@@ -256,10 +386,16 @@ const onSubmit = () => {
     title: form.value.title.trim(),
     description: form.value.description.trim(),
     location: form.value.location.trim(),
-    category_id: form.value.category_id,
+    category_id: toEventCategoryId(form.value.category_id),
     start_datetime: result.value.start_datetime,
     end_datetime: result.value.end_datetime,
     imageFile: form.value.imageFile,
+    community_id: form.value.community_id || undefined,
+    social_links: {
+      whatsapp: form.value.social_links.whatsapp.trim(),
+      facebook: form.value.social_links.facebook.trim(),
+      instagram: form.value.social_links.instagram.trim(),
+    },
   })
 }
 </script>
@@ -303,7 +439,7 @@ const onSubmit = () => {
             <div class="absolute left-0 top-0 h-2 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
               <div
                 v-if="isSaving"
-                class="h-full w-1/3 bg-tertiary-600/90 dark:bg-tertiary-400/90 animate-spin w-full origin-left scale-x-1000 transition-transform duration-300 ease-out"
+                class="h-full w-full origin-left scale-x-1000 animate-spin bg-tertiary-600/90 transition-transform duration-300 ease-out dark:bg-tertiary-400/90"
               ></div>
               <div
                 v-else
@@ -324,6 +460,52 @@ const onSubmit = () => {
       <form class="grid grid-cols-1 gap-4 md:grid-cols-2" @submit.prevent="onSubmit">
         <!-- Paso 1: Basico -->
         <template v-if="step === 1">
+          <div class="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-slate-800 dark:text-slate-100">Comunidad asociada</p>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Selecciona una comunidad con buscador y cards compactas. Opcional.</p>
+              </div>
+              <button
+                type="button"
+                class="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                @click="openCommunitySelector"
+              >
+                Seleccionar
+              </button>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {{ selectedCommunity?.name || 'Sin comunidad seleccionada' }}
+                </p>
+                <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                  {{ selectedCommunity?.contact_email || 'Puedes asociar el evento luego si lo prefieres.' }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  v-if="form.community_id"
+                  type="button"
+                  class="rounded-full border border-slate-300 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  @click="onPickCommunity('')"
+                >
+                  Quitar
+                </button>
+                <button
+                  type="button"
+                  class="rounded-full border border-tertiary-300 bg-tertiary-50 px-2.5 py-1 text-[11px] font-semibold text-tertiary-700 hover:bg-tertiary-100 dark:border-tertiary-900/40 dark:bg-tertiary-900/20 dark:text-tertiary-300"
+                  @click="onRequestCreateCommunity"
+                >
+                  Añadir comunidad
+                </button>
+              </div>
+            </div>
+
+            <FieldError class="mt-2" :error="getFieldError('community_id')" />
+          </div>
+
           <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
             Titulo del evento
             <input
@@ -377,10 +559,26 @@ const onSubmit = () => {
             />
             <FieldError :error="getFieldError('location')" />
           </label>
+
         </template>
 
-        <!-- Paso 3: Horario -->
         <template v-else-if="step === 3">
+          <div class="md:col-span-2">
+            <SocialLinksStep
+              v-model="form.social_links"
+              v-model:visible-inputs="showSocialInput"
+              :field-errors="fieldErrors"
+              :placeholders="{
+                whatsapp: 'https://wa.me/528112345678',
+                facebook: 'https://facebook.com/tu-evento',
+                instagram: 'https://instagram.com/tu-evento',
+              }"
+            />
+          </div>
+        </template>
+
+        <!-- Paso 4: Horario + Imagen -->
+        <template v-else-if="step === 4">
           <div class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
             <label class="block">Fecha del evento</label>
             <div class="relative mt-1">
@@ -440,35 +638,45 @@ const onSubmit = () => {
                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
+
+            <div class="md:col-span-2">
+              <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Imagen del evento</p>
+              <label
+                class="mt-2 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-600 transition hover:border-tertiary-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-tertiary-500 dark:hover:bg-slate-900"
+              >
+                <input type="file" class="sr-only" :accept="ACCEPTED_IMAGE_TYPES" @change="onFileChange" />
+
+                <span class="material-symbols-outlined text-3xl text-tertiary-600 dark:text-tertiary-400">upload</span>
+                <span class="font-semibold text-slate-800 dark:text-slate-100">Sube una imagen para la portada</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400">JPEG, PNG, WEBP, GIF o AVIF. Recomendado: 1200×630</span>
+                <span v-if="form.imageFile" class="mt-2 inline-flex items-center gap-2 rounded-full bg-tertiary-50 px-3 py-1 text-xs font-bold text-tertiary-700 dark:bg-slate-800 dark:text-tertiary-200">
+                  <span class="material-symbols-outlined text-base">check_circle</span>
+                  {{ form.imageFile.name }}
+                </span>
+              </label>
+              <FieldError class="mt-2" :error="getFieldError('image_url')" />
+            </div>
+
+            <div v-if="imagePreview" class="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+              <img :src="imagePreview" alt="Preview de imagen" class="h-56 w-full object-cover" />
+            </div>
           </div>
         </template>
 
-        <!-- Paso 4: Imagen + Confirmacion -->
-        <template v-else>
-          <div class="md:col-span-2">
-            <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Imagen del evento</p>
-            <label
-              class="mt-2 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-600 transition hover:border-tertiary-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-tertiary-500 dark:hover:bg-slate-900"
-            >
-              <input type="file" class="sr-only" :accept="ACCEPTED_IMAGE_TYPES" required @change="onFileChange" />
-
-              <span class="material-symbols-outlined text-3xl text-tertiary-600 dark:text-tertiary-400">upload</span>
-              <span class="font-semibold text-slate-800 dark:text-slate-100">Sube una imagen para la portada</span>
-              <span class="text-xs text-slate-500 dark:text-slate-400">JPEG, PNG, WEBP, GIF o AVIF. Recomendado: 1200×630</span>
-              <span v-if="form.imageFile" class="mt-2 inline-flex items-center gap-2 rounded-full bg-tertiary-50 px-3 py-1 text-xs font-bold text-tertiary-700 dark:bg-slate-800 dark:text-tertiary-200">
-                <span class="material-symbols-outlined text-base">check_circle</span>
-                {{ form.imageFile.name }}
-              </span>
-            </label>
-            <FieldError class="mt-2" :error="getFieldError('image_url')" />
-          </div>
-
-          <div v-if="imagePreview" class="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-            <img :src="imagePreview" alt="Preview de imagen" class="h-56 w-full object-cover" />
-          </div>
-        </template>
-
-        <FieldError class="md:col-span-2" :error="validationError || submitError" />
+        <div class="md:col-span-2">
+          <Alert
+            v-if="showFormError"
+            :model-value="true"
+            type="error"
+            title=""
+            :message="formErrorMessage"
+            :dismissible="false"
+            :duration="0"
+            :auto-focus="false"
+            :auto-scroll="true"
+            :toast="false"
+          />
+        </div>
 
         <div class="md:col-span-2 mt-1 flex justify-between gap-2">
           <button
@@ -512,6 +720,79 @@ const onSubmit = () => {
           </div>
         </div>
       </form>
+
+      <Transition
+        appear
+        enter-active-class="transition duration-150 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-100 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div v-if="communitySelectorOpen" class="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm">
+          <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p class="text-base font-extrabold text-slate-900 dark:text-slate-100">Seleccionar comunidad</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Busca por nombre y elige una card compacta.</p>
+              </div>
+              <button type="button" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" @click="communitySelectorOpen = false">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <input
+              v-model="communitySearch"
+              type="text"
+              placeholder="Buscar comunidad por nombre"
+              class="w-full rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
+            />
+
+            <div class="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
+              <button
+                type="button"
+                class="w-full rounded-xl border border-dashed px-3 py-2 text-left text-xs font-semibold transition"
+                :class="!form.community_id ? 'border-tertiary-400 bg-tertiary-50 text-tertiary-700 dark:border-tertiary-500/60 dark:bg-tertiary-900/20 dark:text-tertiary-300' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'"
+                @click="onPickCommunity('')"
+              >
+                Sin comunidad
+              </button>
+
+              <button
+                v-for="community in filteredCommunities"
+                :key="community.id"
+                type="button"
+                class="w-full rounded-xl border px-3 py-2 text-left transition"
+                :class="form.community_id === community.id ? 'border-tertiary-400 bg-tertiary-50 dark:border-tertiary-500/60 dark:bg-tertiary-900/20' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:bg-slate-800'"
+                @click="onPickCommunity(community.id)"
+              >
+                <span class="flex items-start justify-between gap-2">
+                  <span class="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{{ community.name }}</span>
+                  <span class="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {{ community.events_count ?? community.approved_events_count ?? 0 }}
+                  </span>
+                </span>
+                <span class="mt-0.5 block truncate text-[11px] text-slate-500 dark:text-slate-400">{{ community.contact_email || 'Sin contacto publico' }}</span>
+              </button>
+
+              <p v-if="!filteredCommunities.length" class="rounded-xl border border-dashed border-slate-300 p-3 text-center text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                No hay resultados para "{{ communitySearch }}".
+              </p>
+            </div>
+
+            <div class="mt-3 flex justify-end">
+              <button
+                type="button"
+                class="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                @click="communitySelectorOpen = false"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
         </div>
       </Transition>
     </div>

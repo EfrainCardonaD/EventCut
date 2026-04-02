@@ -8,6 +8,9 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import LandingView from '@/views/LandingView.vue'
 import DashBoardUniversal from '@/views/DashBoardUniversal.vue'
 import CalendarView from '@/views/CalendarView.vue'
+import CommunitiesIndex from '@/views/communities/CommunitiesIndex.vue'
+import CommunityDetailView from '@/views/communities/CommunityDetailView.vue'
+import AdminPanelView from '@/views/admin/AdminPanelView.vue'
 import Login from '@/views/auth/Login.vue'
 import Register from '@/views/auth/Register.vue'
 import ForgotPassword from '@/views/auth/ForgotPassword.vue'
@@ -43,6 +46,22 @@ const routes = [
         path: 'calendario',
         name: 'CalendarView',
         component: CalendarView,
+      },
+      {
+        path: 'comunidades',
+        name: 'CommunitiesIndex',
+        component: CommunitiesIndex,
+      },
+      {
+        path: 'comunidades/:communityId',
+        name: 'CommunityDetail',
+        component: CommunityDetailView,
+      },
+      {
+        path: 'admin',
+        name: 'AdminPanel',
+        component: AdminPanelView,
+        meta: { roles: ['ADMIN', 'SECURITY_ADMIN'] },
       },
     ],
   },

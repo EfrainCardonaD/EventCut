@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { getCategoryAccentStyles } from '@/utils/categoryColors'
+import SocialNetworkIcon from '@/components/icons/SocialNetworkIcon.vue'
 
 const props = defineProps({
   event: {
@@ -66,6 +67,15 @@ const categoryAccentStyle = computed(() => {
   })
 })
 
+const socialLinks = computed(() => {
+  const source = props.event?.social_links || {}
+  return [
+    { key: 'whatsapp', label: 'WhatsApp', url: source.whatsapp },
+    { key: 'facebook', label: 'Facebook', url: source.facebook },
+    { key: 'instagram', label: 'Instagram', url: source.instagram },
+  ].filter((item) => typeof item.url === 'string' && item.url.trim())
+})
+
 const onSelect = () => emit('select', props.event)
 const onToggleFavorite = (event) => {
   event.stopPropagation()
@@ -108,6 +118,20 @@ const onToggleFavorite = (event) => {
         <div v-if="ownerLabel" class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
           <span class="material-symbols-outlined text-[14px]">person</span>
           <span class="truncate">{{ ownerLabel }}</span>
+        </div>
+        <div v-if="socialLinks.length" class="flex items-center gap-2 pt-1">
+          <a
+            v-for="link in socialLinks"
+            :key="`${event.id}-${link.key}`"
+            :href="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-500 transition hover:text-sky-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-sky-400"
+            :aria-label="`Abrir ${link.label}`"
+            @click.stop
+          >
+            <SocialNetworkIcon :network="link.key" :size="14" class-name="text-current" />
+          </a>
         </div>
       </div>
     </div>

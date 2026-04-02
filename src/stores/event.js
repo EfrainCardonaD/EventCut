@@ -56,6 +56,16 @@ const normalizeEvent = (rawEvent, favoriteIdsSet) => {
   const lastInitial = cleanLastName ? `${cleanLastName[0].toUpperCase()}.` : ''
   const ownerDisplayName = [cleanFirstName, lastInitial].filter(Boolean).join(' ')
 
+  const socialLinks = rawEvent?.social_links && typeof rawEvent.social_links === 'object'
+    ? {
+        whatsapp: String(rawEvent.social_links.whatsapp || '').trim(),
+        facebook: String(rawEvent.social_links.facebook || '').trim(),
+        instagram: String(rawEvent.social_links.instagram || '').trim(),
+      }
+    : null
+
+  const hasSocialLinks = socialLinks ? Object.values(socialLinks).some(Boolean) : false
+
   return {
     ...rawEvent,
     score: Number(rawEvent?.score || 0),
@@ -69,6 +79,8 @@ const normalizeEvent = (rawEvent, favoriteIdsSet) => {
       rawEvent?.ownerName ||
       ownerFullName ||
       '',
+    social_links: hasSocialLinks ? socialLinks : null,
+    community_id: rawEvent?.community_id || null,
     isFavorite: typeof serverFavoriteFlag === 'boolean' ? serverFavoriteFlag : favoriteIdsSet.has(rawEvent?.id),
   }
 }

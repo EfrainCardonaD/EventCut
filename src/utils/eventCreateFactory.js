@@ -1,5 +1,6 @@
 import eventsApi from '@/utils/eventsApi'
 import { getApiPayload } from '@/utils/apiFactory'
+import { toEventCategoryId, validateEventImageUrlLength } from '@/utils/eventFormValidation'
 
 export const ALLOWED_EVENT_IMAGE_TYPES = Object.freeze([
   'image/jpeg',
@@ -126,17 +127,43 @@ export const updateEventWithImageUrl = async (eventId, payload) => {
 }
 
 const normalizeEventRequestBody = (formPayload, imageUrlOverride) => {
+  const categoryId = toEventCategoryId(formPayload?.category_id)
+  if (!categoryId) {
+    throw new Error('Debes seleccionar una categoria')
+  }
+
+  const imageUrlLengthError = validateEventImageUrlLength(imageUrlOverride)
+  if (imageUrlLengthError) {
+    throw new Error(imageUrlLengthError)
+  }
+
+  const socialLinks = {
+    whatsapp: String(formPayload?.social_links?.whatsapp || '').trim(),
+    facebook: String(formPayload?.social_links?.facebook || '').trim(),
+    instagram: String(formPayload?.social_links?.instagram || '').trim(),
+  }
+
+  const hasSocialLinks = Object.values(socialLinks).some(Boolean)
+
   const requestBody = {
-    title: formPayload.title,
-    description: formPayload.description,
-    location: formPayload.location,
-    category_id: Number(formPayload.category_id),
+    title: String(formPayload?.title || '').trim(),
+    description: String(formPayload?.description || '').trim(),
+    location: String(formPayload?.location || '').trim(),
+    category_id: categoryId,
     start_datetime: formPayload.start_datetime,
     end_datetime: formPayload.end_datetime,
   }
 
   if (typeof imageUrlOverride !== 'undefined') {
     requestBody.image_url = imageUrlOverride
+  }
+
+  if (hasSocialLinks) {
+    requestBody.social_links = socialLinks
+  }
+
+  if (formPayload?.community_id) {
+    requestBody.community_id = String(formPayload.community_id)
   }
 
   return requestBody
