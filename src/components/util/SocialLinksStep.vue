@@ -136,7 +136,10 @@ const toggleNetwork = (network) => {
           <span class="material-symbols-outlined" style="font-size: 18px">close</span>
         </button>
       </div>
+      <label for="social-whatsapp" class="sr-only">URL de WhatsApp</label>
       <input
+        id="social-whatsapp"
+        name="social_whatsapp"
         :value="linksModel.whatsapp"
         type="url"
         class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 focus:ring-4 focus:ring-tertiary-500/10 dark:border-slate-700 dark:bg-slate-950"
@@ -154,7 +157,10 @@ const toggleNetwork = (network) => {
           <span class="material-symbols-outlined" style="font-size: 18px">close</span>
         </button>
       </div>
+      <label for="social-facebook" class="sr-only">URL de Facebook</label>
       <input
+        id="social-facebook"
+        name="social_facebook"
         :value="linksModel.facebook"
         type="url"
         class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 focus:ring-4 focus:ring-tertiary-500/10 dark:border-slate-700 dark:bg-slate-950"
@@ -172,7 +178,10 @@ const toggleNetwork = (network) => {
           <span class="material-symbols-outlined" style="font-size: 18px">close</span>
         </button>
       </div>
+      <label for="social-instagram" class="sr-only">URL de Instagram</label>
       <input
+        id="social-instagram"
+        name="social_instagram"
         :value="linksModel.instagram"
         type="url"
         class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 focus:ring-4 focus:ring-tertiary-500/10 dark:border-slate-700 dark:bg-slate-950"

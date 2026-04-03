@@ -515,6 +515,7 @@ const onSubmit = () => {
             <input
               v-model="form.title"
               type="text"
+              name="event_title"
               maxlength="150"
               required
               class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
@@ -523,8 +524,8 @@ const onSubmit = () => {
             <FieldError :error="getFieldError('title')" />
           </label>
 
-          <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
-            Descripcion
+          <div class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <p>Descripcion</p>
             <div class="mt-1">
               <RichTextEditor
                 v-model="form.description"
@@ -534,7 +535,7 @@ const onSubmit = () => {
               />
             </div>
             <FieldError :error="getFieldError('description')" />
-          </label>
+          </div>
         </template>
 
         <!-- Paso 2: Categoria + Ubicacion -->
@@ -543,6 +544,7 @@ const onSubmit = () => {
             Categoria
             <select
               v-model="form.category_id"
+              name="event_category"
               required
               class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
             >
@@ -557,6 +559,7 @@ const onSubmit = () => {
             <input
               v-model="form.location"
               type="text"
+              name="event_location"
               maxlength="200"
               required
               class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
@@ -590,6 +593,7 @@ const onSubmit = () => {
               <input
                 v-model="form.date"
                 type="date"
+                name="event_date"
                 required
                 class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
@@ -603,6 +607,7 @@ const onSubmit = () => {
               <input
                 v-model="form.startTime"
                 type="time"
+                name="event_start_time"
                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
             </label>
@@ -612,6 +617,7 @@ const onSubmit = () => {
               <input
                 v-model="form.endTime"
                 type="time"
+                name="event_end_time"
                 :disabled="form.allDay"
                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:disabled:bg-slate-900"
               />
@@ -622,6 +628,7 @@ const onSubmit = () => {
               <input
                 v-model="form.allDay"
                 type="checkbox"
+                name="event_all_day"
                 class="h-4 w-4 rounded border-slate-300 text-tertiary-500 focus:ring-tertiary-500"
               />
               <span class="text-tertiary-600 dark:text-tertiary-400">Todo el dia</span>

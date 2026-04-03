@@ -627,24 +627,25 @@ const onConfirmDelete = () => {
               <input
                 v-model="form.title"
                 type="text"
+                name="event_title"
                 maxlength="150"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
               />
               <FieldError :error="getFieldError('title')" />
             </label>
 
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Descripcion
-              <div class="mt-1">
-                <RichTextEditor
-                  v-model="form.description"
-                  placeholder="Describe el evento..."
-                  min-height="80px"
-                  max-height="250px"
-                />
-              </div>
-              <FieldError :error="getFieldError('description')" />
-            </label>
+            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <p>Descripcion</p>
+               <div class="mt-1">
+                 <RichTextEditor
+                   v-model="form.description"
+                   placeholder="Describe el evento..."
+                   min-height="80px"
+                   max-height="250px"
+                 />
+               </div>
+               <FieldError :error="getFieldError('description')" />
+            </div>
 
             </template>
 
@@ -653,6 +654,7 @@ const onConfirmDelete = () => {
                 Categoria
                 <select
                   v-model="form.category_id"
+                  name="event_category"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
                 >
                   <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
@@ -665,6 +667,7 @@ const onConfirmDelete = () => {
                 <input
                   v-model="form.location"
                   type="text"
+                  name="event_location"
                   maxlength="200"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
                 />
@@ -691,6 +694,7 @@ const onConfirmDelete = () => {
                 <input
                   v-model="form.date"
                   type="date"
+                  name="event_date"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
                 />
                 <FieldError :error="getFieldError('start_datetime')" />
@@ -700,6 +704,7 @@ const onConfirmDelete = () => {
                 <input
                   v-model="form.allDay"
                   type="checkbox"
+                  name="event_all_day"
                   class="h-4 w-4 rounded border-slate-300 text-tertiary-500 focus:ring-tertiary-500"
                 />
                 <span class="text-tertiary-600 dark:text-tertiary-400">Todo el dia</span>
@@ -710,6 +715,7 @@ const onConfirmDelete = () => {
                 <input
                   v-model="form.startTime"
                   type="time"
+                  name="event_start_time"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
                 />
               </label>
@@ -719,6 +725,7 @@ const onConfirmDelete = () => {
                 <input
                   v-model="form.endTime"
                   type="time"
+                  name="event_end_time"
                   :disabled="form.allDay"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:disabled:bg-slate-900"
                 />
@@ -726,7 +733,7 @@ const onConfirmDelete = () => {
               </label>
 
               <label v-if="!form.allDay" class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <input v-model="form.hasEndDate" type="checkbox" class="rounded border-slate-300" />
+                <input v-model="form.hasEndDate" type="checkbox" name="event_has_end_date" class="rounded border-slate-300" />
                 <span class="flex items-center gap-2 text-tertiary-600 dark:text-tertiary-400">Añadir fecha de finalizacion</span>
               </label>
 
@@ -735,6 +742,7 @@ const onConfirmDelete = () => {
                 <input
                   v-model="form.endDate"
                   type="date"
+                  name="event_end_date"
                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
                 />
               </label>
@@ -743,6 +751,7 @@ const onConfirmDelete = () => {
                 Nueva imagen (opcional)
                 <input
                   type="file"
+                  name="event_image"
                   :accept="ACCEPTED_IMAGE_TYPES"
                   class="mt-1 w-full rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
                   @change="onFileChange"
@@ -751,7 +760,7 @@ const onConfirmDelete = () => {
               </label>
 
               <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <input v-model="form.removeImage" type="checkbox" class="rounded border-slate-300" @change="onToggleRemoveImage" />
+                <input v-model="form.removeImage" type="checkbox" name="event_remove_image" class="rounded border-slate-300" @change="onToggleRemoveImage" />
                 Eliminar imagen actual
               </label>
             </template>

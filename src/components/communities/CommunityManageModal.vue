@@ -302,6 +302,7 @@ const onClose = () => {
             <input
               v-model="form.name"
               type="text"
+              name="community_name"
               maxlength="100"
               required
               class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-950"
@@ -310,8 +311,8 @@ const onClose = () => {
             <FieldError :error="getFieldError('name')" />
           </label>
 
-          <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
-            Descripcion
+          <div class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <p>Descripcion</p>
             <div class="mt-1">
               <RichTextEditor
                 v-model="form.description"
@@ -321,12 +322,13 @@ const onClose = () => {
               />
             </div>
             <FieldError :error="getFieldError('description')" />
-          </label>
+          </div>
 
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">
             Categoria
             <select
               v-model="form.category_id"
+              name="community_category"
               required
               class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-950"
             >
@@ -343,6 +345,7 @@ const onClose = () => {
             <input
               v-model="form.contact_email"
               type="email"
+              name="community_contact_email"
               class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-950"
               placeholder="contacto@comunidad.dev"
             />
@@ -355,6 +358,7 @@ const onClose = () => {
             <input
               ref="imageInputRef"
               type="file"
+              name="community_image"
               class="hidden"
               :accept="ALLOWED_COMMUNITY_IMAGE_TYPES.join(',')"
               @change="onSelectImage"

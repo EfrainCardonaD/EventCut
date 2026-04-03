@@ -403,6 +403,7 @@ const onSubmit = async () => {
               <input
                 v-model="form.name"
                 type="text"
+                name="community_name"
                 maxlength="100"
                 required
                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 focus:ring-4 focus:ring-tertiary-500/10 dark:border-slate-700 dark:bg-slate-950"
@@ -411,23 +412,24 @@ const onSubmit = async () => {
               <FieldError :error="getFieldError('name')" />
             </label>
 
-            <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Descripcion
-              <div class="mt-1">
-                <RichTextEditor
-                  v-model="form.description"
-                  placeholder="Comunidad para corredores y organizadores de carreras urbanas"
-                  min-height="100px"
-                  max-height="250px"
-                />
-              </div>
-              <FieldError :error="getFieldError('description')" />
-            </label>
+            <div class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <p>Descripcion</p>
+               <div class="mt-1">
+                 <RichTextEditor
+                   v-model="form.description"
+                   placeholder="Comunidad para corredores y organizadores de carreras urbanas"
+                   min-height="100px"
+                   max-height="250px"
+                 />
+               </div>
+               <FieldError :error="getFieldError('description')" />
+            </div>
 
             <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
               Categoria
               <select
                 v-model="form.category_id"
+                name="community_category"
                 required
                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 focus:ring-4 focus:ring-tertiary-500/10 dark:border-slate-700 dark:bg-slate-950"
               >
@@ -444,7 +446,7 @@ const onSubmit = async () => {
               <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ CONTACT_EMAIL_HELP }}</p>
 
               <div class="mt-3 flex flex-wrap items-center gap-2">
-                <span class="inline-flex items-center gap-2 rounded-full bg-tertiary-100 px-3 py-1 text-xs font-bold text-tertiary-700 dark:bg-tertiary-900/30 dark:text-tertiary-300">
+                <span class="inline-flex items-center gap-2 rounded-full bg-terciary-100 px-3 py-1 text-xs font-bold text-terciary-700 dark:bg-terciary-900/30 dark:text-terciary-300">
                   <span class="material-symbols-outlined" style="font-size: 16px">mail</span>
                   {{ form.contact_email || '...' }}
                 </span>
@@ -460,6 +462,7 @@ const onSubmit = async () => {
               <input
                 ref="imageInputRef"
                 type="file"
+                name="community_image"
                 class="hidden"
                 :accept="ALLOWED_COMMUNITY_IMAGE_TYPES.join(',')"
                 @change="onSelectImage"
@@ -490,7 +493,7 @@ const onSubmit = async () => {
                 </div>
 
                 <div v-else class="flex items-start gap-3">
-                  <div class="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-tertiary-100 text-tertiary-700 dark:bg-tertiary-900/30 dark:text-tertiary-300">
+                  <div class="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-terciary-100 text-terciary-700 dark:bg-terciary-900/30 dark:text-terciary-300">
                     <span class="material-symbols-outlined">cloud_upload</span>
                   </div>
                   <div class="flex-1">
