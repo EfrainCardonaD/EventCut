@@ -36,6 +36,9 @@ const editor = useEditor({
       heading: {
         levels: [1, 2, 3],
       },
+      // Evita registrar extensiones duplicadas; se configuran explícitamente abajo.
+      link: false,
+      underline: false,
     }),
     Underline,
     Link.configure({
