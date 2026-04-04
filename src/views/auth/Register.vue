@@ -142,7 +142,7 @@ const submit = async () => {
         </label>
 
         <label class="block md:col-span-2">
-          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Contrasena</span>
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Contraseña</span>
           <input
             v-model="form.password"
             type="password"

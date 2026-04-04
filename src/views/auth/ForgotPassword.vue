@@ -54,7 +54,7 @@ const submit = async () => {
     />
 
     <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <AuthViewHeader title="Recuperar contrasena" subtitle="Te enviaremos un enlace de restablecimiento." />
+      <AuthViewHeader title="Recuperar contraseña" subtitle="Te enviaremos un enlace de restablecimiento." />
 
       <form class="space-y-4" @submit.prevent="submit">
         <label class="block">

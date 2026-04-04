@@ -37,7 +37,7 @@ const validate = () => {
     ? ''
     : 'Usa 8+ caracteres con mayuscula, minuscula, numero y simbolo.'
   errors.confirmPassword =
-    form.confirmPassword === form.newPassword ? '' : 'La confirmacion no coincide con la contrasena.'
+    form.confirmPassword === form.newPassword ? '' : 'La confirmacion no coincide con la contraseña.'
 
   return Object.values(errors).every((value) => !value)
 }
@@ -49,7 +49,7 @@ const submit = async () => {
   try {
     const result = await auth.resetPassword(form.token.trim(), form.newPassword)
     if (result.success) {
-      showToast('success', 'Contrasena actualizada', result.message || 'Ya puedes iniciar sesion con tu nueva contrasena.')
+      showToast('success', 'Contrasena actualizada', result.message || 'Ya puedes iniciar sesion con tu nueva contraseña.')
       setTimeout(() => {
         router.push('/auth/login')
       }, 1000)
@@ -78,7 +78,7 @@ const submit = async () => {
 
     <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <AuthViewHeader
-        title="Nueva contrasena"
+        title="Nueva contraseña"
         subtitle="Ingresa el token de recuperacion y define una nueva clave segura."
       />
 
@@ -95,7 +95,7 @@ const submit = async () => {
         </label>
 
         <label class="block">
-          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Nueva contrasena</span>
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Nueva contraseña</span>
           <input
             v-model="form.newPassword"
             type="password"
@@ -107,7 +107,7 @@ const submit = async () => {
         </label>
 
         <label class="block">
-          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Confirmar contrasena</span>
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Confirmar contraseña</span>
           <input
             v-model="form.confirmPassword"
             type="password"
@@ -123,7 +123,7 @@ const submit = async () => {
           :disabled="loading"
           class="flex w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {{ loading ? 'Actualizando...' : 'Actualizar contrasena' }}
+          {{ loading ? 'Actualizando...' : 'Actualizar contraseña' }}
         </button>
       </form>
 
