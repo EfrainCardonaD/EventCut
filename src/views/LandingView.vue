@@ -54,7 +54,7 @@ onMounted(() => {
         </nav>
 
         <!-- Actions -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4" >
           <button
             type="button"
             class="hidden sm:inline-flex size-10 items-center justify-center rounded-full p-2 text-neutral-600 transition-all hover:bg-neutral-100 active:scale-95 dark:text-neutral-300 dark:hover:bg-white/5"

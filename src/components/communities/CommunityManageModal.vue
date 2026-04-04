@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useScrollLock } from '@vueuse/core'
 import FieldError from '@/components/util/FieldError.vue'
+import Alert from '@/components/util/Alert.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SocialLinksStep from '@/components/util/SocialLinksStep.vue'
 import RichTextEditor from '@/components/util/RichTextEditor.vue'
@@ -263,7 +264,7 @@ const onClose = () => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+    <div v-if="modelValue" class="fixed inset-0 z-[85] flex items-center justify-center  p-4 ">
       <ConfirmModal
         v-model="deleteConfirmOpen"
         title-user="Eliminar comunidad"
@@ -275,7 +276,7 @@ const onClose = () => {
         @confirm="onConfirmDelete"
       />
 
-      <div class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-200/75 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75">
         <!-- Header fijo -->
         <div class="flex-shrink-0 p-6 pb-0">
         <div class="mb-4 flex items-start justify-between gap-3">
@@ -437,7 +438,16 @@ const onClose = () => {
             </div>
           </template>
 
-          <FieldError class="md:col-span-2" :error="localError || submitError" />
+          <Alert
+            v-if="localError || submitError"
+            :model-value="Boolean(localError || submitError)"
+            type="error"
+            title="Accion requerida"
+            :message="localError || submitError"
+            :dismissible="false"
+            :duration="0"
+            class="md:col-span-2"
+          />
 
           <div class="md:col-span-2 mt-2 flex flex-wrap items-center justify-between gap-2">
             <button
@@ -493,6 +503,7 @@ const onClose = () => {
         </div>
       </div>
     </div>
+
   </Transition>
 </template>
 

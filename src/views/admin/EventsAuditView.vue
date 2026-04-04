@@ -6,6 +6,9 @@ import { useAdminEventsStore } from '@/stores/adminEvents'
 import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import AdminActionModal from '@/components/admin/AdminActionModal.vue'
+import EventCard from '@/components/events/EventCard.vue'
+import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
+import AdminUserManageModal from '@/components/admin/AdminUserManageModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,16 +21,20 @@ const {
   pagination,
   filters,
   isLoading,
-  isLoadingCategories,
   isUpdating,
   isDeleting,
 } = storeToRefs(eventsStore)
 
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
 const deleteModalOpen = ref(false)
-const editModalOpen = ref(false)
 const targetEvent = ref(null)
-const editForm = ref({ title: '', description: '' })
+
+const eventModalOpen = ref(false)
+const activeEvent = ref(null)
+
+const authorPopoverForId = ref(null)
+const manageUserModalOpen = ref(false)
+const manageUserId = ref('')
 
 const sortOptions = [
   { value: 'start_datetime', label: 'Fecha de inicio' },
@@ -67,26 +74,24 @@ const onPageChange = (page) => {
   loadEvents()
 }
 
-const onOpenEditModal = (event) => {
-  targetEvent.value = event
-  editForm.value = {
-    title: event.title,
-    description: event.description || ''
-  }
-  editModalOpen.value = true
+const openEventModal = (event) => {
+  activeEvent.value = event
+  eventModalOpen.value = true
 }
 
-const onConfirmEdit = async () => {
-  if (!targetEvent.value) return
+const onUpdateEvent = async (payload) => {
+  if (!payload?.eventId) return
 
-  const result = await eventsStore.updateEvent(targetEvent.value.id, editForm.value)
+  const result = await eventsStore.updateEvent(payload.eventId, payload)
   if (!result.success) {
     showToast('error', 'Error al actualizar', result.error)
     return
   }
 
-  editModalOpen.value = false
-  targetEvent.value = null
+  // Refresca referencia local para que el modal vea los cambios
+  const refreshed = eventsStore.events.find((event) => event.id === payload.eventId) || null
+  if (refreshed) activeEvent.value = refreshed
+
   showToast('success', 'Evento actualizado', result.message)
 }
 
@@ -109,37 +114,40 @@ const onConfirmDelete = async () => {
   showToast('success', 'Evento eliminado', result.message)
 }
 
-const navigateToUser = (userId) => {
-  router.push({ path: '/app/admin/users', query: { search: userId } })
+const getAuthorSnapshot = (event) => {
+  const owner = event?.owner || event?.author || event?.user || null
+  const ownerId = owner?.id || event?.owner_id || event?.ownerId || null
+  const username = owner?.username || owner?.handle || owner?.email || ''
+
+  const fallbackFirstName = event?.owner_first_name || event?.ownerFirstName || ''
+  const fallbackLastName = event?.owner_last_name || event?.ownerLastName || ''
+
+  const fullName =
+    owner?.fullName ||
+    owner?.name ||
+    [owner?.firstName, owner?.lastName].filter(Boolean).join(' ') ||
+    [fallbackFirstName, fallbackLastName].filter(Boolean).join(' ') ||
+    ''
+
+  const email = owner?.email || event?.owner_email || ''
+  return { ownerId, username, fullName, email }
+}
+
+const toggleAuthorPopover = (eventId) => {
+  authorPopoverForId.value = authorPopoverForId.value === eventId ? null : eventId
+}
+
+const openManageUser = (event) => {
+  const snapshot = getAuthorSnapshot(event)
+  if (!snapshot?.ownerId) return
+  manageUserId.value = String(snapshot.ownerId)
+  manageUserModalOpen.value = true
+  authorPopoverForId.value = null
 }
 
 const getCategoryName = (categoryId) => {
   const category = categories.value.find(c => c.id === categoryId)
   return category?.name || 'Sin categoría'
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleString('es-MX', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const formatShortDate = (dateString) => {
-  if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleDateString('es-MX', {
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-const getCurrentMonth = () => {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 const monthOptions = computed(() => {
@@ -203,54 +211,18 @@ onMounted(async () => {
       :duration="4500"
     />
 
-    <!-- Edit Modal -->
-    <Teleport to="body">
-      <div v-if="editModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900">
-          <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">Editar evento</h3>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Modifica los datos del evento para corregir errores menores.
-          </p>
-          
-          <div class="mt-4 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Título</label>
-              <input
-                v-model="editForm.title"
-                type="text"
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-950"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Descripción</label>
-              <textarea
-                v-model="editForm.description"
-                rows="4"
-                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-950"
-              />
-            </div>
-          </div>
-
-          <div class="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-              @click="editModalOpen = false"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
-              :disabled="isUpdating"
-              @click="onConfirmEdit"
-            >
-              {{ isUpdating ? 'Guardando...' : 'Guardar cambios' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <EventCardModalEdit
+      v-model="eventModalOpen"
+      :event="activeEvent"
+      :categories="categories"
+      :can-manage="true"
+      :is-saving="isUpdating"
+      :is-deleting="isDeleting"
+      submit-error=""
+      :field-errors="{}"
+      @save="onUpdateEvent"
+      @delete="(eventId) => onOpenDeleteModal({ id: eventId, title: activeEvent?.title || '' })"
+    />
 
     <AdminActionModal
       v-model="deleteModalOpen"
@@ -260,6 +232,8 @@ onMounted(async () => {
       :loading="isDeleting"
       @confirm="onConfirmDelete"
     />
+
+    <AdminUserManageModal v-model="manageUserModalOpen" :user-id="manageUserId" />
 
     <!-- Header -->
     <header>
@@ -363,78 +337,67 @@ onMounted(async () => {
     </div>
 
     <!-- Events List -->
-    <div v-else class="space-y-4">
-      <article
-        v-for="event in events"
-        :key="event.id"
-        class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-      >
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <!-- Event Info -->
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <h3 class="font-bold text-slate-900 dark:text-slate-100">{{ event.title }}</h3>
-              <span class="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
-                {{ getCategoryName(event.category_id) }}
-              </span>
-              <span v-if="event.score > 0" class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                <svg class="h-3.5 w-3.5 text-warning-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                {{ event.score }}
-              </span>
-            </div>
+    <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div v-for="event in events" :key="event.id" class="relative min-w-0">
+        <EventCard
+          :event="{ ...event, category_name: getCategoryName(event.category_id) }"
+          @select="openEventModal"
+        />
 
-            <p v-if="event.description" class="mt-2 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
-              {{ event.description }}
-            </p>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs sm:flex-nowrap">
+          <div class="relative">
+            <button
+              type="button"
+              class="inline-flex w-full items-center justify-center gap-1 font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 sm:w-auto"
+              @click.stop="toggleAuthorPopover(event.id)"
+            >
+              <span class="material-symbols-outlined text-[16px]">person</span>
+              Autor
+            </button>
 
-            <div class="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-              <span class="flex items-center gap-1">
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                {{ formatDate(event.start_datetime) }}
-              </span>
-              <span v-if="event.location" class="flex items-center gap-1">
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {{ event.location }}
-              </span>
+            <div
+              v-if="authorPopoverForId === event.id"
+              class="absolute left-0 right-0 top-full z-20 mt-2 w-64 max-w-[90vw] rounded-2xl border border-slate-200 bg-white/75 p-3 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75 sm:right-auto"
+              @click.stop
+            >
+              <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Autor</p>
+              <p class="mt-1 text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                {{ getAuthorSnapshot(event).fullName || getAuthorSnapshot(event).username || 'Usuario' }}
+              </p>
+              <p v-if="getAuthorSnapshot(event).email" class="mt-0.5 truncate text-[12px] text-slate-600 dark:text-slate-300">
+                {{ getAuthorSnapshot(event).email }}
+              </p>
+              <p v-if="getAuthorSnapshot(event).ownerId" class="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                {{ String(getAuthorSnapshot(event).ownerId).slice(0, 10) }}…
+              </p>
+
+              <button
+                v-if="getAuthorSnapshot(event).ownerId"
+                type="button"
+                class="mt-2 w-full rounded-xl bg-primary-600 px-3 py-2 text-[12px] font-bold text-white hover:bg-primary-700"
+                @click.stop="openManageUser(event)"
+              >
+                Gestionar
+              </button>
               <button
                 type="button"
-                class="flex items-center gap-1 font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                @click="navigateToUser(event.owner_id)"
+                class="mt-2 w-full rounded-xl border border-slate-300 bg-transparent px-3 py-2 text-[12px] font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                @click.stop="authorPopoverForId = null"
               >
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Ver autor
+                Cerrar
               </button>
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-              @click="onOpenEditModal(event)"
-            >
-              Editar
-            </button>
-            <button
-              type="button"
-              class="rounded-xl bg-error-600 px-4 py-2 text-sm font-semibold text-white hover:bg-error-700"
-              @click="onOpenDeleteModal(event)"
-            >
-              Eliminar
-            </button>
-          </div>
+          <button
+            type="button"
+            class="w-full rounded-xl bg-error-600 px-3 py-2 text-[12px] font-bold text-white hover:bg-error-700 sm:w-auto"
+            @click.stop="onOpenDeleteModal(event)"
+          >
+            Eliminar
+          </button>
         </div>
-      </article>
+      </div>
     </div>
 
     <!-- Pagination -->

@@ -7,7 +7,7 @@ import { useCommunityStore } from '@/stores/community'
 import { useEventStore } from '@/stores/event'
 import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
-import EventCardModal from '@/components/events/EventCardModal.vue'
+import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import CreateCommunityModal from '@/components/communities/CreateCommunityModal.vue'
 import CommunityManageModal from '@/components/communities/CommunityManageModal.vue'
@@ -427,10 +427,21 @@ watch(
     await loadCommunity()
   },
 )
+
+const displayedMyCommunitiesCount = computed(() => displayedMyCommunities.value.length)
+
+const truncateWords = (value, limit = 3) => {
+  const text = typeof value === 'string' ? value.trim() : ''
+  if (!text) return ''
+
+  const words = text.split(/\s+/).filter(Boolean)
+  if (words.length <= limit) return words.join(' ')
+  return `${words.slice(0, limit).join(' ')}...`
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <div class="min-h-screen bg-slate-50 text-slate-700 dark:text-slate-100 dark:bg-slate-950  ">
     <SpinnerOverlay :show="isLoadingDetail || isLoadingEvents" text="Cargando comunidad..." />
 
     <Alert
@@ -453,7 +464,6 @@ watch(
       :submit-error="createSubmitError"
       :field-errors="createFieldErrors"
       @submit="onCreateEvent"
-      @request-create-community="createCommunityModalOpen = true"
     />
 
     <CreateCommunityModal
@@ -477,7 +487,7 @@ watch(
       @delete="onDeleteCommunity"
     />
 
-    <EventCardModal
+    <EventCardModalEdit
       v-model="eventModalOpen"
       :event="activeEvent"
       :categories="categories"
@@ -508,7 +518,7 @@ watch(
           >
             <div class="absolute inset-0 bg-slate-950/35 dark:bg-black/45"></div>
             <h1 class="z-10 px-4 text-center font-headline text-3xl font-black tracking-tight text-white drop-shadow-lg sm:text-5xl">
-              {{ detail?.name || 'Comunidad' }}
+              {{ truncateWords(detail?.name || 'Comunidad', 3) }}
             </h1>
           </div>
 
@@ -554,7 +564,7 @@ watch(
             </div>
 
             <div class="mt-4">
-              <h2 class="mb-2 text-3xl font-bold">{{ detail?.name || 'Comunidad sin nombre' }}</h2>
+              <h2 class="mb-2 text-3xl font-bold">{{ truncateWords(detail?.name || 'Comunidad sin nombre', 3) }}</h2>
               <div v-if="detail?.description" class="mb-4">
                 <RichTextRenderer :content="detail.description" max-height="300px" />
               </div>
@@ -736,9 +746,17 @@ watch(
       </div>
     </div>
 
-    <div v-if="error" class="fixed bottom-24 right-4 z-[75] hidden max-w-sm rounded-xl border border-error-200 bg-error-50 p-3 text-xs text-error-700 shadow-md dark:border-error-900/40 dark:bg-error-950/50 dark:text-error-200 md:block">
-      {{ error }}
-    </div>
+    <Alert
+      v-if="error"
+      :model-value="Boolean(error)"
+      toast
+      position="bottom-right"
+      type="error"
+      title="Error"
+      :message="error"
+      :dismissible="false"
+      :duration="0"
+    />
   </div>
 </template>
 

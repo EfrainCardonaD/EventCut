@@ -150,7 +150,7 @@ const navigateToUserEvents = (userId) => {
 }
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A'
+  if (!dateString) return 'Sin fecha de registro'
   return new Date(dateString).toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'short',
@@ -210,9 +210,9 @@ onMounted(async () => {
             <label
               v-for="option in roleOptions"
               :key="option.value"
-              class="flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors"
-              :class="selectedRole === option.value 
-                ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-900/20' 
+              class="flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors"
+              :class="selectedRole === option.value
+                ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-900/20'
                 : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'"
             >
               <input
@@ -225,17 +225,17 @@ onMounted(async () => {
             </label>
           </div>
 
-          <div class="mt-6 flex justify-end gap-3">
+          <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
-              class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              class="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 sm:w-auto"
               @click="roleModalOpen = false"
             >
               Cancelar
             </button>
             <button
               type="button"
-              class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+              class="w-full rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 sm:w-auto"
               :disabled="isUpdatingRole"
               @click="onConfirmRole"
             >
@@ -328,10 +328,10 @@ onMounted(async () => {
     </div>
 
     <!-- Users (Mobile Cards) -->
-    <div class="space-y-3 lg:hidden">
+    <div class="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
       <div
         v-if="users.length === 0 && !isLoading"
-        class="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+        class="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 md:col-span-2"
       >
         No se encontraron usuarios.
       </div>
@@ -339,7 +339,7 @@ onMounted(async () => {
       <article
         v-for="user in users"
         :key="`mobile-${user.id}`"
-        class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+        class="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
@@ -386,7 +386,7 @@ onMounted(async () => {
           >
             {{ getUserBanStatus(user.id) ? 'Baneado' : 'Activo' }}
           </span>
-          <span class="text-xs text-slate-500 dark:text-slate-400">Registro: {{ formatDate(user.createdAt) }}</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400">Registro: {{ formatDate(user.created_at ?? user.createdAt ?? user.updated_at ?? user.updatedAt) }}</span>
         </div>
 
         <div class="mt-4 grid grid-cols-2 gap-2">
@@ -424,10 +424,10 @@ onMounted(async () => {
       </article>
     </div>
 
-    <!-- Users Table (Desktop) -->
-    <div class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:block">
+    <!-- Users Table (Tablet/Desktop) -->
+    <div class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 xl:block">
       <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="min-w-[760px] w-full">
           <thead>
             <tr class="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50">
               <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Usuario</th>
@@ -488,7 +488,7 @@ onMounted(async () => {
                 </span>
               </td>
               <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
-                {{ formatDate(user.createdAt) }}
+                {{ formatDate(user.created_at ?? user.createdAt ?? user.updated_at ?? user.updatedAt) }}
               </td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-2">

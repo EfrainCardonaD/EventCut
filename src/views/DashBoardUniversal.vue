@@ -10,7 +10,7 @@ import Alert from '@/components/util/Alert.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import EventCard from '@/components/events/EventCard.vue'
-import EventCardModal from '@/components/events/EventCardModal.vue'
+import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import CalendarWidget from '@/components/events/CalendarWidget.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.vue'
@@ -239,12 +239,6 @@ const onSyncSchedule = () => {
   showToast('info', 'Proximamente', 'La sincronizacion con Google Calendar estara disponible en una siguiente iteracion.')
 }
 
-const onRequestCreateCommunity = async () => {
-  createModalOpen.value = false
-  await router.push('/app/comunidades')
-  showToast('info', 'Crear comunidad', 'Selecciona Crear comunidad para registrar una nueva comunidad.')
-}
-
 onMounted(async () => {
    await eventStore.fetchCategories()
    await eventStore.fetchEvents({ scope: 'all' })
@@ -288,7 +282,7 @@ watch(featuredEvents, async () => {
       @create-event="createModalOpen = true"
       @logout="logoutModalOpen = true"
   />
-  <div class="bg-slate-50 text-slate-900 transition-colors duration-300 selection:bg-tertiary-400/30 dark:bg-slate-950 dark:text-slate-100 p-4  ">
+  <div class="bg-slate-50 text-slate-700 dark:text-slate-100 transition-colors duration-300 selection:bg-tertiary-400/30 dark:bg-slate-950  p-4  ">
     <SpinnerOverlay :show="isLoggingOut || isLoadingEvents" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando eventos...'" />
 
     <Alert
@@ -319,9 +313,8 @@ watch(featuredEvents, async () => {
       :submit-error="createSubmitError"
       :field-errors="createFieldErrors"
       @submit="onCreateEvent"
-      @request-create-community="onRequestCreateCommunity"
     />
-    <EventCardModal
+    <EventCardModalEdit
       v-model="eventModalOpen"
       :event="activeEvent"
       :categories="categories"
@@ -336,7 +329,7 @@ watch(featuredEvents, async () => {
 
 
     <main class="min-h-screen pb-24 pt-20 md:pb-8 xl:pr-[22rem]">
-      <div class="p-4 md:p-8">
+      <div class="p-4 md:p-8 lg:p-20">
         <div class="mb-4">
           <div class="relative -mx-4 md:mx-0">
             <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-5 bg-gradient-to-r from-slate-50 to-transparent dark:from-slate-950 md:hidden"></div>
@@ -371,22 +364,23 @@ watch(featuredEvents, async () => {
         <section class="mb-8" v-if="featuredEvents.length">
           <div class="mb-4 flex items-end justify-between">
             <h2 class="font-headline text-2xl font-extrabold tracking-tight md:text-3xl">Destacado</h2>
+
             <div v-if="featuredCanScroll" class="flex items-center gap-2">
               <button
-                type="button"
-                class="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                :disabled="featuredAtStart"
-                aria-label="Ver destacados anteriores"
-                @click="scrollFeatured(-1)"
+                  type="button"
+                  class="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  :disabled="featuredAtStart"
+                  aria-label="Ver destacados anteriores"
+                  @click="scrollFeatured(-1)"
               >
                 <span class="material-symbols-outlined text-base">chevron_left</span>
               </button>
               <button
-                type="button"
-                class="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                :disabled="featuredAtEnd"
-                aria-label="Ver siguientes destacados"
-                @click="scrollFeatured(1)"
+                  type="button"
+                  class="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  :disabled="featuredAtEnd"
+                  aria-label="Ver siguientes destacados"
+                  @click="scrollFeatured(1)"
               >
                 <span class="material-symbols-outlined text-base">chevron_right</span>
               </button>
@@ -394,20 +388,17 @@ watch(featuredEvents, async () => {
           </div>
 
           <div
-            ref="featuredRailRef"
-            class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:overflow-visible 2xl:grid-cols-3"
-            @scroll="syncFeaturedRailState"
+              ref="featuredRailRef"
+              class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              @scroll="syncFeaturedRailState"
           >
             <article
-              v-for="(event, index) in featuredEvents"
-              :key="`featured-${event.id}`"
-              :class="[
-                'group relative h-[260px] w-[85%] shrink-0 snap-start cursor-pointer overflow-hidden rounded-3xl bg-slate-900 shadow-xl sm:w-[65%] md:h-[300px] lg:h-[320px] lg:w-full',
-                index >= 3 ? 'lg:hidden' : '',
-              ]"
-               @click="openEventModal(event)"
+                v-for="(event, index) in featuredEvents"
+                :key="`featured-${event.id}`"
+                class="group relative h-[260px] w-[85%] shrink-0 snap-start cursor-pointer overflow-hidden rounded-3xl bg-slate-900 shadow-xl sm:w-[calc(50%-0.5rem)] md:h-[250px] lg:h-[280px] lg:w-[calc(33.333%-0.66rem)] xl:w-[calc(33.333%-0.66rem)]"
+                @click="openEventModal(event)"
             >
-              <img :src="event.image_url" :alt="event.title" class="h-full w-full object-cover opacity-60 transition duration-300 group-hover:scale-105" />
+              <img :src="event.image_url" :alt="event.title" loading="lazy" class="h-full w-full object-cover opacity-60 transition duration-300 group-hover:scale-105" />
               <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
 
               <div class="absolute inset-0 z-10 flex items-end p-5 md:p-6">
@@ -515,6 +506,7 @@ watch(featuredEvents, async () => {
         </div>
         <span class="text-[10px] font-medium">Eventos</span>
       </RouterLink>
+
       <RouterLink
         to="/app/calendario"
         class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
@@ -557,16 +549,7 @@ watch(featuredEvents, async () => {
         <span class="text-[10px] font-medium">Agenda</span>
       </button>
 
-      <button
-        type="button"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
-        @click="createModalOpen = true"
-      >
-        <span class="mb-1 px-4 py-1">
-          <span class="material-symbols-outlined">add</span>
-        </span>
-        <span class="text-[10px] font-medium">Crear</span>
-      </button>
+
     </nav>
 
     <div
@@ -627,6 +610,8 @@ watch(featuredEvents, async () => {
         <MyScheduleTimelineCard :events="favoriteUpcomingEvents" @select="openEventModalFromMobileSchedule" @sync="onSyncSchedule" />
       </div>
     </div>
+
+
   </div>
 </template>
 

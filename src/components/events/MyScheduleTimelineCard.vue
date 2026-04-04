@@ -54,7 +54,7 @@ const getDateClass = (isActive) => {
 </script>
 
 <template>
-  <section class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-950 dark:shadow-xl">
+  <section class="rounded-[2rem] border border-slate-200 bg-white/75 p-5 shadow-sm backdrop-blur-sm sm:p-6 dark:border-slate-800 dark:bg-slate-950/75 dark:shadow-xl">
     <header class="mb-6 flex items-start justify-between">
       <div class="font-headline">
         <h2 class="text-xs font-bold uppercase tracking-[0.2em] leading-tight text-slate-500 dark:text-slate-400">Tu</h2>

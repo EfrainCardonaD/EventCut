@@ -129,8 +129,8 @@ onBeforeUnmount(() => {
         class="inline-flex items-center gap-1.5 rounded-full bg-primary-600 px-3 py-2 text-xs font-bold text-white transition-all hover:bg-primary-700 active:scale-95 dark:bg-primary-500 dark:text-primary-950 dark:hover:bg-primary-400 sm:px-4 sm:text-sm"
         @click="onCreateEvent"
       >
-        <span class="material-symbols-outlined text-base leading-none">add</span>
-        <span class="hidden sm:inline">Crear evento</span>
+        <span class="material-symbols-outlined text-base leading-none text-white">add</span>
+        <span class="hidden sm:inline text-white ">Crear evento</span>
       </button>
 
       <button

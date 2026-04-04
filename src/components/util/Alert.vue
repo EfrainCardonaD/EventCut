@@ -56,7 +56,7 @@ const props = defineProps({
   },
   zIndex: {
     type: Number,
-    // Debe quedar sobre los modales (CreateEventModal z-[70], EventCardModal z-[80]).
+    // Debe quedar sobre los modales (CreateEventModal z-[70], EventCardModalEdit z-[80]).
     // Si un toast/error queda detrás del blur, es porque su z-index es menor.
     default: 90
   }

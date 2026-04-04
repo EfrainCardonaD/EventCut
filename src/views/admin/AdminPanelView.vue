@@ -8,6 +8,7 @@ import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import AdminActionCard from '@/components/admin/AdminActionCard.vue'
 import AdminActionModal from '@/components/admin/AdminActionModal.vue'
+import CommunitiesAcceptedFlowModal from '@/components/admin/CommunitiesAcceptedFlowModal.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 
 const router = useRouter()
@@ -15,11 +16,9 @@ const authStore = useAuthStore()
 const adminStore = useAdminStore()
 const {
   communities,
-  communitiesStatusFilter,
   bannedUsers,
   isLoadingCommunities,
   isLoadingBans,
-  isUpdatingCommunityStatus,
   isBanningUser,
   isUnbanningUser,
   error,
@@ -28,15 +27,13 @@ const {
 const tab = ref('communities')
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
 
-const rejectModalOpen = ref(false)
+const pendingReviewModalOpen = ref(false)
 const banModalOpen = ref(false)
-const targetCommunityId = ref('')
+const targetCommunity = ref(null)
 
 const unbanModalOpen = ref(false)
 const targetUserId = ref('')
 const manualUserId = ref('')
-
-const statusOptions = ['PENDING', 'ACTIVE', 'REJECTED']
 
 const isAdminUser = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN']))
 
@@ -61,43 +58,34 @@ const onHeaderLogout = async () => {
 }
 
 const loadModeration = async () => {
-  await adminStore.fetchCommunities({ status: communitiesStatusFilter.value, limit: 50 })
+  const result = await adminStore.fetchCommunities({ status: 'PENDING', limit: 50 })
+  if (!result.success) {
+    showToast('error', 'No se pudieron cargar pendientes', result.error)
+  }
 }
 
 const loadBans = async () => {
   await adminStore.fetchBannedUsers({ limit: 50 })
 }
 
-const onApprove = async (communityId) => {
-  const result = await adminStore.updateCommunityStatus(communityId, { action: 'ACTIVATE' })
-  if (!result.success) {
-    showToast('error', 'No se pudo aprobar', result.error)
-    return
-  }
-
-  showToast('success', 'Comunidad activada', result.message)
-  await loadModeration()
+const onOpenPendingReview = (community) => {
+  if (!community?.id) return
+  targetCommunity.value = community
+  pendingReviewModalOpen.value = true
 }
 
-const onOpenReject = (communityId) => {
-  targetCommunityId.value = communityId
-  rejectModalOpen.value = true
+const onPendingReviewChange = (isOpen) => {
+  pendingReviewModalOpen.value = isOpen
+  if (!isOpen) {
+    targetCommunity.value = null
+  }
 }
 
-const onConfirmReject = async (reason) => {
-  const result = await adminStore.updateCommunityStatus(targetCommunityId.value, {
-    action: 'REJECT',
-    rejection_reason: reason,
-  })
-
-  if (!result.success) {
-    showToast('error', 'No se pudo rechazar', result.error)
-    return
-  }
-
-  rejectModalOpen.value = false
-  targetCommunityId.value = ''
-  showToast('success', 'Comunidad rechazada', result.message)
+const onPendingUpdated = async (payload) => {
+  const actionLabel = payload?.action === 'ACTIVATE' ? 'Comunidad activada' : 'Comunidad rechazada'
+  showToast('success', actionLabel, payload?.message || 'Estado de comunidad actualizado correctamente.')
+  pendingReviewModalOpen.value = false
+  targetCommunity.value = null
   await loadModeration()
 }
 
@@ -137,7 +125,7 @@ const onConfirmUnban = async () => {
 }
 
 const pendingCommunities = computed(() => {
-  return communities.value.filter((community) => community.status === 'PENDING' || communitiesStatusFilter.value !== 'PENDING')
+  return communities.value.filter((community) => community.status === 'PENDING')
 })
 
 onMounted(async () => {
@@ -168,16 +156,12 @@ onMounted(async () => {
       :duration="4500"
     />
 
-    <AdminActionModal
-      v-model="rejectModalOpen"
-      title="Rechazar comunidad"
-      description="Debes especificar el motivo del rechazo para auditoria y soporte."
-      confirm-text="Rechazar"
-      :loading="isUpdatingCommunityStatus"
-      :require-reason="true"
-      reason-label="Motivo de rechazo"
-      reason-placeholder="No cumple politicas de contenido"
-      @confirm="onConfirmReject"
+    <CommunitiesAcceptedFlowModal
+      :model-value="pendingReviewModalOpen"
+      :community="targetCommunity"
+      :is-loading="isLoadingCommunities"
+      @update:model-value="onPendingReviewChange"
+      @updated="onPendingUpdated"
     />
 
     <AdminActionModal
@@ -236,15 +220,8 @@ onMounted(async () => {
       </header>
 
       <section v-if="tab === 'communities'" class="mt-6 space-y-4">
-        <div class="flex flex-wrap items-center gap-2">
-          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Estado</label>
-          <select
-            v-model="communitiesStatusFilter"
-            class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-900"
-            @change="loadModeration"
-          >
-            <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
-          </select>
+        <div class="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          Solicitudes pendientes: <span class="font-black text-slate-900 dark:text-slate-100">{{ pendingCommunities.length }}</span>
         </div>
 
         <div v-if="pendingCommunities.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -258,6 +235,8 @@ onMounted(async () => {
             :title="community.name"
             :subtitle="community.contact_email"
             :status="community.status"
+            class="cursor-pointer"
+            @click="onOpenPendingReview(community)"
           >
             <template #meta>
               <p>Owner: {{ community.owner_id }}</p>
@@ -265,22 +244,11 @@ onMounted(async () => {
             </template>
             <template #actions>
               <button
-                v-if="community.status === 'PENDING'"
                 type="button"
-                class="rounded-full bg-success-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-success-700"
-                :disabled="isUpdatingCommunityStatus"
-                @click="onApprove(community.id)"
+                class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                @click.stop="onOpenPendingReview(community)"
               >
-                Aprobar
-              </button>
-              <button
-                v-if="community.status === 'PENDING'"
-                type="button"
-                class="rounded-full bg-error-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-error-700"
-                :disabled="isUpdatingCommunityStatus"
-                @click="onOpenReject(community.id)"
-              >
-                Rechazar
+                Revisar solicitud
               </button>
             </template>
           </AdminActionCard>
@@ -339,9 +307,17 @@ onMounted(async () => {
       </section>
     </div>
 
-    <div v-if="error" class="fixed bottom-24 right-4 z-[75] hidden max-w-sm rounded-xl border border-error-200 bg-error-50 p-3 text-xs text-error-700 shadow-md dark:border-error-900/40 dark:bg-error-950/50 dark:text-error-200 md:block">
-      {{ error }}
-    </div>
+    <Alert
+      v-if="error"
+      :model-value="Boolean(error)"
+      toast
+      position="bottom-right"
+      type="error"
+      title="Error"
+      :message="error"
+      :dismissible="false"
+      :duration="0"
+    />
   </div>
 </template>
 

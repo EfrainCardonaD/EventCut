@@ -91,8 +91,8 @@ const onConfirm = () => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
-      <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+      <div v-if="modelValue" class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+        <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white/75 p-5 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75">
         <h3 class="text-lg font-black text-slate-900 dark:text-slate-100">{{ title }}</h3>
         <p v-if="description" class="mt-2 text-sm text-slate-600 dark:text-slate-300">{{ description }}</p>
 

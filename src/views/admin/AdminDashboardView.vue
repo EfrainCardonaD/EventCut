@@ -115,7 +115,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 text-slate-700 dark:text-slate-100 ">
     <!-- Header -->
     <header>
       <p class="text-xs font-bold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">

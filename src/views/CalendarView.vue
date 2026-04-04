@@ -7,7 +7,7 @@ import CalendarWidgetLarge from '@/components/events/CalendarWidgetLarge.vue'
 import CategoryFilter from '@/components/events/CategoryFilter.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import EventCard from '@/components/events/EventCard.vue'
-import EventCardModal from '@/components/events/EventCardModal.vue'
+import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.vue'
 import Alert from '@/components/util/Alert.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
@@ -200,12 +200,6 @@ const onSyncSchedule = () => {
   scheduleToastOpen.value = true
 }
 
-const onRequestCreateCommunity = async () => {
-  createModalOpen.value = false
-  await router.push('/app/comunidades')
-  showFavoriteToast('info', 'Crear comunidad', 'Desde comunidades puedes registrar una nueva comunidad.')
-}
-
 const isEventManageable = computed(() => {
   if (!activeEvent.value) return false
 
@@ -278,7 +272,7 @@ watch(monthEvents, () => {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen bg-slate-50 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100 lg:h-screen lg:overflow-hidden">
+  <div class="flex flex-col min-h-screen bg-slate-50text-slate-700 dark:text-slate-100 transition-colors duration-300 dark:bg-slate-950 lg:h-screen lg:overflow-hidden">
 
     <SpinnerOverlay :show="isLoadingEvents || isLoggingOut" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando calendario...'" />
 
@@ -287,8 +281,8 @@ watch(monthEvents, () => {
     <Alert v-model="favoriteToast.show" toast position="top-right" :type="favoriteToast.type" :title="favoriteToast.title" :message="favoriteToast.message" :duration="3500" />
 
     <ConfirmModal v-model="logoutModalOpen" title-user="Cerrar sesion" message="Se cerrara tu sesion actual en EventCut." description="Si tienes cambios sin guardar en otra pestaña, podrian perderse." confirm-text="Si, cerrar sesion" cancel-text="Cancelar" :danger="false" @confirm="onLogout" />
-    <CreateEventModal v-model="createModalOpen" :categories="categories" :is-saving="isSavingEvent" :submit-error="createSubmitError" :field-errors="createFieldErrors" @submit="onCreateEvent" @request-create-community="onRequestCreateCommunity" />
-    <EventCardModal v-model="eventModalOpen" :event="activeEvent" :categories="categories" :can-manage="isEventManageable" :is-saving="isUpdatingEvent" :is-deleting="isDeletingEvent" :submit-error="updateSubmitError" :field-errors="updateFieldErrors" @save="onUpdateEvent" @delete="onDeleteEvent" />
+    <CreateEventModal v-model="createModalOpen" :categories="categories" :is-saving="isSavingEvent" :submit-error="createSubmitError" :field-errors="createFieldErrors" @submit="onCreateEvent" />
+    <EventCardModalEdit v-model="eventModalOpen" :event="activeEvent" :categories="categories" :can-manage="isEventManageable" :is-saving="isUpdatingEvent" :is-deleting="isDeletingEvent" :submit-error="updateSubmitError" :field-errors="updateFieldErrors" @save="onUpdateEvent" @delete="onDeleteEvent" />
 
     <AppHeader
       v-model="searchQuery"

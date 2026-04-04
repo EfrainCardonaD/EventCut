@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useScrollLock } from '@vueuse/core'
 import { useAuthStore } from '@/stores/auth'
 import FieldError from '@/components/util/FieldError.vue'
+import Alert from '@/components/util/Alert.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SocialLinksStep from '@/components/util/SocialLinksStep.vue'
 import RichTextEditor from '@/components/util/RichTextEditor.vue'
@@ -353,7 +354,7 @@ const onSubmit = async () => {
         @confirm="closeWithoutSaving"
       />
 
-      <div class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/75 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75">
         <!-- Header fijo -->
         <div class="flex-shrink-0 p-6 pb-0">
         <div class="mb-4 flex items-start justify-between gap-3">
@@ -562,7 +563,15 @@ const onSubmit = async () => {
             </label>
           </div>
 
-          <FieldError :error="localError || submitError" />
+          <Alert
+            v-if="localError || submitError"
+            :model-value="Boolean(localError || submitError)"
+            type="error"
+            title="Accion requerida"
+            :message="localError || submitError"
+            :dismissible="false"
+            :duration="0"
+          />
 
           <div class="mt-1 flex flex-wrap items-center justify-between gap-2">
             <button

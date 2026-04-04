@@ -234,6 +234,10 @@ router.beforeEach(async (to, from, next) => {
     return next('/app')
   }
 
+  if(to.path === '/' && isAuthenticated) {
+    return next('/app')
+  }
+
   next()
 })
 

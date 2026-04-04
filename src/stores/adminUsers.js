@@ -52,6 +52,23 @@ export const useAdminUsersStore = defineStore('adminUsers', {
   },
 
   actions: {
+    async fetchUserById(userId) {
+      if (!userId) return { success: false, error: 'Usuario requerido.' }
+
+      // Nota: mantenemos api (no adminApi) porque el resto del store usa /api/users
+      // y este endpoint solicitado es /api/users/{user_id}.
+      try {
+        const response = await api.get(`/api/users/${userId}`)
+        const payload = getApiPayload(response)
+        return {
+          success: true,
+          message: getApiMessage(response) || 'Usuario cargado correctamente.',
+          data: payload,
+        }
+      } catch (error) {
+        return toStoreErrorResult(error, 'No se pudo cargar el detalle del usuario.')
+      }
+    },
     async fetchUsers(params = {}) {
       this.isLoading = true
       this.error = null

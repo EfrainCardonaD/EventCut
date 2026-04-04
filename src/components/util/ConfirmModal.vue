@@ -45,11 +45,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <div v-if="modelValue" class="fixed inset-0 z-50 flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/60" @click="close"></div>
+    <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" @click="close"></div>
 
     <div class="relative z-10 w-full max-w-md mx-4">
       <div
-        class="relative p-4 text-center bg-white rounded-lg shadow dark:bg-slate-900 sm:p-5"
+        class="relative p-4 text-center bg-white/75 backdrop-blur-sm rounded-lg shadow dark:bg-slate-900/75 sm:p-5"
         role="dialog"
         aria-modal="true"
         :aria-labelledby="titleId"

@@ -65,20 +65,13 @@ const getCommunityCardImageUrl = (community) => {
   return url || COMMUNITY_FALLBACK_IMAGE
 }
 
-const truncateWords = (value, limit = 8) => {
+const truncateWords = (value, limit = 3) => {
   const text = typeof value === 'string' ? value.trim() : ''
   if (!text) return ''
 
   const words = text.split(/\s+/).filter(Boolean)
   if (words.length <= limit) return words.join(' ')
   return `${words.slice(0, limit).join(' ')}...`
-}
-
-const truncateChars = (value, max = 70) => {
-  const text = typeof value === 'string' ? value.trim() : ''
-  if (!text) return ''
-  if (text.length <= max) return text
-  return `${text.slice(0, max).trimEnd()}...`
 }
 
 const avatarInitial = computed(() => {
@@ -277,7 +270,7 @@ watch(
 
   />
 
-  <main class="min-h-screen pb-24 pt-40 bg-slate-50  text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:pb-8">
+  <main class="min-h-screen pb-24 pt-40  md:pb-8">
 
 
     <SpinnerOverlay :show="isLoadingList || isLoadingMyList || isLoadingMySubscribedList" text="Cargando comunidades..." />
@@ -313,7 +306,6 @@ watch(
       :submit-error="createSubmitError"
       :field-errors="createFieldErrors"
       @submit="onCreateEvent"
-      @request-create-community="createCommunityModalOpen = true"
     />
 
     <CreateCommunityModal
@@ -396,7 +388,7 @@ watch(
               <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-2">
                   <div class="min-w-0">
-                    <h3 class="truncate text-[13px] font-black leading-4 text-slate-900 dark:text-slate-100">{{ community.name }}</h3>
+                    <h3 class="truncate text-[13px] font-black leading-4 text-slate-900 dark:text-slate-100">{{ truncateWords(community.name, 3) }}</h3>
                     <p class="mt-0.5 truncate text-[10px] leading-3 text-slate-500 dark:text-slate-400">
                       {{ (community.events_count ?? community.approved_events_count ?? 0) }} ev.
                       <span class="mx-1 text-slate-300 dark:text-slate-700">•</span>
@@ -563,9 +555,17 @@ watch(
       </div>
     </div>
 
-    <div v-if="error" class="fixed bottom-24 right-4 z-[75] hidden max-w-sm rounded-xl border border-error-200 bg-error-50 p-3 text-xs text-error-700 shadow-md dark:border-error-900/40 dark:bg-error-950/50 dark:text-error-200 md:block">
-      {{ error }}
-    </div>
+    <Alert
+      v-if="error"
+      :model-value="Boolean(error)"
+      toast
+      position="bottom-right"
+      type="error"
+      title="Error"
+      :message="error"
+      :dismissible="false"
+      :duration="0"
+    />
   </main>
 </template>
 

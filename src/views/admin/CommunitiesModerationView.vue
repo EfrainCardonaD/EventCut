@@ -8,6 +8,7 @@ import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import AdminActionCard from '@/components/admin/AdminActionCard.vue'
 import CommunityManageModal from '@/components/communities/CommunityManageModal.vue'
+import CommunitiesAcceptedFlowModal from '@/components/admin/CommunitiesAcceptedFlowModal.vue'
 import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
 
 const adminStore = useAdminStore()
@@ -29,6 +30,8 @@ const manageModalOpen = ref(false)
 const targetCommunity = ref(null)
 const manageSubmitError = ref('')
 const manageFieldErrors = ref({})
+const pendingReviewModalOpen = ref(false)
+const targetPendingCommunity = ref(null)
 
 const statusOptions = ['PENDING', 'ACTIVE', 'REJECTED']
 
@@ -71,6 +74,35 @@ const onOpenManage = (community) => {
   manageSubmitError.value = ''
   manageFieldErrors.value = {}
   manageModalOpen.value = true
+}
+
+const onOpenPendingReview = (community) => {
+  targetPendingCommunity.value = community
+  pendingReviewModalOpen.value = true
+}
+
+const onOpenCommunity = (community) => {
+  if (!community?.id) return
+  if (community.status === 'PENDING') {
+    onOpenPendingReview(community)
+    return
+  }
+  onOpenManage(community)
+}
+
+const onPendingReviewChange = (isOpen) => {
+  pendingReviewModalOpen.value = isOpen
+  if (!isOpen) {
+    targetPendingCommunity.value = null
+  }
+}
+
+const onPendingUpdated = async (payload) => {
+  const actionLabel = payload?.action === 'ACTIVATE' ? 'Comunidad activada' : 'Comunidad rechazada'
+  showToast('success', actionLabel, payload?.message || 'Estado de comunidad actualizado correctamente.')
+  pendingReviewModalOpen.value = false
+  targetPendingCommunity.value = null
+  await loadModeration()
 }
 
 const onSaveCommunity = async (payload) => {
@@ -154,6 +186,14 @@ onMounted(async () => {
       @delete="onDeleteCommunity"
     />
 
+    <CommunitiesAcceptedFlowModal
+      :model-value="pendingReviewModalOpen"
+      :community="targetPendingCommunity"
+      :is-loading="isLoadingCommunities"
+      @update:model-value="onPendingReviewChange"
+      @updated="onPendingUpdated"
+    />
+
     <header>
       <p class="text-xs font-bold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">
         Contenido y Moderacion
@@ -205,7 +245,7 @@ onMounted(async () => {
         :subtitle="community.contact_email"
         :status="community.status"
         class="cursor-pointer"
-        @click="onOpenManage(community)"
+        @click="onOpenCommunity(community)"
       >
         <template #meta>
           <p class="flex items-center gap-1.5">
@@ -230,9 +270,9 @@ onMounted(async () => {
           <button
             type="button"
             class="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-            @click.stop="onOpenManage(community)"
+            @click.stop="onOpenCommunity(community)"
           >
-            Gestionar
+            {{ community.status === 'PENDING' ? 'Revisar solicitud' : 'Gestionar' }}
           </button>
         </template>
       </AdminActionCard>
