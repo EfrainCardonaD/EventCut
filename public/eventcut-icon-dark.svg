@@ -1,8 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 190" width="100%" height="100%">
-  <path d="M 20 0 L 50 0 L 50 30 L 20 30 Z M 150 0 L 180 0 L 180 30 L 150 30 Z" fill="#F3A18F" />
-  <path d="M 0 20 L 0 190 L 200 190 L 200 20 L 170 20 L 170 160 L 30 160 L 30 20 Z" fill="#7BD9E2" />
-  <path d="M 70 50 L 130 50 L 130 80 L 160 80 L 160 110 L 40 110 L 40 80 L 70 80 Z" fill="#A98CFF" />
-  <circle cx="100" cy="115" r="15" fill="#F3A18F" />
-  <rect x="95" y="60" width="10" height="70" fill="#F3A18F" />
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+    <defs>
+        <linearGradient id="aztecGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#008C9E"/> <stop offset="100%" stop-color="#2C3E50"/> </linearGradient>
+        <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#F39C12"/> <stop offset="100%" stop-color="#D9534F"/> </linearGradient>
+    </defs>
 
+    <rect width="400" height="400" fill="transparent"/>
+
+    <g transform="translate(0, -20)">
+        <path d="M 120 70 L 150 70 L 150 100 L 120 100 Z M 250 70 L 280 70 L 280 100 L 250 100 Z" fill="url(#accentGrad)"/>
+        <path d="M 100 90 L 100 240 L 300 240 L 300 90 L 270 90 L 270 210 L 130 210 L 130 90 Z" fill="url(#aztecGrad)"/>
+
+        <path d="M 170 120 L 230 120 L 230 150 L 260 150 L 260 180 L 140 180 L 140 150 L 170 150 Z" fill="url(#aztecGrad)"/>
+
+        <circle cx="200" cy="165" r="15" fill="url(#accentGrad)"/>
+
+        <rect x="195" y="110" width="10" height="70" fill="#F39C12"/>
+    </g>
+
+</svg>

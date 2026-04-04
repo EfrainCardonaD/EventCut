@@ -31,7 +31,7 @@ defineProps({
       />
     </RouterLink>
 
-    <p v-if="!compact && subtitle" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+    <p v-if="!compact && subtitle" class=" text-[.6rem] text-slate-500 dark:text-slate-400">
       {{ subtitle }}
     </p>
   </div>
