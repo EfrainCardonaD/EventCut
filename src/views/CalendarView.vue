@@ -1,9 +1,8 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
-import CalendarWidgetLarge from '@/components/events/CalendarWidgetLarge.vue'
+import CalendarWidgetCompact from '@/components/events/CalendarWidgetCompact.vue'
 import CategoryFilter from '@/components/events/CategoryFilter.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import EventCard from '@/components/events/EventCard.vue'
@@ -11,6 +10,7 @@ import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.vue'
 import Alert from '@/components/util/Alert.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
+import MobileDrawer from '@/components/util/MobileDrawer.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useEventStore } from '@/stores/event'
@@ -19,7 +19,6 @@ import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
 
 const authStore = useAuthStore()
 const eventStore = useEventStore()
-const router = useRouter()
 const {
   categories,
   filteredEvents,
@@ -44,14 +43,11 @@ const createFieldErrors = ref({})
 const eventModalOpen = ref(false)
 const activeEvent = ref(null)
 const mobileScheduleOpen = ref(false)
+const monthEventsDrawerOpen = ref(false)
 const scheduleToastOpen = ref(false)
 const updateSubmitError = ref('')
 const updateFieldErrors = ref({})
 const favoriteToast = ref({ show: false, type: 'info', title: '', message: '' })
-
-const monthListRef = ref(null)
-const firstMonthCardRef = ref(null)
-const monthListMaxHeight = ref(null)
 
 const showFavoriteToast = (type, title, message) => {
   favoriteToast.value = { show: true, type, title, message }
@@ -120,26 +116,19 @@ const totalEventsLoaded = computed(() => {
   return Object.values(eventsByDate.value || {}).reduce((acc, dayEvents) => acc + dayEvents.length, 0)
 })
 
-const syncMonthListHeight = async () => {
-  await nextTick()
-  if (monthEvents.value.length <= 4) {
-    monthListMaxHeight.value = null
-    return
-  }
-
-  const firstCard = firstMonthCardRef.value
-  const listElement = monthListRef.value
-  if (!firstCard || !listElement) return
-
-  const cardHeight = firstCard.getBoundingClientRect().height
-  const gap = 12
-  monthListMaxHeight.value = Math.round(cardHeight * 4 + gap * 3)
+const closeMobilePanels = () => {
+  mobileScheduleOpen.value = false
+  monthEventsDrawerOpen.value = false
 }
 
-const setMonthCardRef = (el, index) => {
-  if (index === 0) {
-    firstMonthCardRef.value = el
-  }
+const openMobileSchedule = () => {
+  monthEventsDrawerOpen.value = false
+  mobileScheduleOpen.value = true
+}
+
+const openMobileMonthEvents = () => {
+  mobileScheduleOpen.value = false
+  monthEventsDrawerOpen.value = true
 }
 
 const onLogout = async () => {
@@ -192,7 +181,12 @@ const openEventModal = (event) => {
 }
 
 const openEventModalFromMobileSchedule = (event) => {
-  mobileScheduleOpen.value = false
+  closeMobilePanels()
+  openEventModal(event)
+}
+
+const openEventModalFromMobileMonthEvents = (event) => {
+  closeMobilePanels()
   openEventModal(event)
 }
 
@@ -246,12 +240,7 @@ onMounted(async () => {
   }
 
   await eventStore.fetchEvents({ scope: 'all' })
-  await syncMonthListHeight()
-  window.addEventListener('resize', syncMonthListHeight)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', syncMonthListHeight)
+  closeMobilePanels()
 })
 
 watch(eventModalOpen, (isOpen) => {
@@ -266,13 +255,10 @@ watch(createModalOpen, (isOpen) => {
   createFieldErrors.value = {}
 })
 
-watch(monthEvents, () => {
-  syncMonthListHeight()
-})
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen bg-slate-50text-slate-700 dark:text-slate-100 transition-colors duration-300 dark:bg-slate-950 lg:h-screen lg:overflow-hidden">
+  <div class="flex min-h-screen flex-col bg-slate-50 text-slate-700 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
 
     <SpinnerOverlay :show="isLoadingEvents || isLoggingOut" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando calendario...'" />
 
@@ -292,79 +278,76 @@ watch(monthEvents, () => {
       @logout="logoutModalOpen = true"
     />
 
-    <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 pb-24 pt-20 md:gap-6 md:px-8 md:pb-6 md:pt-24 lg:min-h-0 lg:pb-8">
-
-      <header class="rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 class="font-headline text-2xl font-black tracking-tight sm:text-3xl">Calendario de eventos</h1>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Consulta por mes, selecciona un dia y abre el detalle completo de cualquier evento.</p>
+    <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 pb-24 pt-20 md:gap-5 md:px-8 md:pb-6 md:pt-24 lg:pb-8">
+      <main class="grid grid-cols-1 gap-4 overflow-x-hidden lg:grid-cols-12 lg:items-start lg:gap-5">
+        <aside class="hidden min-w-0 lg:col-span-3 lg:block">
+          <div class="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
+            <section class="rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 class="font-headline text-lg font-extrabold text-slate-900 dark:text-white">Agenda</h2>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Favoritos proximos y acceso rapido.</p>
+              <div class="mt-4">
+                <MyScheduleTimelineCard :events="favoriteUpcomingEvents" @select="openEventModal" @sync="onSyncSchedule" />
+              </div>
+            </section>
           </div>
-          <RouterLink to="/app" class="micro-accent-surface inline-flex w-fit rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            Volver al dashboard
-          </RouterLink>
-        </div>
+        </aside>
 
-        <div class="mt-4">
-          <CategoryFilter :categories="categories" :modelValue="selectedCategoryId" @update:modelValue="eventStore.setCategory" />
-        </div>
-        <div class="mt-4 flex flex-wrap gap-2">
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Seleccionado: {{ selectedDateLabel }}</span>
-          <span class="micro-accent-chip rounded-full px-3 py-1 text-xs font-semibold">{{ selectedDayCount }} eventos este dia</span>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">{{ daysWithEventsCount }} dias con actividad</span>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">{{ totalEventsLoaded }} eventos cargados</span>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">{{ monthEventsCount }} eventos este mes</span>
-        </div>
-      </header>
+        <section class="min-w-0 rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5 lg:col-span-6">
+          <div class="mb-4 flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="font-headline text-xl font-black tracking-tight sm:text-2xl">Calendario</h1>
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ monthEventsCount }} eventos del mes</span>
+              <span class="micro-accent-chip rounded-full px-3 py-1 text-xs font-semibold">{{ selectedDayCount }} en el dia</span>
+            </div>
+            <CategoryFilter :categories="categories" :modelValue="selectedCategoryId" @update:modelValue="eventStore.setCategory" />
+          </div>
 
-      <main class="grid grid-cols-1 gap-6 lg:min-h-0 lg:grid-cols-12 lg:gap-8">
-
-        <section class="flex flex-col rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5 lg:col-span-7 lg:min-h-0 xl:col-span-8">
-          <div class="h-full w-full overflow-auto custom-scrollbar">
-            <CalendarWidgetLarge
-                class="h-full w-full"
+          <div class="mx-auto w-full max-w-[540px] xl:max-w-[560px]">
+            <div class="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800/70 dark:bg-slate-950">
+              <CalendarWidgetCompact
+                class="w-full"
                 :month-key="monthKey"
                 :selected-date="selectedDate"
                 :events-by-date="eventsByDate"
                 @change-month="onChangeMonth"
                 @select-date="onSelectDate"
-            />
+              />
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">Seleccionado: {{ selectedDateLabel }}</span>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">{{ daysWithEventsCount }} dias con actividad</span>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">{{ totalEventsLoaded }} cargados</span>
           </div>
         </section>
 
-        <section class="flex flex-col gap-6 lg:col-span-5 lg:min-h-0 xl:col-span-4">
+        <aside class="hidden min-w-0 lg:col-span-3 lg:block">
+          <div class="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
+            <section class="min-w-0 overflow-x-hidden rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 class="mb-4 font-headline text-lg font-extrabold capitalize text-slate-900 dark:text-white">Eventos de {{ monthLabel }}</h2>
 
-          <div class="flex flex-col rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5 lg:min-h-0">
-            <h2 class="mb-4 font-headline text-lg font-extrabold capitalize text-slate-900 dark:text-white">
-              Eventos de {{ monthLabel }}
-            </h2>
+              <div v-if="monthEvents.length === 0" class="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                No hay eventos para este mes.
+              </div>
 
-            <div v-if="monthEvents.length === 0" class="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              No hay eventos para este mes.
-            </div>
-
-            <div v-else class="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
-              <EventCard
+              <div v-else class="space-y-2.5">
+                <EventCard
                   v-for="event in monthEvents"
                   :key="event.id"
                   :event="event"
                   compact
                   @select="openEventModal"
                   @toggle-favorite="onToggleFavorite"
-              />
-            </div>
+                />
+              </div>
+            </section>
           </div>
-
-          <div class="hidden rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:block">
-            <MyScheduleTimelineCard :events="favoriteUpcomingEvents" @select="openEventModal" @sync="onSyncSchedule" />
-          </div>
-
-        </section>
-
+        </aside>
       </main>
     </div>
 
-    <nav class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/90 lg:hidden">
+    <nav class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-between border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/90 lg:hidden">
       <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300">
         <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">event</span></span>
         <span class="text-[10px] font-medium">Eventos</span>
@@ -373,22 +356,35 @@ watch(monthEvents, () => {
         <span class="mb-1 rounded-full bg-primary-100 px-4 py-1 dark:bg-primary-500/20"><span class="material-symbols-outlined icon-filled">calendar_month</span></span>
         <span class="text-[10px] font-medium">Calendario</span>
       </RouterLink>
-      <button type="button" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300" @click="mobileScheduleOpen = true">
+      <button type="button" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300" @click="openMobileMonthEvents">
+        <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">view_list</span></span>
+        <span class="text-[10px] font-medium">Mes</span>
+      </button>
+      <button type="button" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300" @click="openMobileSchedule">
         <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">schedule</span></span>
         <span class="text-[10px] font-medium">Agenda</span>
       </button>
     </nav>
 
-    <div v-if="mobileScheduleOpen" class="fixed inset-0 z-[60] bg-slate-950/60 p-4 backdrop-blur-sm md:hidden">
-      <div class="mx-auto flex h-full w-full max-w-md flex-col justify-center">
-        <div class="mb-2 flex justify-end">
-          <button type="button" class="rounded-full bg-white/10 p-2 text-white hover:bg-tertiary-500/30" aria-label="Cerrar agenda" @click="mobileScheduleOpen = false">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <MyScheduleTimelineCard :events="favoriteUpcomingEvents" @select="openEventModalFromMobileSchedule" @sync="onSyncSchedule" />
+    <MobileDrawer v-model="monthEventsDrawerOpen" title="Eventos del mes" subtitle="Explora y abre el detalle de cada evento" class="lg:hidden">
+      <div v-if="monthEvents.length === 0" class="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        No hay eventos para {{ monthLabel }}.
       </div>
-    </div>
+      <div v-else class="space-y-2.5">
+        <EventCard
+          v-for="event in monthEvents"
+          :key="`mobile-month-${event.id}`"
+          :event="event"
+          compact
+          @select="openEventModalFromMobileMonthEvents"
+          @toggle-favorite="onToggleFavorite"
+        />
+      </div>
+    </MobileDrawer>
+
+    <MobileDrawer v-model="mobileScheduleOpen" title="Tu agenda" subtitle="Tus proximos favoritos" class="lg:hidden">
+      <MyScheduleTimelineCard :events="favoriteUpcomingEvents" @select="openEventModalFromMobileSchedule" @sync="onSyncSchedule" />
+    </MobileDrawer>
   </div>
 </template>
 

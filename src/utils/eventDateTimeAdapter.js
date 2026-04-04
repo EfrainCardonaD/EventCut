@@ -12,6 +12,10 @@
 const pad2 = (value) => String(value).padStart(2, '0')
 const MAX_EVENT_DURATION_MS = 30 * 24 * 60 * 60 * 1000
 
+const toLocalDateOnly = (value) => {
+  return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}`
+}
+
 const parseLocalDateTimeParts = (date, timeHms) => {
   if (!isValidDateOnly(date) || !isValidTimeOnly(timeHms)) return null
   const [year, month, day] = date.split('-').map(Number)
@@ -81,6 +85,8 @@ export const uiToDbStrict = (ux) => {
   const date = ux?.date
   const hasEndDate = Boolean(ux?.hasEndDate)
   const endDate = hasEndDate ? ux?.endDate : date
+  const now = new Date()
+  const today = toLocalDateOnly(now)
 
   if (!isValidDateOnly(date)) {
     return { ok: false, error: 'Selecciona una fecha valida para el evento.' }
@@ -92,6 +98,10 @@ export const uiToDbStrict = (ux) => {
 
   if (endDate < date) {
     return { ok: false, error: 'La fecha de finalizacion no puede ser anterior a la de inicio.' }
+  }
+
+  if (date < today) {
+    return { ok: false, error: 'No puedes crear o editar eventos en una fecha que ya paso.' }
   }
 
   const allDay = Boolean(ux?.allDay)
@@ -126,6 +136,10 @@ export const uiToDbStrict = (ux) => {
   const endDateTime = parseLocalDateTimeParts(endDate, endHms)
   if (!startDate || !endDateTime) {
     return { ok: false, error: 'Debes ingresar una fecha de inicio valida' }
+  }
+
+  if (startDate.getTime() <= now.getTime()) {
+    return { ok: false, error: 'La fecha y hora de inicio deben ser posteriores a la hora actual.' }
   }
 
   const durationMs = endDateTime.getTime() - startDate.getTime()

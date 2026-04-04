@@ -337,9 +337,45 @@ const endLabel = computed(() => {
   }).format(parsed)
 })
 
-const creatorSummary = computed(() => {
+const creatorIdentity = computed(() => {
   const source = props.event || {}
-  return source.owner_display_name || source.ownerDisplayName || source.owner_name || source.ownerName || source.username || 'Creador anonimo'
+  const owner = source.owner || source.author || source.user || {}
+
+  const firstName =
+    source.owner_first_name ||
+    source.ownerFirstName ||
+    owner.first_name ||
+    owner.firstName ||
+    ''
+
+  const lastName =
+    source.owner_last_name ||
+    source.ownerLastName ||
+    owner.last_name ||
+    owner.lastName ||
+    ''
+
+  const fullName =
+    source.owner_display_name ||
+    source.ownerDisplayName ||
+    source.owner_name ||
+    source.ownerName ||
+    owner.full_name ||
+    owner.fullName ||
+    owner.name ||
+    [firstName, lastName].filter(Boolean).join(' ').trim() ||
+    ''
+
+  return {
+    id: source.owner_id || source.ownerId || owner.id || null,
+    username: source.owner_username || source.ownerUsername || source.username || owner.username || owner.handle || '',
+    email: source.owner_email || source.ownerEmail || owner.email || '',
+    fullName,
+  }
+})
+
+const creatorSummary = computed(() => {
+  return creatorIdentity.value.fullName || creatorIdentity.value.username || 'Creador anonimo'
 })
 
 const creatorInitial = computed(() => {
@@ -350,11 +386,11 @@ const creatorInitial = computed(() => {
 })
 
 const creatorDetails = computed(() => {
-  const source = props.event || {}
   const rows = [
-    { icon: 'badge', label: 'ID', value: source.owner_id },
-    { icon: 'alternate_email', label: 'Usuario', value: source.owner_username || source.ownerUsername || source.username },
-    { icon: 'mail', label: 'Correo', value: source.owner_email || source.ownerEmail },
+    { icon: 'person', label: 'Nombre', value: creatorIdentity.value.fullName },
+    { icon: 'badge', label: 'ID', value: creatorIdentity.value.id },
+    { icon: 'alternate_email', label: 'Usuario', value: creatorIdentity.value.username },
+    { icon: 'mail', label: 'Correo', value: creatorIdentity.value.email },
   ]
   return rows.filter((row) => row.value !== null && row.value !== undefined && String(row.value).trim())
 })
@@ -501,7 +537,7 @@ onBeforeUnmount(() => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue && event" class="fixed inset-0 z-[80] flex items-center justify-center  p-0 sm:p-4 md:p-6  sm:border border-slate-200  shadow-2xl backdrop-blur-md dark:border-slate-800 ">
+    <div v-if="modelValue && event" class="p-2 pt-5  fixed inset-0 z-[80] flex items-center justify-center  border sm:p-4 md:p-6  sm:border border-slate-200  shadow-2xl backdrop-blur-md dark:border-slate-800 ">
       <SpinnerOverlay :show="isSaving || isDeleting" :text="isDeleting ? 'Eliminando evento...' : 'Guardando cambios...'" />
 
       <ConfirmModal
@@ -525,10 +561,10 @@ onBeforeUnmount(() => {
         leave-from-class="opacity-100 translate-y-0 sm:scale-100"
         leave-to-class="opacity-0 translate-y-8 sm:translate-y-4 sm:scale-95"
       >
-        <div v-if="modelValue && event" class="relative flex max-h-[100dvh] w-full flex-col sm:max-h-[90vh] sm:max-w-4xl sm:rounded-3xl border-0 sm:border border-slate-200 bg-white/75 shadow-2xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/75 overflow-hidden">
+        <div v-if="modelValue && event" class="relative flex max-h-[100dvh] w-full flex-col sm:max-h-[90vh]   sm:max-w-4xl sm:rounded-3xl border-0 sm:border border-slate-200 bg-white/75 shadow-2xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/75 overflow-hidden">
 
           <!-- Header Sticky -->
-          <header class="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/50 bg-white/50 px-4 py-3 sm:px-6 sm:py-4 backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/50">
+          <header class=" sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/50 bg-white/50 px-4 py-3 sm:px-6 sm:py-4 backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/50">
             <div class="min-w-0 flex-1">
               <p class="mb-0.5 text-[10px] font-bold uppercase tracking-[0.2em]" :style="categoryAccentStyle">{{ categoryName }}</p>
               <h3 class="truncate font-headline text-lg font-black text-slate-900 dark:text-white sm:text-xl">{{ event.title }}</h3>
@@ -564,7 +600,7 @@ onBeforeUnmount(() => {
           <div class="flex-1 overflow-y-auto overscroll-contain">
 
             <!-- Modo Detalle -->
-            <div v-if="!editMode" class="flex flex-col md:flex-row h-full  overscroll-contain ">
+            <div v-if="!editMode" class="flex flex-col md:flex-row h-full  overscroll-contain p-2">
               <!-- Hero Image (Desktop Left, Mobile Top) -->
 
               <div class="relative w-full md:w-5/12 shrink-0  ">

@@ -36,7 +36,8 @@ export const useAdminEventsStore = defineStore('adminEvents', {
       category_id: null,
       month: null,
       sort_by: 'start_datetime',
-      owner_id: null
+      owner_id: null,
+
     },
     selectedEvent: null,
     isLoading: false,

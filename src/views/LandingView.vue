@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+import EventCutLogo from '@/components/icons/EventCutLogo.vue'
 import { toggleTheme } from '@/utils/theme'
 
 const themeIcon = ref('light_mode')
@@ -26,18 +27,11 @@ onMounted(() => {
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
         <!-- Logo -->
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center border border-neutral-200 overflow-hidden shrink-0 dark:bg-neutral-900 dark:border-neutral-700"
-          >
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv_wZJRTi5DqAYEYwdDgsuxjSYEv-JB2T5_RsmC272YkWz9VF7QP0_z8ba8OQPFTf9nZdfmp9aMfEAP31PIkcYQQjrURZFSb3XFRT15H8QGOqRDkJYiYye8Yz9kw4Dl7fa2c4pX3fyyuf_YwQMM_Dsb6fyUSB7UKv_ffRcIVhwoIwK90cyXI0NOZ-jbcH4jAMAQRjNF3JSZEuCNbofZB0Ouir-TDGHU2nK4EdbvTZ_89I81eMyChjLX7IEz987Ynrup9A-IGhA"
-              alt="CUTonalá Seal"
-              class="w-8 h-8 object-contain"
-            />
-          </div>
-          <span class="text-sm font-semibold uppercase tracking-[0.25em] text-tertiary-700 md:text-2xl hidden sm:block dark:text-tertiary-300">EVENTCUT</span>
-        </div>
+        <EventCutLogo
+          :wordmark-class="'hidden h-7 w-auto object-contain sm:block md:h-9'"
+          :logo-class="'w-10 h-10 flex items-center justify-center shrink-0'"
+          :img-class="'w-10 h-10 object-contain'"
+        />
 
         <!-- Desktop Nav Links -->
         <nav class="hidden md:flex gap-8 font-headline font-semibold text-sm">
@@ -304,7 +298,11 @@ onMounted(() => {
     <footer class="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-12">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div class="flex items-center gap-3">
-          <span class="font-headline font-bold text-slate-900 dark:text-white text-xl">CampusEvents</span>
+          <EventCutLogo
+            :wordmark-class="'h-6 w-auto object-contain'"
+            :logo-class="'w-10 h-10 flex items-center justify-center shrink-0'"
+            :img-class="'w-10 h-10 object-contain'"
+          />
           <span class="text-slate-400">|</span>
           <span class="text-slate-500 text-sm">CUTonalá © 2026</span>
         </div>

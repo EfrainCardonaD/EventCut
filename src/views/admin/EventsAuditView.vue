@@ -23,6 +23,8 @@ const {
   isLoading,
   isUpdating,
   isDeleting,
+  owner_first_name,
+    owner_last_name
 } = storeToRefs(eventsStore)
 
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
@@ -35,6 +37,8 @@ const activeEvent = ref(null)
 const authorPopoverForId = ref(null)
 const manageUserModalOpen = ref(false)
 const manageUserId = ref('')
+
+
 
 const sortOptions = [
   { value: 'start_datetime', label: 'Fecha de inicio' },
@@ -150,6 +154,8 @@ const getCategoryName = (categoryId) => {
   return category?.name || 'Sin categoría'
 }
 
+
+
 const monthOptions = computed(() => {
   const options = []
   const now = new Date()
@@ -161,6 +167,8 @@ const monthOptions = computed(() => {
   }
   return options
 })
+
+
 
 const paginationPages = computed(() => {
   const current = eventsStore.currentPage

@@ -147,6 +147,24 @@
   --color-gradient-to: oklch(56% 0.18 275);
   --dark-color-gradient-from: var(--color-primary-400);
   --dark-color-gradient-to: oklch(60% 0.16 275);
+
+  /* Logo EventCut: 4 colores base + variante dark */
+  --color-logo-1: #6a44d8;
+  --color-logo-2: #1aa8b8;
+  --color-logo-3: #e46c58;
+  --color-logo-4: #1d2430;
+
+  --dark-color-logo-1: #a98cff;
+  --dark-color-logo-2: #7bd9e2;
+  --dark-color-logo-3: #f3a18f;
+  --dark-color-logo-4: #e8edf5;
+}
+
+:root.dark {
+  --color-logo-1: var(--dark-color-logo-1);
+  --color-logo-2: var(--dark-color-logo-2);
+  --color-logo-3: var(--dark-color-logo-3);
+  --color-logo-4: var(--dark-color-logo-4);
 }
 
 
