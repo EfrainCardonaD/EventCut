@@ -114,7 +114,7 @@ const submit = async () => {
             type="email"
             autocomplete="email"
             class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-            placeholder="juan.perez@universidad.edu.mx"
+            placeholder="juan.perez@alumnos.udg.mx"
           />
           <FieldError :error="errors.email" />
         </label>

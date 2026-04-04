@@ -69,7 +69,7 @@ const submit = async () => {
     <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <AuthViewHeader title="Iniciar sesion" subtitle="Accede con tu usuario o correo institucional." />
 
-      <form class="space-y-4" @submit.prevent="submit">
+      <form class="space-y-4 " @submit.prevent="submit">
         <label class="block">
           <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Usuario o correo</span>
           <input
@@ -77,13 +77,13 @@ const submit = async () => {
             type="text"
             autocomplete="username"
             class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-            placeholder="juan.perez o juan.perez@universidad.edu.mx"
+            placeholder="juan.perez o juan.perez@alumnos.udg.mx"
           />
           <FieldError :error="errors.username" />
         </label>
 
         <label class="block">
-          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Contrasena</span>
+          <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Contraseña</span>
           <input
             v-model="form.password"
             type="password"
@@ -104,7 +104,7 @@ const submit = async () => {
       </form>
 
       <div class="mt-6 flex items-center justify-between text-sm">
-        <RouterLink to="/auth/forgot" class="micro-accent-link font-medium text-tertiary-700 hover:underline dark:text-tertiary-300">Olvide mi contrasena</RouterLink>
+        <RouterLink to="/auth/forgot" class="micro-accent-link font-medium text-tertiary-700 hover:underline dark:text-tertiary-300">Olvide mi contraseña</RouterLink>
         <RouterLink to="/auth/register" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">Crear cuenta</RouterLink>
       </div>
     </div>
