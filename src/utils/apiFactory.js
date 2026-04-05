@@ -7,6 +7,7 @@ const NON_REFRESHABLE_PATHS = [
   '/api/auth/register',
   '/api/auth/refresh',
   '/api/auth/forgot',
+  '/api/auth/password/forgot',
   '/api/auth/reset',
   '/api/auth/verify/email/confirm',
   '/api/auth/verify/email/resend',
@@ -87,6 +88,11 @@ const extractBackendMessage = (error) => {
   return null;
 };
 
+const stripRedundantErrorPrefix = (value) => {
+  if (typeof value !== 'string') return value;
+  return value.replace(/^\s*error\s*[:\-]?\s*/i, '').trim();
+};
+
 // Axios deja `error.response` undefined cuando hay problemas de red/CORS/timeout.
 export const isNetworkOrConnectionError = (error) => {
   if (!error) return false;
@@ -125,8 +131,10 @@ export const normalizeApiError = (error, fallbackMessage) => {
     ? 'No se pudo conectar con el servidor. Verifica que el backend esté activo e inténtalo de nuevo.'
     : conciseValidationMessage || backendMessage || fallbackMessage || 'Ocurrió un error inesperado.';
 
+  const sanitizedMessage = stripRedundantErrorPrefix(message) || 'Ocurrió un error inesperado.';
+
   return {
-    message,
+    message: sanitizedMessage,
     code,
     details: getDetailsFromErrorData(responseData),
     traceId,

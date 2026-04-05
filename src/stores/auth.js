@@ -227,7 +227,7 @@ export const useAuthStore = defineStore('auth', {
 
     async forgotPassword(email) {
       try {
-        const response = await api.post('/api/auth/forgot', { email })
+        const response = await api.post('/api/auth/password/forgot', { email })
 
         if (response.status >= 200 && response.status < 300) {
           return {
