@@ -1,8 +1,7 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useScrollLock } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
-import { useRoutedModalWizard } from '@/composables/useRoutedModalWizard'
 import { useCommunityStore } from '@/stores/community'
 import Alert from '@/components/util/Alert.vue'
 import FieldError from '@/components/util/FieldError.vue'
@@ -64,7 +63,7 @@ const communityStore = useCommunityStore()
 const { activeList: storeCommunities } = storeToRefs(communityStore)
 
 const TOTAL_STEPS = 4
- const pendingCloseAction = ref(null)
+const step = ref(1)
 const showSocialInput = ref({
   whatsapp: false,
   facebook: false,
@@ -181,35 +180,20 @@ const canSubmit = computed(() => {
   return !props.isSaving
 })
 
- const modalWizard = useRoutedModalWizard({
-   modalKey: 'create-event',
-   totalSteps: TOTAL_STEPS,
-   defaultStep: 1,
-   isDirty: () => isDirty.value,
-   isBlocked: () => props.isSaving,
- })
+const closeModal = () => {
+  if (props.isSaving) return
+  if (isDirty.value) {
+    closeConfirmOpen.value = true
+    return
+  }
 
- const step = modalWizard.step
+  emit('update:modelValue', false)
+}
 
- const requestClose = (reason) => {
-   const result = modalWizard.requestClose(reason)
-   if (result?.blocked) return
-
-   if (result?.needsConfirm) {
-     pendingCloseAction.value = result.confirm
-     closeConfirmOpen.value = true
-     return
-   }
-
-   result?.run?.()
- }
-
- const closeWithoutSaving = () => {
-   closeConfirmOpen.value = false
-   const action = pendingCloseAction.value
-   pendingCloseAction.value = null
-   action?.()
- }
+const closeWithoutSaving = () => {
+  closeConfirmOpen.value = false
+  emit('update:modelValue', false)
+}
 
 const openCommunitySelector = async () => {
   communitySearch.value = ''
@@ -232,6 +216,7 @@ const clearImagePreview = () => {
 }
 
 const resetForm = () => {
+  step.value = 1
   form.value = {
     title: '',
     description: '',
@@ -263,29 +248,12 @@ watch(
   () => props.modelValue,
   (isOpen) => {
     isBodyScrollLocked.value = isOpen
-    if (!isOpen) {
-      resetForm()
-      return
-    }
-
-    // Si el modal está abierto sin step, aseguramos step=1.
-    if (isOpen && modalWizard.isOpen.value && step.value < 1) {
-      step.value = 1
-    }
+    if (!isOpen) resetForm()
+    if (isOpen) step.value = 1
   },
 )
 
-const onKeyDown = (event) => {
-  if (!props.modelValue) return
-  if (event.key === 'Escape') requestClose('escape')
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', onKeyDown)
-})
-
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeyDown)
   isBodyScrollLocked.value = false
 })
 
@@ -303,7 +271,7 @@ const progressRatio = computed(() => {
 
 const goPrev = () => {
   validationError.value = ''
-  if (step.value > 1) modalWizard.prevStep()
+  if (step.value > 1) step.value -= 1
 }
 
 const validateStep = (targetStep) => {
@@ -382,7 +350,7 @@ const goNext = () => {
   if (props.isSaving) return
   const ok = validateStep(step.value)
   if (!ok) return
-  if (step.value < TOTAL_STEPS) modalWizard.nextStep()
+  if (step.value < TOTAL_STEPS) step.value += 1
 }
 
 const onFileChange = (event) => {
@@ -497,7 +465,7 @@ const onSubmit = () => {
           <h3 class="font-headline text-xl font-extrabold text-slate-900 dark:text-white">Crear evento</h3>
           <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Paso {{ step }} de {{ TOTAL_STEPS }}</p>
         </div>
-        <button class="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" @click="requestClose('close-button')">
+        <button class="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" @click="closeModal">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -713,7 +681,7 @@ const onSubmit = () => {
             type="button"
             class="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             :disabled="isSaving"
-            @click="requestClose('cancel')"
+            @click="closeModal"
           >
             Cancelar
           </button>

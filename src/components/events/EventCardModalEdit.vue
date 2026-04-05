@@ -1,8 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useScrollLock } from '@vueuse/core'
-import { useRoutedModalWizard } from '@/composables/useRoutedModalWizard'
-import { useFormDirtySnapshot } from '@/composables/useFormDirtySnapshot'
 import Alert from '@/components/util/Alert.vue'
 import FieldError from '@/components/util/FieldError.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
@@ -61,11 +59,10 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['update:modelValue', 'save', 'delete', 'enter-edit'])
+const emit = defineEmits(['update:modelValue', 'save', 'delete'])
 
 const EDIT_TOTAL_STEPS = 4
-const pendingCloseAction = ref(null)
-const discardConfirmOpen = ref(false)
+const editStep = ref(1)
 const showSocialInput = ref({
   whatsapp: false,
   facebook: false,
@@ -98,26 +95,6 @@ const form = ref({
   imageFile: null,
   removeImage: false,
 })
-
-const dirtySnapshot = useFormDirtySnapshot({ sourceRef: form })
-
-const editWizard = useRoutedModalWizard({
-  modalKey: 'edit-event',
-  totalSteps: EDIT_TOTAL_STEPS,
-  defaultStep: 1,
-  isDirty: () => editMode.value && dirtySnapshot.isDirty.value,
-  isBlocked: () => props.isSaving || props.isDeleting,
-})
-
-const detailsModal = useRoutedModalWizard({
-  modalKey: 'event-details',
-  totalSteps: 1,
-  defaultStep: 1,
-  isDirty: () => false,
-  isBlocked: () => props.isSaving || props.isDeleting,
-})
-
-const editStep = editWizard.step
 
 const localImagePreview = ref('')
 
@@ -152,7 +129,7 @@ const syncFormFromEvent = () => {
     end_datetime: props.event?.end_datetime,
   })
 
-  // el step se controla por la ruta cuando estamos en edit-event
+  editStep.value = 1
   form.value = {
     title: props.event?.title || '',
     description: props.event?.description || '',
@@ -184,11 +161,11 @@ watch(
 
     if (!isOpen) {
       editMode.value = false
+      editStep.value = 1
       deleteModalOpen.value = false
       creatorCardOpen.value = false
       descriptionExpanded.value = false
       clearLocalImagePreview()
-      dirtySnapshot.resetSnapshot()
       return
     }
     syncFormFromEvent()
@@ -204,14 +181,10 @@ watch(
   () => editMode.value,
   (enabled) => {
     if (!enabled) {
+      editStep.value = 1
       localError.value = ''
       descriptionExpanded.value = false
-      dirtySnapshot.resetSnapshot()
-      return
     }
-
-    // Entramos a editar: snapshot inicial para dirty tracking.
-    dirtySnapshot.takeSnapshot()
   },
 )
 
@@ -292,40 +265,19 @@ const validateEditStep = (targetStep) => {
 
 const goEditPrev = () => {
   localError.value = ''
-  if (editStep.value > 1) editWizard.prevStep()
+  if (editStep.value > 1) editStep.value -= 1
 }
 
 const goEditNext = () => {
   if (props.isSaving || props.isDeleting) return
   const ok = validateEditStep(editStep.value)
   if (!ok) return
-  if (editStep.value < EDIT_TOTAL_STEPS) editWizard.nextStep()
+  if (editStep.value < EDIT_TOTAL_STEPS) editStep.value += 1
 }
 
-const openEditMode = () => {
-  if (!props.event?.id) return
-  emit('enter-edit', props.event.id)
-}
 
-const confirmDiscard = () => {
-  discardConfirmOpen.value = false
-  const action = pendingCloseAction.value
-  pendingCloseAction.value = null
-  action?.()
-}
-
-const requestClose = (reason) => {
-  const mode = editWizard.isOpen.value ? editWizard : detailsModal
-  const result = mode.requestClose(reason)
-  if (result?.blocked) return
-
-  if (result?.needsConfirm) {
-    pendingCloseAction.value = result.confirm
-    discardConfirmOpen.value = true
-    return
-  }
-
-  result?.run?.()
+const closeModal = () => {
+  emit('update:modelValue', false)
 }
 
 const categoryName = computed(() => {
@@ -492,7 +444,7 @@ const youtubeEmbeds = computed(() => {
 
 const onKeyDown = (event) => {
   if (!props.modelValue) return
-  if (event.key === 'Escape') requestClose('escape')
+  if (event.key === 'Escape') closeModal()
 }
 
 onMounted(() => {
@@ -588,20 +540,9 @@ onBeforeUnmount(() => {
     <div
       v-if="modelValue && event"
       class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-2 pt-5 backdrop-blur-md sm:p-4 md:p-6"
-      @click.self="requestClose('outside')"
+      @click.self="closeModal"
     >
       <SpinnerOverlay :show="isSaving || isDeleting" :text="isDeleting ? 'Eliminando evento...' : 'Guardando cambios...'" />
-
-      <ConfirmModal
-        v-model="discardConfirmOpen"
-        title-user="Descartar cambios"
-        message="Tienes cambios sin guardar en la edicion del evento."
-        description="Si sales ahora, se perderan tus cambios."
-        confirm-text="Descartar"
-        cancel-text="Seguir editando"
-        :danger="false"
-        @confirm="confirmDiscard"
-      />
 
       <ConfirmModal
         v-model="deleteModalOpen"
@@ -650,11 +591,11 @@ onBeforeUnmount(() => {
                 v-if="canManage"
                 type="button"
                 class="rounded-full border border-slate-300/70 bg-white/50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 transition hover:bg-white/80 dark:border-slate-700/70 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800/80"
-                @click="editMode ? (dirtySnapshot.isDirty.value ? (pendingCloseAction = () => { editMode = false }, discardConfirmOpen = true) : (editMode = false)) : openEditMode()"
+                @click="editMode = !editMode"
               >
                 {{ editMode ? 'Cancelar' : 'Editar' }}
               </button>
-              <button type="button" class="rounded-full bg-slate-100/50 p-1.5 text-slate-500 hover:bg-slate-200/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50 transition-colors" @click="requestClose('close-button')">
+              <button type="button" class="rounded-full bg-slate-100/50 p-1.5 text-slate-500 hover:bg-slate-200/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50 transition-colors" @click="closeModal">
                 <span class="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>

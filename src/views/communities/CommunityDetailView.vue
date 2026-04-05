@@ -26,7 +26,11 @@ const { detail, events, isLoadingDetail, isLoadingEvents, isSavingCommunity, isU
 const { categories, isSavingEvent, isUpdatingEvent, isDeletingEvent } = storeToRefs(eventStore)
 
 const searchQuery = ref('')
+const eventModalOpen = ref(false)
 const activeEvent = ref(null)
+const createEventModalOpen = ref(false)
+const createCommunityModalOpen = ref(false)
+const manageCommunityModalOpen = ref(false)
 const mobileActionsOpen = ref(false)
 
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
@@ -38,75 +42,6 @@ const createCommunitySubmitError = ref('')
 const createCommunityFieldErrors = ref({})
 const manageCommunitySubmitError = ref('')
 const manageCommunityFieldErrors = ref({})
-
-const MODAL_PARAM = 'modal'
-const STEP_PARAM = 'step'
-const EVENT_ID_PARAM = 'eventId'
-
-const omitModalKeys = (query) => {
-  const next = { ...query }
-  delete next[MODAL_PARAM]
-  delete next[STEP_PARAM]
-  delete next[EVENT_ID_PARAM]
-  return next
-}
-
-const closeRoutedModal = () => {
-  router.push({ query: omitModalKeys(route.query || {}) })
-}
-
-const createEventModalOpen = computed({
-  get: () => route.query?.[MODAL_PARAM] === 'create-event',
-  set: (isOpen) => {
-    if (isOpen) {
-      router.push({
-        query: {
-          ...route.query,
-          [MODAL_PARAM]: 'create-event',
-          [STEP_PARAM]: '1',
-        },
-      })
-      return
-    }
-
-    closeRoutedModal()
-  },
-})
-
-const createCommunityModalOpen = computed({
-  get: () => route.query?.[MODAL_PARAM] === 'create-community',
-  set: (isOpen) => {
-    if (isOpen) {
-      router.push({ query: { ...route.query, [MODAL_PARAM]: 'create-community' } })
-      return
-    }
-
-    closeRoutedModal()
-  },
-})
-
-const manageCommunityModalOpen = computed({
-  get: () => route.query?.[MODAL_PARAM] === 'manage-community',
-  set: (isOpen) => {
-    if (isOpen) {
-      router.push({ query: { ...route.query, [MODAL_PARAM]: 'manage-community' } })
-      return
-    }
-
-    closeRoutedModal()
-  },
-})
-
-const eventModalOpen = computed({
-  get: () => {
-    const key = route.query?.[MODAL_PARAM]
-    return key === 'event-details' || key === 'edit-event'
-  },
-  set: (isOpen) => {
-    if (isOpen) return
-    closeRoutedModal()
-  },
-})
 
 const isAdmin = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN']))
 const isAdminUser = computed(() => isAdmin.value)
@@ -323,28 +258,8 @@ const loadCommunity = async () => {
 }
 
 const openEventModal = (event) => {
-  if (!event?.id) return
   activeEvent.value = event
-  router.push({
-    query: {
-      ...route.query,
-      [MODAL_PARAM]: 'event-details',
-      [EVENT_ID_PARAM]: String(event.id),
-    },
-  })
-}
-
-const openEditEventModal = (eventId) => {
-  if (!eventId) return
-  const id = String(eventId)
-  router.push({
-    query: {
-      ...route.query,
-      [MODAL_PARAM]: 'edit-event',
-      [EVENT_ID_PARAM]: id,
-      [STEP_PARAM]: '1',
-    },
-  })
+  eventModalOpen.value = true
 }
 
 const onHeaderLogout = async () => {
@@ -369,7 +284,7 @@ const onCreateEvent = async (payload) => {
     return
   }
 
-  closeRoutedModal()
+  createEventModalOpen.value = false
   showToast('success', 'Evento creado', 'El evento se registro correctamente.')
   await loadCommunity()
 }
@@ -388,7 +303,7 @@ const onUpdateEvent = async (payload) => {
     return
   }
 
-  closeRoutedModal()
+  eventModalOpen.value = false
   showToast('success', 'Evento actualizado', 'Cambios guardados correctamente.')
   await loadCommunity()
 }
@@ -400,7 +315,7 @@ const onDeleteEvent = async (eventId) => {
     return
   }
 
-  closeRoutedModal()
+  eventModalOpen.value = false
   activeEvent.value = null
   showToast('success', 'Evento eliminado', 'El evento se retiro del listado.')
   await loadCommunity()
@@ -450,7 +365,7 @@ const onCreateCommunity = async (payload) => {
     return
   }
 
-  closeRoutedModal()
+  createCommunityModalOpen.value = false
   showToast('success', 'Comunidad enviada', result.message || 'Tu comunidad quedo en revision.')
 }
 
@@ -478,7 +393,7 @@ const onUpdateCommunity = async (payload) => {
     return
   }
 
-  closeRoutedModal()
+  manageCommunityModalOpen.value = false
   showToast('success', 'Comunidad actualizada', result.message || 'Cambios guardados correctamente.')
   await loadCommunity()
 }
@@ -493,7 +408,7 @@ const onDeleteCommunity = async () => {
     return
   }
 
-  closeRoutedModal()
+  manageCommunityModalOpen.value = false
   showToast('success', 'Comunidad eliminada', result.message || 'La comunidad fue eliminada correctamente.')
   await router.push('/app/comunidades')
 }
@@ -511,47 +426,6 @@ watch(
   async () => {
     await loadCommunity()
   },
-)
-
-watch(eventModalOpen, (isOpen) => {
-  if (isOpen) return
-  updateSubmitError.value = ''
-  updateFieldErrors.value = {}
-  activeEvent.value = null
-})
-
-watch(createEventModalOpen, (isOpen) => {
-  if (isOpen) return
-  createSubmitError.value = ''
-  createFieldErrors.value = {}
-})
-
-watch(createCommunityModalOpen, (isOpen) => {
-  if (isOpen) return
-  createCommunitySubmitError.value = ''
-  createCommunityFieldErrors.value = {}
-})
-
-watch(manageCommunityModalOpen, (isOpen) => {
-  if (isOpen) return
-  manageCommunitySubmitError.value = ''
-  manageCommunityFieldErrors.value = {}
-})
-
-watch(
-  () => [route.query?.[MODAL_PARAM], route.query?.[EVENT_ID_PARAM], normalizedEvents.value.length],
-  () => {
-    const modalKey = route.query?.[MODAL_PARAM]
-    const eventId = route.query?.[EVENT_ID_PARAM]
-
-    if (modalKey !== 'event-details' && modalKey !== 'edit-event') return
-    if (!eventId) return
-
-    const id = String(eventId)
-    const found = normalizedEvents.value.find((evt) => String(evt.id) === id) || null
-    if (found) activeEvent.value = found
-  },
-  { immediate: true },
 )
 
 const displayedMyCommunitiesCount = computed(() => displayedMyCommunities.value.length)
@@ -624,7 +498,6 @@ const truncateWords = (value, limit = 3) => {
       :field-errors="updateFieldErrors"
       @save="onUpdateEvent"
       @delete="onDeleteEvent"
-      @enter-edit="openEditEventModal"
     />
 
     <AppHeader

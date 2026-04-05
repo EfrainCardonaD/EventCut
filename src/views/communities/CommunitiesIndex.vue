@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useCommunityStore } from '@/stores/community'
 import { useEventStore } from '@/stores/event'
@@ -13,7 +13,6 @@ import RichTextRenderer from '@/components/util/RichTextRenderer.vue'
 import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
 import AppHeader from '@/components/layout/AppHeader.vue'
 
-const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const communityStore = useCommunityStore()
@@ -23,61 +22,14 @@ const { activeList, selectedCommunityId, myList, mySubscribedList, isLoadingList
 const { categories, isSavingEvent } = storeToRefs(eventStore)
 
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
+const createEventModalOpen = ref(false)
+const createCommunityModalOpen = ref(false)
 const mobileActionsOpen = ref(false)
 
 const createSubmitError = ref('')
 const createFieldErrors = ref({})
 const createCommunitySubmitError = ref('')
 const createCommunityFieldErrors = ref({})
-const MODAL_PARAM = 'modal'
-const STEP_PARAM = 'step'
-
-const omitModalKeys = (query) => {
-  const next = { ...query }
-  delete next[MODAL_PARAM]
-  delete next[STEP_PARAM]
-  return next
-}
-
-const closeRoutedModal = () => {
-  router.push({ query: omitModalKeys(route.query || {}) })
-}
-
-const createEventModalOpen = computed({
-  get: () => route.query?.[MODAL_PARAM] === 'create-event',
-  set: (isOpen) => {
-    if (isOpen) {
-      router.push({
-        query: {
-          ...route.query,
-          [MODAL_PARAM]: 'create-event',
-          [STEP_PARAM]: '1',
-        },
-      })
-      return
-    }
-
-    closeRoutedModal()
-  },
-})
-
-const createCommunityModalOpen = computed({
-  get: () => route.query?.[MODAL_PARAM] === 'create-community',
-  set: (isOpen) => {
-    if (isOpen) {
-      router.push({
-        query: {
-          ...route.query,
-          [MODAL_PARAM]: 'create-community',
-        },
-      })
-      return
-    }
-
-    closeRoutedModal()
-  },
-})
-
 
 const isAdmin = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN']))
 const isAdminUser = computed(() => isAdmin.value)
@@ -235,7 +187,7 @@ const onCreateEvent = async (payload) => {
     return
   }
 
-  closeRoutedModal()
+  createEventModalOpen.value = false
   showToast('success', 'Evento creado', 'Tu evento fue enviado correctamente.')
 }
 
@@ -253,7 +205,7 @@ const onCreateCommunity = async (payload) => {
     return
   }
 
-  closeRoutedModal()
+  createCommunityModalOpen.value = false
   showToast('success', 'Comunidad enviada', result.message || 'Tu comunidad quedo en revision.')
 }
 
@@ -293,18 +245,6 @@ onMounted(async () => {
   if (!selectedCommunityId.value && activeList.value.length) {
     communityStore.setSelectedCommunityId(activeList.value[0].id)
   }
-})
-
-watch(createEventModalOpen, (isOpen) => {
-  if (isOpen) return
-  createSubmitError.value = ''
-  createFieldErrors.value = {}
-})
-
-watch(createCommunityModalOpen, (isOpen) => {
-  if (isOpen) return
-  createCommunitySubmitError.value = ''
-  createCommunityFieldErrors.value = {}
 })
 
 watch(

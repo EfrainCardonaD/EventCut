@@ -30,6 +30,8 @@ const {
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
 const deleteModalOpen = ref(false)
 const targetEvent = ref(null)
+
+const eventModalOpen = ref(false)
 const activeEvent = ref(null)
 
 const authorPopoverForId = ref(null)
@@ -76,56 +78,9 @@ const onPageChange = (page) => {
   loadEvents()
 }
 
-const MODAL_PARAM = 'modal'
-const STEP_PARAM = 'step'
-const EVENT_ID_PARAM = 'eventId'
-
-const omitModalKeys = (query) => {
-  const next = { ...query }
-  delete next[MODAL_PARAM]
-  delete next[STEP_PARAM]
-  delete next[EVENT_ID_PARAM]
-  return next
-}
-
-const closeRoutedModal = () => {
-  router.push({ query: omitModalKeys(route.query || {}) })
-}
-
-const eventModalOpen = computed({
-  get: () => {
-    const key = route.query?.[MODAL_PARAM]
-    return key === 'event-details' || key === 'edit-event'
-  },
-  set: (isOpen) => {
-    if (isOpen) return
-    closeRoutedModal()
-  },
-})
-
 const openEventModal = (event) => {
-  if (!event?.id) return
   activeEvent.value = event
-  router.push({
-    query: {
-      ...route.query,
-      [MODAL_PARAM]: 'event-details',
-      [EVENT_ID_PARAM]: String(event.id),
-    },
-  })
-}
-
-const openEditEventModal = (eventId) => {
-  if (!eventId) return
-  const id = String(eventId)
-  router.push({
-    query: {
-      ...route.query,
-      [MODAL_PARAM]: 'edit-event',
-      [EVENT_ID_PARAM]: id,
-      [STEP_PARAM]: '1',
-    },
-  })
+  eventModalOpen.value = true
 }
 
 const onUpdateEvent = async (payload) => {
@@ -162,26 +117,6 @@ const onConfirmDelete = async () => {
   targetEvent.value = null
   showToast('success', 'Evento eliminado', result.message)
 }
-
-watch(eventModalOpen, (isOpen) => {
-  if (isOpen) return
-  activeEvent.value = null
-})
-
-watch(
-  () => [route.query?.[MODAL_PARAM], route.query?.[EVENT_ID_PARAM], events.value.length],
-  () => {
-    const modalKey = route.query?.[MODAL_PARAM]
-    const eventId = route.query?.[EVENT_ID_PARAM]
-    if (modalKey !== 'event-details' && modalKey !== 'edit-event') return
-    if (!eventId) return
-
-    const id = String(eventId)
-    const found = eventsStore.events.find((evt) => String(evt.id) === id) || null
-    if (found) activeEvent.value = found
-  },
-  { immediate: true },
-)
 
 const getAuthorSnapshot = (event) => {
   const owner = event?.owner || event?.author || event?.user || null
@@ -295,7 +230,6 @@ onMounted(async () => {
       :field-errors="{}"
       @save="onUpdateEvent"
       @delete="(eventId) => onOpenDeleteModal({ id: eventId, title: activeEvent?.title || '' })"
-      @enter-edit="openEditEventModal"
     />
 
     <AdminActionModal
