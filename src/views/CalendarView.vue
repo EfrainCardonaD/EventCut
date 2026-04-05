@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import CalendarWidgetCompact from '@/components/events/CalendarWidgetCompact.vue'
 import CategoryFilter from '@/components/events/CategoryFilter.vue'
@@ -19,6 +20,8 @@ import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
 
 const authStore = useAuthStore()
 const eventStore = useEventStore()
+const route = useRoute()
+const router = useRouter()
 const {
   categories,
   filteredEvents,
@@ -36,11 +39,9 @@ const {
 
 const isLoggingOut = ref(false)
 const logoutModalOpen = ref(false)
-const createModalOpen = ref(false)
 const createSubmitError = ref('')
 const createFieldErrors = ref({})
 
-const eventModalOpen = ref(false)
 const activeEvent = ref(null)
 const mobileScheduleOpen = ref(false)
 const monthEventsDrawerOpen = ref(false)
@@ -172,12 +173,77 @@ const onCreateEvent = async (payload) => {
     return
   }
 
-  createModalOpen.value = false
+  closeRoutedModal()
 }
 
+const MODAL_PARAM = 'modal'
+const STEP_PARAM = 'step'
+const EVENT_ID_PARAM = 'eventId'
+
+const omitModalKeys = (query) => {
+  const next = { ...query }
+  delete next[MODAL_PARAM]
+  delete next[STEP_PARAM]
+  delete next[EVENT_ID_PARAM]
+  return next
+}
+
+const closeRoutedModal = () => {
+  router.push({ query: omitModalKeys(route.query || {}) })
+}
+
+const createModalOpen = computed({
+  get: () => route.query?.[MODAL_PARAM] === 'create-event',
+  set: (isOpen) => {
+    if (isOpen) {
+      router.push({
+        query: {
+          ...route.query,
+          [MODAL_PARAM]: 'create-event',
+          [STEP_PARAM]: '1',
+        },
+      })
+      return
+    }
+
+    closeRoutedModal()
+  },
+})
+
+const eventModalOpen = computed({
+  get: () => {
+    const key = route.query?.[MODAL_PARAM]
+    return key === 'event-details' || key === 'edit-event'
+  },
+  set: (isOpen) => {
+    if (isOpen) return
+    closeRoutedModal()
+  },
+})
+
 const openEventModal = (event) => {
+  if (!event?.id) return
   activeEvent.value = event
-  eventModalOpen.value = true
+  router.push({
+    query: {
+      ...route.query,
+      [MODAL_PARAM]: 'event-details',
+      [EVENT_ID_PARAM]: String(event.id),
+    },
+  })
+}
+
+const openEditEventModal = (eventId) => {
+  if (!eventId) return
+  const id = String(eventId)
+  router.push({
+    query: {
+      ...route.query,
+      [MODAL_PARAM]: 'edit-event',
+      [EVENT_ID_PARAM]: id,
+      [STEP_PARAM]: '1',
+    },
+  })
 }
 
 const openEventModalFromMobileSchedule = (event) => {
@@ -231,7 +297,7 @@ const onDeleteEvent = async (eventId) => {
   if (!result.success) return
 
   activeEvent.value = null
-  eventModalOpen.value = false
+  closeRoutedModal()
 }
 
 onMounted(async () => {
@@ -255,6 +321,26 @@ watch(createModalOpen, (isOpen) => {
   createFieldErrors.value = {}
 })
 
+watch(
+  () => [route.query?.[MODAL_PARAM], route.query?.[EVENT_ID_PARAM], filteredEvents.value.length],
+  () => {
+    const modalKey = route.query?.[MODAL_PARAM]
+    const eventId = route.query?.[EVENT_ID_PARAM]
+
+    if (modalKey !== 'event-details' && modalKey !== 'edit-event') return
+    if (!eventId) return
+
+    const id = String(eventId)
+    const found =
+      eventStore.events.find((evt) => String(evt.id) === id) ||
+      eventStore.favoriteEventSnapshots.find((evt) => String(evt.id) === id) ||
+      null
+
+    if (found) activeEvent.value = found
+  },
+  { immediate: true },
+)
+
 </script>
 
 <template>
@@ -268,7 +354,19 @@ watch(createModalOpen, (isOpen) => {
 
     <ConfirmModal v-model="logoutModalOpen" title-user="Cerrar sesion" message="Se cerrara tu sesion actual en EventCut." description="Si tienes cambios sin guardar en otra pestaña, podrian perderse." confirm-text="Si, cerrar sesion" cancel-text="Cancelar" :danger="false" @confirm="onLogout" />
     <CreateEventModal v-model="createModalOpen" :categories="categories" :is-saving="isSavingEvent" :submit-error="createSubmitError" :field-errors="createFieldErrors" @submit="onCreateEvent" />
-    <EventCardModalEdit v-model="eventModalOpen" :event="activeEvent" :categories="categories" :can-manage="isEventManageable" :is-saving="isUpdatingEvent" :is-deleting="isDeletingEvent" :submit-error="updateSubmitError" :field-errors="updateFieldErrors" @save="onUpdateEvent" @delete="onDeleteEvent" />
+    <EventCardModalEdit
+      v-model="eventModalOpen"
+      :event="activeEvent"
+      :categories="categories"
+      :can-manage="isEventManageable"
+      :is-saving="isUpdatingEvent"
+      :is-deleting="isDeletingEvent"
+      :submit-error="updateSubmitError"
+      :field-errors="updateFieldErrors"
+      @save="onUpdateEvent"
+      @delete="onDeleteEvent"
+      @enter-edit="openEditEventModal"
+    />
 
     <AppHeader
       v-model="searchQuery"

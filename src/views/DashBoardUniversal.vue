@@ -26,13 +26,9 @@ const { categories, filteredEvents, upcomingEvents, favoriteEvents, favoriteUpco
 
 const isLoggingOut = ref(false)
 const logoutModalOpen = ref(false)
-const createModalOpen = ref(false)
 const mobileSearchOpen = ref(false)
 const mobileScheduleOpen = ref(false)
-const eventModalOpen = ref(false)
 const activeEvent = ref(null)
-const hasEventModalHistoryEntry = ref(false)
-const isClosingEventModalFromHistory = ref(false)
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
 const createSubmitError = ref('')
 const createFieldErrors = ref({})
@@ -175,7 +171,7 @@ const onCreateEvent = async (payload) => {
 
   createSubmitError.value = ''
   createFieldErrors.value = {}
-  createModalOpen.value = false
+  closeRoutedModal()
   showToast('success', 'Evento creado', 'Tu evento ya aparece en la cartelera del mes seleccionado.')
 }
 
@@ -183,14 +179,74 @@ const onToggleMobileSearch = () => {
   mobileSearchOpen.value = !mobileSearchOpen.value
 }
 
-const openEventModal = (event) => {
-  activeEvent.value = event
-  eventModalOpen.value = true
+const MODAL_PARAM = 'modal'
+const STEP_PARAM = 'step'
+const EVENT_ID_PARAM = 'eventId'
+
+const omitModalKeys = (query) => {
+  const next = { ...query }
+  delete next[MODAL_PARAM]
+  delete next[STEP_PARAM]
+  delete next[EVENT_ID_PARAM]
+  return next
 }
 
-const closeEventModal = () => {
-  eventModalOpen.value = false
-  activeEvent.value = null
+const closeRoutedModal = () => {
+  router.push({ query: omitModalKeys(route.query || {}) })
+}
+
+const createModalOpen = computed({
+  get: () => route.query?.[MODAL_PARAM] === 'create-event',
+  set: (isOpen) => {
+    if (isOpen) {
+      router.push({
+        query: {
+          ...route.query,
+          [MODAL_PARAM]: 'create-event',
+          [STEP_PARAM]: '1',
+        },
+      })
+      return
+    }
+
+    closeRoutedModal()
+  },
+})
+
+const eventModalOpen = computed({
+  get: () => {
+    const key = route.query?.[MODAL_PARAM]
+    return key === 'event-details' || key === 'edit-event'
+  },
+  set: (isOpen) => {
+    if (isOpen) return
+    closeRoutedModal()
+  },
+})
+
+const openEventModal = (event) => {
+  if (!event?.id) return
+  activeEvent.value = event
+  router.push({
+    query: {
+      ...route.query,
+      [MODAL_PARAM]: 'event-details',
+      [EVENT_ID_PARAM]: String(event.id),
+    },
+  })
+}
+
+const openEditEventModal = (eventId) => {
+  if (!eventId) return
+  const id = String(eventId)
+  router.push({
+    query: {
+      ...route.query,
+      [MODAL_PARAM]: 'edit-event',
+      [EVENT_ID_PARAM]: id,
+      [STEP_PARAM]: '1',
+    },
+  })
 }
 
 const openEventModalFromMobileSchedule = (event) => {
@@ -237,20 +293,9 @@ const onDeleteEvent = async (eventId) => {
     return
   }
 
-  eventModalOpen.value = false
+  closeRoutedModal()
   activeEvent.value = null
   showToast('success', 'Evento eliminado', 'El evento fue retirado de la cartelera.')
-}
-
-const onEventModalPopState = () => {
-  if (!eventModalOpen.value) {
-    hasEventModalHistoryEntry.value = false
-    return
-  }
-
-  isClosingEventModalFromHistory.value = true
-  closeEventModal()
-  hasEventModalHistoryEntry.value = false
 }
 
 const onSyncSchedule = () => {
@@ -268,12 +313,10 @@ onMounted(async () => {
   }
 
   window.addEventListener('resize', syncFeaturedRailState)
-  window.addEventListener('popstate', onEventModalPopState)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', syncFeaturedRailState)
-  window.removeEventListener('popstate', onEventModalPopState)
 })
 
 watch(createModalOpen, (isOpen) => {
@@ -283,24 +326,31 @@ watch(createModalOpen, (isOpen) => {
 })
 
 watch(eventModalOpen, (isOpen) => {
-  if (isOpen) {
-    if (!hasEventModalHistoryEntry.value) {
-      window.history.pushState({ modal: 'event-details' }, '')
-      hasEventModalHistoryEntry.value = true
-    }
-    return
-  }
-
-  if (hasEventModalHistoryEntry.value && !isClosingEventModalFromHistory.value) {
-    hasEventModalHistoryEntry.value = false
-    window.history.back()
-  }
-
-  isClosingEventModalFromHistory.value = false
+  if (isOpen) return
   activeEvent.value = null
   updateSubmitError.value = ''
   updateFieldErrors.value = {}
 })
+
+watch(
+  () => [route.query?.[MODAL_PARAM], route.query?.[EVENT_ID_PARAM], filteredEvents.value.length, favoriteEvents.value.length],
+  () => {
+    const modalKey = route.query?.[MODAL_PARAM]
+    const eventId = route.query?.[EVENT_ID_PARAM]
+
+    if (modalKey !== 'event-details' && modalKey !== 'edit-event') return
+    if (!eventId) return
+
+    const id = String(eventId)
+    const found =
+      eventStore.events.find((evt) => String(evt.id) === id) ||
+      eventStore.favoriteEventSnapshots.find((evt) => String(evt.id) === id) ||
+      null
+
+    if (found) activeEvent.value = found
+  },
+  { immediate: true },
+)
 
 watch(featuredEvents, async () => {
   await nextTick()
@@ -359,6 +409,7 @@ watch(featuredEvents, async () => {
       :field-errors="updateFieldErrors"
       @save="onUpdateEvent"
       @delete="onDeleteEvent"
+      @enter-edit="openEditEventModal"
     />
 
 
@@ -427,7 +478,7 @@ watch(featuredEvents, async () => {
               @scroll="syncFeaturedRailState"
           >
             <article
-                v-for="(event, index) in featuredEvents"
+                v-for="event in featuredEvents"
                 :key="`featured-${event.id}`"
                 class="group relative h-[260px] w-[85%] shrink-0 snap-start cursor-pointer overflow-hidden rounded-3xl bg-slate-900 shadow-xl sm:w-[calc(50%-0.5rem)] md:h-[250px] lg:h-[280px] lg:w-[calc(33.333%-0.66rem)] xl:w-[calc(33.333%-0.66rem)]"
                 @click="openEventModal(event)"
