@@ -16,6 +16,8 @@ const routeToken = computed(() => {
   return ''
 })
 
+const isTokenFromUrl = computed(() => Boolean(routeToken.value.trim()))
+
 const form = reactive({ token: '' })
 const loading = ref(false)
 const completed = ref(false)
@@ -49,8 +51,8 @@ const submit = async () => {
 }
 
 onMounted(async () => {
-  if (!routeToken.value) return
-  form.token = routeToken.value
+  if (!isTokenFromUrl.value) return
+  form.token = routeToken.value.trim()
   await submit()
 })
 </script>
@@ -80,9 +82,13 @@ onMounted(async () => {
 		  <input
 			v-model="form.token"
 			type="text"
+			:readonly="isTokenFromUrl"
 			class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
 			placeholder="Pega aqui el token recibido por correo"
 		  />
+		  <span v-if="isTokenFromUrl" class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+			Token detectado.
+		  </span>
 		  <FieldError :error="errors.token" />
 		</label>
 

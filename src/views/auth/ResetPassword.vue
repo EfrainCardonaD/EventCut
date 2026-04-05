@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthViewHeader from '@/components/auth/AuthViewHeader.vue'
@@ -11,8 +11,16 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
+const routeToken = computed(() => {
+  if (typeof route.params.token === 'string') return route.params.token
+  if (typeof route.query.token === 'string') return route.query.token
+  return ''
+})
+
+const isTokenFromUrl = computed(() => Boolean(routeToken.value.trim()))
+
 const form = reactive({
-  token: typeof route.query.token === 'string' ? route.query.token : '',
+  token: routeToken.value.trim(),
   newPassword: '',
   confirmPassword: '',
 })
@@ -88,9 +96,13 @@ const submit = async () => {
           <input
             v-model="form.token"
             type="text"
+            :readonly="isTokenFromUrl"
             class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="Token recibido por correo"
           />
+          <span v-if="isTokenFromUrl" class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+            Token detectado.
+          </span>
           <FieldError :error="errors.token" />
         </label>
 
