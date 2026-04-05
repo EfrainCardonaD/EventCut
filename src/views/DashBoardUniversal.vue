@@ -31,6 +31,8 @@ const mobileSearchOpen = ref(false)
 const mobileScheduleOpen = ref(false)
 const eventModalOpen = ref(false)
 const activeEvent = ref(null)
+const hasEventModalHistoryEntry = ref(false)
+const isClosingEventModalFromHistory = ref(false)
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
 const createSubmitError = ref('')
 const createFieldErrors = ref({})
@@ -186,6 +188,11 @@ const openEventModal = (event) => {
   eventModalOpen.value = true
 }
 
+const closeEventModal = () => {
+  eventModalOpen.value = false
+  activeEvent.value = null
+}
+
 const openEventModalFromMobileSchedule = (event) => {
   mobileScheduleOpen.value = false
   openEventModal(event)
@@ -235,6 +242,17 @@ const onDeleteEvent = async (eventId) => {
   showToast('success', 'Evento eliminado', 'El evento fue retirado de la cartelera.')
 }
 
+const onEventModalPopState = () => {
+  if (!eventModalOpen.value) {
+    hasEventModalHistoryEntry.value = false
+    return
+  }
+
+  isClosingEventModalFromHistory.value = true
+  closeEventModal()
+  hasEventModalHistoryEntry.value = false
+}
+
 const onSyncSchedule = () => {
   showToast('info', 'Proximamente', 'La sincronizacion con Google Calendar estara disponible en una siguiente iteracion.')
 }
@@ -250,10 +268,12 @@ onMounted(async () => {
   }
 
   window.addEventListener('resize', syncFeaturedRailState)
+  window.addEventListener('popstate', onEventModalPopState)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', syncFeaturedRailState)
+  window.removeEventListener('popstate', onEventModalPopState)
 })
 
 watch(createModalOpen, (isOpen) => {
@@ -263,7 +283,21 @@ watch(createModalOpen, (isOpen) => {
 })
 
 watch(eventModalOpen, (isOpen) => {
-  if (isOpen) return
+  if (isOpen) {
+    if (!hasEventModalHistoryEntry.value) {
+      window.history.pushState({ modal: 'event-details' }, '')
+      hasEventModalHistoryEntry.value = true
+    }
+    return
+  }
+
+  if (hasEventModalHistoryEntry.value && !isClosingEventModalFromHistory.value) {
+    hasEventModalHistoryEntry.value = false
+    window.history.back()
+  }
+
+  isClosingEventModalFromHistory.value = false
+  activeEvent.value = null
   updateSubmitError.value = ''
   updateFieldErrors.value = {}
 })

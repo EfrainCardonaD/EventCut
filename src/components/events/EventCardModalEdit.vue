@@ -537,7 +537,11 @@ onBeforeUnmount(() => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue && event" class="p-2 pt-5  fixed inset-0 z-[80] flex items-center justify-center  border sm:p-4 md:p-6  sm:border border-slate-200  shadow-2xl backdrop-blur-md dark:border-slate-800 ">
+    <div
+      v-if="modelValue && event"
+      class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-2 pt-5 backdrop-blur-md sm:p-4 md:p-6"
+      @click.self="closeModal"
+    >
       <SpinnerOverlay :show="isSaving || isDeleting" :text="isDeleting ? 'Eliminando evento...' : 'Guardando cambios...'" />
 
       <ConfirmModal
