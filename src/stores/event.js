@@ -3,21 +3,42 @@ import eventsApi from '@/utils/eventsApi'
 import { getApiMessage, getApiPayload, mapApiCodeToUxAction, toApiErrorResult } from '@/utils/apiFactory'
 import { createEventWithSignedImageUpload, updateEventWithSignedImageUpload } from '@/utils/eventCreateFactory'
 
-const FAVORITES_CACHE_KEY = 'eventcut.favoriteEventIds'
+const FAVORITES_CACHE_PREFIX = 'eventcut.favoriteEventIds'
+// TTL para evitar quedarnos con favoritos viejos cuando el usuario cambió de dispositivo.
+// Ajustable según necesidad de negocio.
+const FAVORITES_CACHE_TTL_MS = 1000 * 60 * 5
 
-const readFavoriteIds = () => {
+const buildFavoritesCacheKey = (userScopedKey = 'anon') => `${FAVORITES_CACHE_PREFIX}:${userScopedKey}`
+
+const readFavoriteIds = (key) => {
   try {
-    const parsed = JSON.parse(localStorage.getItem(FAVORITES_CACHE_KEY) || '[]')
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter((id) => typeof id === 'string')
+    const raw = localStorage.getItem(key)
+    if (!raw) return []
+
+    // Nuevo formato: { ids: string[], updatedAt: number }
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      // Backward compatible: formato legacy era solo array.
+      return parsed.filter((id) => typeof id === 'string')
+    }
+
+    const ids = Array.isArray(parsed?.ids) ? parsed.ids : []
+    const updatedAt = typeof parsed?.updatedAt === 'number' ? parsed.updatedAt : 0
+    const isFresh = Date.now() - updatedAt <= FAVORITES_CACHE_TTL_MS
+
+    if (!isFresh) return []
+    return ids.filter((id) => typeof id === 'string')
   } catch {
-    localStorage.removeItem(FAVORITES_CACHE_KEY)
+    localStorage.removeItem(key)
     return []
   }
 }
 
-const saveFavoriteIds = (favoriteIds) => {
-  localStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(favoriteIds))
+const saveFavoriteIds = (key, favoriteIds) => {
+  localStorage.setItem(
+    key,
+    JSON.stringify({ ids: favoriteIds, updatedAt: Date.now() }),
+  )
 }
 
 const toIsoDate = (date) => {
@@ -126,8 +147,14 @@ export const useEventStore = defineStore('event', {
       isDeletingEvent: false,
       error: null,
       lastEventsQuery: null,
-      favoriteEventIds: readFavoriteIds(),
+      // Se inicializa como vacío y se hidrata cuando sabemos el usuario (o anon).
+      favoriteEventIds: [],
       favoriteEventSnapshots: [],
+
+      // Internos para cache y refresco.
+      favoritesCacheKey: buildFavoritesCacheKey('anon'),
+      lastFavoritesRefreshAt: 0,
+      isRefreshingFavorites: false,
     }
   },
 
@@ -246,6 +273,32 @@ export const useEventStore = defineStore('event', {
   },
 
   actions: {
+    /**
+     * Debe llamarse cuando cambia la sesión (login/logout/refresh) para scopear el cache por usuario.
+     * userScopedKey típico: authStore.user?.id || authStore.user?.email || 'anon'
+     */
+    setFavoritesUserScope(userScopedKey) {
+      const nextKey = buildFavoritesCacheKey(userScopedKey || 'anon')
+      this.favoritesCacheKey = nextKey
+
+      // Rehidrata desde cache (solo si está fresco por TTL).
+      this.favoriteEventIds = readFavoriteIds(nextKey)
+      // Mantener snapshots coherentes: si ya no están en IDs, se limpian.
+      const valid = new Set(this.favoriteEventIds)
+      this.favoriteEventSnapshots = this.favoriteEventSnapshots.filter((e) => valid.has(e.id))
+    },
+
+    clearFavoritesCache() {
+      try {
+        localStorage.removeItem(this.favoritesCacheKey)
+      } catch {
+        // noop
+      }
+      this.favoriteEventIds = []
+      this.favoriteEventSnapshots = []
+      this.lastFavoritesRefreshAt = 0
+    },
+
     upsertEventInCollections(eventToUpsert) {
       this.events = this.events.map((event) => (event.id === eventToUpsert.id ? { ...event, ...eventToUpsert } : event))
 
@@ -266,7 +319,7 @@ export const useEventStore = defineStore('event', {
       this.favoriteEventSnapshots = this.favoriteEventSnapshots.filter((event) => event.id !== eventId)
 
       this.favoriteEventIds = this.favoriteEventIds.filter((id) => id !== eventId)
-      saveFavoriteIds(this.favoriteEventIds)
+      saveFavoriteIds(this.favoritesCacheKey, this.favoriteEventIds)
     },
 
     setCategory(categoryId) {
@@ -378,7 +431,7 @@ export const useEventStore = defineStore('event', {
         })
 
         this.favoriteEventIds = [...favoriteIdsSet]
-        saveFavoriteIds(this.favoriteEventIds)
+        saveFavoriteIds(this.favoritesCacheKey, this.favoriteEventIds)
         this.total = this.events.length
         await this.hydrateFavoriteEvents()
       } catch (error) {
@@ -399,7 +452,7 @@ export const useEventStore = defineStore('event', {
         if (favorited) favoriteIds.add(eventId)
         else favoriteIds.delete(eventId)
         this.favoriteEventIds = [...favoriteIds]
-        saveFavoriteIds(this.favoriteEventIds)
+        saveFavoriteIds(this.favoritesCacheKey, this.favoriteEventIds)
 
         this.events = this.events.map((event) => {
           if (event.id !== eventId) return event
@@ -427,6 +480,61 @@ export const useEventStore = defineStore('event', {
         return { success: true, favorited, message }
       } catch (error) {
         return toStoreErrorResult(error, 'No se pudo actualizar tu favorito.')
+      }
+    },
+
+    /**
+     * Refresca favoritos desde el backend para evitar “cache” en multi-dispositivo.
+     *
+     * Estrategia:
+     * - Intenta un endpoint dedicado (si existe) con `only_favorites=1`.
+     * - Si el backend no lo soporta, cae en `fetchEvents()` y reconstruye desde flags `favorited`.
+     *
+     * Nota: Si el backend pagina o limita resultados, el endpoint dedicado es la opción robusta.
+     */
+    async refreshFavoritesFromServer(options = {}) {
+      const minIntervalMs = typeof options.minIntervalMs === 'number' ? options.minIntervalMs : 15_000
+      const force = Boolean(options.force)
+
+      if (!force && Date.now() - this.lastFavoritesRefreshAt < minIntervalMs) return
+      if (this.isRefreshingFavorites) return
+
+      this.isRefreshingFavorites = true
+      try {
+        // 1) Intento endpoint dedicado (si el backend lo soporta)
+        try {
+          const response = await eventsApi.get('/api/v1/events', {
+            params: { only_favorites: 1, limit: 500, offset: 0 },
+          })
+          const payload = getApiPayload(response)
+          const items = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : []
+
+          if (items?.length) {
+            const ids = items.map((e) => e?.id).filter((id) => typeof id === 'string')
+            this.favoriteEventIds = [...new Set(ids)]
+            saveFavoriteIds(this.favoritesCacheKey, this.favoriteEventIds)
+
+            // Actualiza snapshots para que el UI tenga data aunque no estén en el listado principal.
+            const normalizedItems = items
+              .filter((e) => e?.id)
+              .map((e) => ({ ...normalizeEvent(e, new Set(this.favoriteEventIds)), isFavorite: true }))
+
+            const byId = new Map(this.favoriteEventSnapshots.map((e) => [e.id, e]))
+            normalizedItems.forEach((e) => byId.set(e.id, e))
+            this.favoriteEventSnapshots = [...byId.values()]
+            this.lastFavoritesRefreshAt = Date.now()
+            return
+          }
+        } catch {
+          // Si falla, caemos al fallback.
+        }
+
+        // 2) Fallback: recargar eventos y dejar que los flags del backend (si están) reconstruyan el set.
+        // Si el backend no envía flags de favorito, no hay forma de sincronizar sin endpoint dedicado.
+        await this.fetchEvents(this.lastEventsQuery || { scope: this.eventsScope || 'all' })
+        this.lastFavoritesRefreshAt = Date.now()
+      } finally {
+        this.isRefreshingFavorites = false
       }
     },
 

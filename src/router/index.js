@@ -1,5 +1,6 @@
 ﻿import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useEventStore } from '@/stores/event'
 
 import LandingPageLayout from '@/layouts/LandingPageLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
@@ -207,6 +208,11 @@ router.beforeEach(async (to, from, next) => {
     await authStore.bootstrapSession()
   }
 
+  // Mantiene el cache de favoritos scopeado por usuario.
+  const eventStore = useEventStore()
+  const scopeKey = authStore.user?.id || authStore.user?.email || authStore.user?.username || 'anon'
+  eventStore.setFavoritesUserScope(scopeKey)
+
   const isAuthenticated = authStore.isAuthenticated
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const isGuest = to.matched.some((record) => record.meta.guest)
@@ -240,5 +246,25 @@ router.beforeEach(async (to, from, next) => {
 
   next()
 })
+
+// Revalidación “live-ish” multi-dispositivo: al volver a foco o salir del background.
+// No usa websockets; hace un refresh throttled (ver minIntervalMs en el store).
+if (typeof window !== 'undefined') {
+  const refresh = async () => {
+    try {
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return
+      const eventStore = useEventStore()
+      await eventStore.refreshFavoritesFromServer({ minIntervalMs: 15_000 })
+    } catch {
+      // noop
+    }
+  }
+
+  window.addEventListener('focus', refresh)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refresh()
+  })
+}
 
 export default router

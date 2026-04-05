@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import api from '../utils/api'
 import router from '../router'
 import { getFriendlyApiErrorMessage, normalizeApiError } from '../utils/apiFactory'
+import { useEventStore } from './event'
 
 const DEFAULT_MIN_TTL_SECONDS = 60
 let refreshInFlightPromise = null
@@ -77,6 +78,12 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = authData?.refreshToken || null
       this.user = this.normalizeUser(authData?.user)
 
+      // Scopear cache de favoritos por usuario (evita cache compartido entre cuentas/dispositivos).
+      // Nota: el store de eventos vive fuera del router, es seguro instanciarlo acá.
+      const eventStore = useEventStore()
+      const scopeKey = this.user?.id || this.user?.email || this.user?.username || 'anon'
+      eventStore.setFavoritesUserScope(scopeKey)
+
       if (this.token) localStorage.setItem('jwt_token', this.token)
       else localStorage.removeItem('jwt_token')
 
@@ -88,6 +95,16 @@ export const useAuthStore = defineStore('auth', {
     },
 
     clearAuthData() {
+      // Limpieza de favoritos al cerrar sesión: evita “cache” de otra cuenta.
+      // Si se quiere mantener favoritos anónimos, esto puede ajustarse a solo reseat a 'anon'.
+      try {
+        const eventStore = useEventStore()
+        eventStore.clearFavoritesCache()
+        eventStore.setFavoritesUserScope('anon')
+      } catch {
+        // noop
+      }
+
       this.token = null
       this.refreshToken = null
       this.user = null
@@ -131,6 +148,12 @@ export const useAuthStore = defineStore('auth', {
 
         if (response.data?.success && authData?.token && authData?.refreshToken) {
           this.setAuthData(authData)
+
+          // Best-effort: traer favoritos del backend ASAP para consistencia multi-dispositivo.
+          // Si el backend no soporta endpoint dedicado, el store caerá a fetchEvents().
+          const eventStore = useEventStore()
+          await eventStore.refreshFavoritesFromServer({ force: true })
+
           return {
             success: true,
             user: this.user,
@@ -198,7 +221,14 @@ export const useAuthStore = defineStore('auth', {
       const profile = await this.fetchMe()
       if (!profile.success) {
         this.clearAuthData()
+        return
       }
+
+      // Una vez que tenemos el user, scoping y refresh de favoritos.
+      const eventStore = useEventStore()
+      const scopeKey = this.user?.id || this.user?.email || this.user?.username || 'anon'
+      eventStore.setFavoritesUserScope(scopeKey)
+      await eventStore.refreshFavoritesFromServer({ force: true })
     },
 
     async resendVerification(email) {
