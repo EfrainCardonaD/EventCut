@@ -58,8 +58,16 @@ export const useAuthStore = defineStore('auth', {
 
     normalizeUser(user) {
       if (!user || typeof user !== 'object') return null
+
+      const firstName = user.firstName ?? user.first_name ?? null
+      const lastName = user.lastName ?? user.last_name ?? null
+      const emailVerified = user.emailVerified ?? user.email_verified ?? null
+
       return {
         ...user,
+        firstName,
+        lastName,
+        emailVerified,
         role: this.normalizeRole(user.role),
       }
     },
@@ -95,8 +103,8 @@ export const useAuthStore = defineStore('auth', {
           username: payload.username,
           email: payload.email,
           password: payload.password,
-          firstName: payload.firstName,
-          lastName: payload.lastName,
+          first_name: payload.firstName,
+          last_name: payload.lastName,
         })
 
         if (response.status === 201 && response.data?.success) {
@@ -145,10 +153,20 @@ export const useAuthStore = defineStore('auth', {
       }
 
       try {
-        const response = await api.get('/api/auth/me')
+        let response
 
-        if (response.data?.success && response.data?.data) {
-          this.user = this.normalizeUser(response.data.data)
+        try {
+          response = await api.get('/api/auth/me')
+        } catch (error) {
+          if (error?.response?.status !== 404) throw error
+          response = await api.get('/api/users/me')
+        }
+
+        const payload = response.data
+        const userData = payload?.success === false ? null : payload?.data || payload
+
+        if (userData && typeof userData === 'object') {
+          this.user = this.normalizeUser(userData)
           localStorage.setItem('user_data', JSON.stringify(this.user))
           return { success: true, data: this.user }
         }
@@ -182,7 +200,7 @@ export const useAuthStore = defineStore('auth', {
 
     async resendVerification(email) {
       try {
-        const response = await api.post('/api/auth/verify/email/resend', null, { params: { email } })
+        const response = await api.post('/api/auth/verify/email/resend', { email })
 
         if (response.status >= 200 && response.status < 300) {
           return {
@@ -249,7 +267,7 @@ export const useAuthStore = defineStore('auth', {
 
     async resetPassword(token, newPassword) {
       try {
-        const response = await api.post('/api/auth/reset', { token, newPassword })
+        const response = await api.post('/api/auth/password/reset', { token, new_password: newPassword })
 
         if (response.status >= 200 && response.status < 300 && response.data?.success) {
           return {

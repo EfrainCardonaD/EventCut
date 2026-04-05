@@ -9,6 +9,7 @@ const NON_REFRESHABLE_PATHS = [
   '/api/auth/forgot',
   '/api/auth/password/forgot',
   '/api/auth/reset',
+  '/api/auth/password/reset',
   '/api/auth/verify/email/confirm',
   '/api/auth/verify/email/resend',
 ];
