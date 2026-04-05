@@ -487,8 +487,8 @@ export const useEventStore = defineStore('event', {
      * Refresca favoritos desde el backend para evitar “cache” en multi-dispositivo.
      *
      * Estrategia:
-     * - Intenta un endpoint dedicado (si existe) con `only_favorites=1`.
-     * - Si el backend no lo soporta, cae en `fetchEvents()` y reconstruye desde flags `favorited`.
+     * - Usa el endpoint dedicado: `GET /api/v1/events/my/favorites` (paginado).
+     * - Si falla (p.ej. backend viejo), cae en `fetchEvents()` y reconstruye desde flags `favorited`.
      *
      * Nota: Si el backend pagina o limita resultados, el endpoint dedicado es la opción robusta.
      */
@@ -501,30 +501,54 @@ export const useEventStore = defineStore('event', {
 
       this.isRefreshingFavorites = true
       try {
-        // 1) Intento endpoint dedicado (si el backend lo soporta)
+        // 1) Endpoint dedicado (paginado): /api/v1/events/my/favorites
         try {
-          const response = await eventsApi.get('/api/v1/events', {
-            params: { only_favorites: 1, limit: 500, offset: 0 },
-          })
-          const payload = getApiPayload(response)
-          const items = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload) ? payload : []
+          const limit = Math.min(Math.max(Number(options.limit ?? 100), 1), 100)
+          const collected = []
+          let offset = 0
+          let total = Number.POSITIVE_INFINITY
 
-          if (items?.length) {
-            const ids = items.map((e) => e?.id).filter((id) => typeof id === 'string')
-            this.favoriteEventIds = [...new Set(ids)]
-            saveFavoriteIds(this.favoritesCacheKey, this.favoriteEventIds)
+          while (collected.length < total) {
+            const response = await eventsApi.get('/api/v1/events/my/favorites', {
+              params: { limit, offset },
+            })
 
-            // Actualiza snapshots para que el UI tenga data aunque no estén en el listado principal.
-            const normalizedItems = items
-              .filter((e) => e?.id)
-              .map((e) => ({ ...normalizeEvent(e, new Set(this.favoriteEventIds)), isFavorite: true }))
+            const payload = getApiPayload(response)
+            const data = payload?.data ?? payload
+            const pageItems = Array.isArray(data?.items) ? data.items : []
+            total = Number(data?.total ?? collected.length + pageItems.length)
 
-            const byId = new Map(this.favoriteEventSnapshots.map((e) => [e.id, e]))
-            normalizedItems.forEach((e) => byId.set(e.id, e))
-            this.favoriteEventSnapshots = [...byId.values()]
-            this.lastFavoritesRefreshAt = Date.now()
-            return
+            if (!pageItems.length) break
+            collected.push(...pageItems)
+            offset += pageItems.length
+
+            if (pageItems.length < limit) break
+            if (offset >= total) break
+            if (offset > 5000) break
           }
+
+          const ids = collected.map((e) => e?.id).filter((id) => typeof id === 'string')
+          this.favoriteEventIds = [...new Set(ids)]
+          saveFavoriteIds(this.favoritesCacheKey, this.favoriteEventIds)
+
+          // Actualiza snapshots para que el UI tenga data aunque no estén en el listado principal.
+          const normalizedItems = collected
+            .filter((e) => e?.id)
+            .map((e) => ({ ...normalizeEvent(e, new Set(this.favoriteEventIds)), isFavorite: true }))
+
+          const byId = new Map(this.favoriteEventSnapshots.map((e) => [e.id, e]))
+          normalizedItems.forEach((e) => byId.set(e.id, e))
+          this.favoriteEventSnapshots = [...byId.values()]
+
+          // También patcha la colección principal si ya está cargada.
+          const favoritesSet = new Set(this.favoriteEventIds)
+          this.events = this.events.map((event) => ({
+            ...event,
+            isFavorite: favoritesSet.has(event.id),
+          }))
+
+          this.lastFavoritesRefreshAt = Date.now()
+          return
         } catch {
           // Si falla, caemos al fallback.
         }
