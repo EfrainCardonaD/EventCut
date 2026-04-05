@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import api from '../utils/api'
 import router from '../router'
-import { getFriendlyApiErrorMessage } from '../utils/apiFactory'
+import { getFriendlyApiErrorMessage, normalizeApiError } from '../utils/apiFactory'
 
 const DEFAULT_MIN_TTL_SECONDS = 60
 let refreshInFlightPromise = null
@@ -140,9 +140,12 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: false, error: 'Respuesta inválida del servidor al iniciar sesión.' }
       } catch (error) {
+        const apiError = normalizeApiError(error, 'Error al iniciar sesión. Verifica tus credenciales.')
         return {
           success: false,
-          error: getFriendlyApiErrorMessage(error, 'Error al iniciar sesión. Verifica tus credenciales.'),
+          error: apiError.message,
+          code: apiError.code,
+          status: apiError.status,
         }
       }
     },

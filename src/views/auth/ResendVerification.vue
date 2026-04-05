@@ -1,6 +1,6 @@
 <script setup>
-import { reactive, ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { onMounted, reactive, ref } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthViewHeader from '@/components/auth/AuthViewHeader.vue'
 import Alert from '@/components/util/Alert.vue'
@@ -8,6 +8,7 @@ import FieldError from '@/components/util/FieldError.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 
 const form = reactive({
@@ -23,6 +24,20 @@ const showToast = (type, title, message) => {
   toast.message = message
   toast.show = true
 }
+
+onMounted(async () => {
+  if (route.query.reason !== 'email-not-verified') return
+
+  showToast(
+	'warning',
+	'Verifica tu cuenta',
+	'Necesitas verificar tu correo antes de iniciar sesión. Te ayudamos a reenviar el enlace.',
+  )
+
+  const nextQuery = { ...route.query }
+  delete nextQuery.reason
+  await router.replace({ query: nextQuery })
+})
 
 const submit = async () => {
   errors.email = /\S+@\S+\.\S+/.test(form.email) ? '' : 'Ingresa un correo valido.'

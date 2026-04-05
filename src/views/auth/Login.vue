@@ -29,6 +29,16 @@ const showToast = (type, title, message) => {
   toast.show = true
 }
 
+const isEmailCandidate = (value) => /\S+@\S+\.\S+/.test(value || '')
+
+const isUnverifiedAccountError = (result) => {
+  const code = String(result?.code || '').toUpperCase()
+  const message = String(result?.error || '').toLowerCase()
+
+  if (code === 'EMAIL_NOT_VERIFIED' || code === 'ACCOUNT_NOT_VERIFIED') return true
+  return message.includes('verific') && message.includes('correo')
+}
+
 const validate = () => {
   errors.username = form.username ? '' : 'Ingresa tu usuario o correo institucional.'
   errors.password = form.password ? '' : 'Ingresa tu contraseña.'
@@ -40,9 +50,22 @@ const submit = async () => {
 
   loading.value = true
   try {
-    const result = await auth.login(form.username.trim(), form.password)
+    const username = form.username.trim()
+    const result = await auth.login(username, form.password)
     if (result.success) {
       await router.push(redirectTarget.value)
+      return
+    }
+
+    if (isUnverifiedAccountError(result)) {
+      const email = isEmailCandidate(username) ? username.toLowerCase() : ''
+      await router.push({
+        path: '/auth/verify/resend',
+        query: {
+          ...(email ? { email } : {}),
+          reason: 'email-not-verified',
+        },
+      })
       return
     }
 
