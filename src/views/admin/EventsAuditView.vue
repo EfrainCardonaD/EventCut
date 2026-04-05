@@ -7,6 +7,7 @@ import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import AdminActionModal from '@/components/admin/AdminActionModal.vue'
 import EventCard from '@/components/events/EventCard.vue'
+import EventCardModal from '@/components/events/EventCardModal.vue'
 import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import AdminUserManageModal from '@/components/admin/AdminUserManageModal.vue'
 
@@ -23,8 +24,6 @@ const {
   isLoading,
   isUpdating,
   isDeleting,
-  owner_first_name,
-    owner_last_name
 } = storeToRefs(eventsStore)
 
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
@@ -32,6 +31,7 @@ const deleteModalOpen = ref(false)
 const targetEvent = ref(null)
 
 const eventModalOpen = ref(false)
+const eventEditModalOpen = ref(false)
 const activeEvent = ref(null)
 
 const authorPopoverForId = ref(null)
@@ -219,13 +219,21 @@ onMounted(async () => {
       :duration="4500"
     />
 
-    <EventCardModalEdit
+    <EventCardModal
       v-model="eventModalOpen"
       :event="activeEvent"
       :categories="categories"
       :can-manage="true"
+      @edit="() => { eventModalOpen = false; eventEditModalOpen = true }"
+    />
+
+    <EventCardModalEdit
+      v-model="eventEditModalOpen"
+      :event="activeEvent"
+      :categories="categories"
+      :can-manage="true"
       :is-saving="isUpdating"
-      :is-deleting="isDeleting"
+      :is-deleting="false"
       submit-error=""
       :field-errors="{}"
       @save="onUpdateEvent"

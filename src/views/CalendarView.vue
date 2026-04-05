@@ -6,6 +6,7 @@ import CalendarWidgetCompact from '@/components/events/CalendarWidgetCompact.vue
 import CategoryFilter from '@/components/events/CategoryFilter.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import EventCard from '@/components/events/EventCard.vue'
+import EventCardModal from '@/components/events/EventCardModal.vue'
 import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.vue'
 import Alert from '@/components/util/Alert.vue'
@@ -47,6 +48,8 @@ const monthEventsDrawerOpen = ref(false)
 const scheduleToastOpen = ref(false)
 const updateSubmitError = ref('')
 const updateFieldErrors = ref({})
+
+const eventEditModalOpen = ref(false)
 const favoriteToast = ref({ show: false, type: 'info', title: '', message: '' })
 
 const showFavoriteToast = (type, title, message) => {
@@ -249,6 +252,12 @@ watch(eventModalOpen, (isOpen) => {
   updateFieldErrors.value = {}
 })
 
+watch(eventEditModalOpen, (isOpen) => {
+  if (isOpen) return
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
+})
+
 watch(createModalOpen, (isOpen) => {
   if (isOpen) return
   createSubmitError.value = ''
@@ -268,7 +277,25 @@ watch(createModalOpen, (isOpen) => {
 
     <ConfirmModal v-model="logoutModalOpen" title-user="Cerrar sesion" message="Se cerrara tu sesion actual en EventCut." description="Si tienes cambios sin guardar en otra pestaña, podrian perderse." confirm-text="Si, cerrar sesion" cancel-text="Cancelar" :danger="false" @confirm="onLogout" />
     <CreateEventModal v-model="createModalOpen" :categories="categories" :is-saving="isSavingEvent" :submit-error="createSubmitError" :field-errors="createFieldErrors" @submit="onCreateEvent" />
-    <EventCardModalEdit v-model="eventModalOpen" :event="activeEvent" :categories="categories" :can-manage="isEventManageable" :is-saving="isUpdatingEvent" :is-deleting="isDeletingEvent" :submit-error="updateSubmitError" :field-errors="updateFieldErrors" @save="onUpdateEvent" @delete="onDeleteEvent" />
+    <EventCardModal
+      v-model="eventModalOpen"
+      :event="activeEvent"
+      :categories="categories"
+      :can-manage="isEventManageable"
+      @edit="() => { eventModalOpen = false; eventEditModalOpen = true }"
+    />
+    <EventCardModalEdit
+      v-model="eventEditModalOpen"
+      :event="activeEvent"
+      :categories="categories"
+      :can-manage="isEventManageable"
+      :is-saving="isUpdatingEvent"
+      :is-deleting="isDeletingEvent"
+      :submit-error="updateSubmitError"
+      :field-errors="updateFieldErrors"
+      @save="onUpdateEvent"
+      @delete="onDeleteEvent"
+    />
 
     <AppHeader
       v-model="searchQuery"

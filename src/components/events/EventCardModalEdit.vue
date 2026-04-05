@@ -5,13 +5,10 @@ import Alert from '@/components/util/Alert.vue'
 import FieldError from '@/components/util/FieldError.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
-import SocialNetworkIcon from '@/components/icons/SocialNetworkIcon.vue'
 import SocialLinksStep from '@/components/util/SocialLinksStep.vue'
 import RichTextEditor from '@/components/util/RichTextEditor.vue'
-import RichTextRenderer from '@/components/util/RichTextRenderer.vue'
 import { isAllowedEventImageType } from '@/utils/eventCreateFactory'
-import { dbToUiModel, uiToDbStrict, parseDbDateTime } from '@/utils/eventDateTimeAdapter'
-import { getCategoryAccentStyles } from '@/utils/categoryColors'
+import { dbToUiModel, uiToDbStrict } from '@/utils/eventDateTimeAdapter'
 import {
   toEventCategoryId,
   validateEventCategory,
@@ -63,24 +60,17 @@ const emit = defineEmits(['update:modelValue', 'save', 'delete'])
 
 const EDIT_TOTAL_STEPS = 4
 const editStep = ref(1)
+
 const showSocialInput = ref({
   whatsapp: false,
   facebook: false,
   instagram: false,
 })
 
-const editMode = ref(false)
 const deleteModalOpen = ref(false)
-const creatorCardOpen = ref(false)
-const descriptionExpanded = ref(false)
 const localError = ref('')
 const isBodyScrollLocked = useScrollLock(typeof document !== 'undefined' ? document.body : null)
 
-const formErrorMessage = computed(() => {
-  return (localError.value || props.submitError || '').trim()
-})
-
-const showFormError = computed(() => Boolean(formErrorMessage.value))
 const form = ref({
   title: '',
   description: '',
@@ -94,6 +84,11 @@ const form = ref({
   endDate: '',
   imageFile: null,
   removeImage: false,
+  social_links: {
+    whatsapp: '',
+    facebook: '',
+    instagram: '',
+  },
 })
 
 const localImagePreview = ref('')
@@ -108,9 +103,14 @@ const clearLocalImagePreview = () => {
 const imagePreview = computed(() => {
   if (localImagePreview.value) return localImagePreview.value
   if (form.value.removeImage) return ''
-  if (!props.event?.image_url) return ''
-  return props.event.image_url
+  return props.event?.image_url || ''
 })
+
+const formErrorMessage = computed(() => {
+  return (localError.value || props.submitError || '').trim()
+})
+
+const showFormError = computed(() => Boolean(formErrorMessage.value))
 
 const toFieldErrorText = (value) => {
   if (!value) return ''
@@ -144,11 +144,13 @@ const syncFormFromEvent = () => {
     imageFile: null,
     removeImage: false,
   }
+
   showSocialInput.value = {
     whatsapp: Boolean(form.value.social_links.whatsapp),
     facebook: Boolean(form.value.social_links.facebook),
     instagram: Boolean(form.value.social_links.instagram),
   }
+
   clearLocalImagePreview()
   deleteModalOpen.value = false
   localError.value = ''
@@ -160,32 +162,16 @@ watch(
     isBodyScrollLocked.value = isOpen
 
     if (!isOpen) {
-      editMode.value = false
       editStep.value = 1
       deleteModalOpen.value = false
-      creatorCardOpen.value = false
-      descriptionExpanded.value = false
+      localError.value = ''
       clearLocalImagePreview()
       return
     }
+
     syncFormFromEvent()
   },
   { immediate: true },
-)
-
-onBeforeUnmount(() => {
-  isBodyScrollLocked.value = false
-})
-
-watch(
-  () => editMode.value,
-  (enabled) => {
-    if (!enabled) {
-      editStep.value = 1
-      localError.value = ''
-      descriptionExpanded.value = false
-    }
-  },
 )
 
 const editProgressRatio = computed(() => {
@@ -275,203 +261,28 @@ const goEditNext = () => {
   if (editStep.value < EDIT_TOTAL_STEPS) editStep.value += 1
 }
 
+const closeModal = () => {
+  if (props.isSaving || props.isDeleting) return
+  emit('update:modelValue', false)
+}
 
 const onBackdropIntent = () => {
   if (props.isSaving || props.isDeleting) return
-  // Si hay sub-modals/popovers abiertos, primero se quedan en ese flujo.
   if (deleteModalOpen.value) return
-  if (creatorCardOpen.value) {
-    creatorCardOpen.value = false
-    return
-  }
-
-  // Tap fuera = cerrar modal.
   closeModal()
 }
 
 const onBackIntent = () => {
   if (props.isSaving || props.isDeleting) return
   if (deleteModalOpen.value) return
-  if (creatorCardOpen.value) {
-    creatorCardOpen.value = false
-    return
-  }
 
-  // Back/Escape = atrás por pasos si está editando.
-  if (editMode.value && editStep.value > 1) {
+  if (editStep.value > 1) {
     goEditPrev()
     return
   }
 
   closeModal()
 }
-
-
-const closeModal = () => {
-  emit('update:modelValue', false)
-}
-
-const categoryName = computed(() => {
-  const found = props.categories.find((category) => category.id === props.event?.category_id)
-  return props.event?.category_name || found?.name || 'Evento'
-})
-
-const isDark = computed(() => document.documentElement.classList.contains('dark'))
-
-const categoryAccentStyle = computed(() => {
-  const found = props.categories.find((category) => category.id === props.event?.category_id)
-  return getCategoryAccentStyles({
-    category: { id: props.event?.category_id, name: found?.name || props.event?.category_name },
-    isDark: isDark.value,
-  })
-})
-
-const socialLinks = computed(() => {
-  const links = form.value.social_links || {}
-  return [
-    { key: 'whatsapp', label: 'WhatsApp', url: links.whatsapp },
-    { key: 'facebook', label: 'Facebook', url: links.facebook },
-    { key: 'instagram', label: 'Instagram', url: links.instagram },
-  ].filter((item) => typeof item.url === 'string' && item.url.trim())
-})
-
-const startLabel = computed(() => {
-  const parsedValue = parseDbDateTime(props.event?.start_datetime)
-  if (!parsedValue) return 'Fecha no disponible'
-
-  const parsed = new Date(`${parsedValue.date}T${parsedValue.time}`)
-  if (Number.isNaN(parsed.getTime())) return 'Fecha no disponible'
-  return new Intl.DateTimeFormat('es-MX', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(parsed)
-})
-
-const endLabel = computed(() => {
-  const parsedValue = parseDbDateTime(props.event?.end_datetime)
-  if (!parsedValue) return 'Fecha no disponible'
-
-  const parsed = new Date(`${parsedValue.date}T${parsedValue.time}`)
-  if (Number.isNaN(parsed.getTime())) return 'Fecha no disponible'
-  return new Intl.DateTimeFormat('es-MX', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(parsed)
-})
-
-const creatorIdentity = computed(() => {
-  const source = props.event || {}
-  const owner = source.owner || source.author || source.user || {}
-
-  const firstName =
-    source.owner_first_name ||
-    source.ownerFirstName ||
-    owner.first_name ||
-    owner.firstName ||
-    ''
-
-  const lastName =
-    source.owner_last_name ||
-    source.ownerLastName ||
-    owner.last_name ||
-    owner.lastName ||
-    ''
-
-  const fullName =
-    source.owner_display_name ||
-    source.ownerDisplayName ||
-    source.owner_name ||
-    source.ownerName ||
-    owner.full_name ||
-    owner.fullName ||
-    owner.name ||
-    [firstName, lastName].filter(Boolean).join(' ').trim() ||
-    ''
-
-  return {
-    id: source.owner_id || source.ownerId || owner.id || null,
-    username: source.owner_username || source.ownerUsername || source.username || owner.username || owner.handle || '',
-    email: source.owner_email || source.ownerEmail || owner.email || '',
-    fullName,
-  }
-})
-
-const creatorSummary = computed(() => {
-  return creatorIdentity.value.fullName || creatorIdentity.value.username || 'Creador anonimo'
-})
-
-const creatorInitial = computed(() => {
-  const parts = String(creatorSummary.value || '').trim().split(/\s+/).filter(Boolean)
-  if (!parts.length) return 'U'
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
-  return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase()
-})
-
-const creatorDetails = computed(() => {
-  const rows = [
-    { icon: 'person', label: 'Nombre', value: creatorIdentity.value.fullName },
-    { icon: 'badge', label: 'ID', value: creatorIdentity.value.id },
-    { icon: 'alternate_email', label: 'Usuario', value: creatorIdentity.value.username },
-    { icon: 'mail', label: 'Correo', value: creatorIdentity.value.email },
-  ]
-  return rows.filter((row) => row.value !== null && row.value !== undefined && String(row.value).trim())
-})
-
-const descriptionContent = computed(() => {
-  return String(props.event?.description || '').trim()
-})
-
-const hasLongDescription = computed(() => descriptionContent.value.length > 420)
-
-const extractYouTubeId = (rawUrl) => {
-  if (!rawUrl) return ''
-
-  try {
-    const normalized = String(rawUrl).replaceAll('&amp;', '&')
-    const parsed = new URL(normalized)
-    const host = parsed.hostname.toLowerCase()
-
-    if (host === 'youtu.be') return parsed.pathname.slice(1)
-
-    if (host.includes('youtube.com') || host.includes('youtube-nocookie.com')) {
-      if (parsed.pathname === '/watch') return parsed.searchParams.get('v') || ''
-      if (parsed.pathname.startsWith('/shorts/')) return parsed.pathname.split('/')[2] || ''
-      if (parsed.pathname.startsWith('/embed/')) return parsed.pathname.split('/')[2] || ''
-    }
-  } catch {
-    return ''
-  }
-
-  return ''
-}
-
-const youtubeEmbeds = computed(() => {
-  const urls = descriptionContent.value.match(/https?:\/\/[^\s"'<>]+/g) || []
-  const seen = new Set()
-
-  return urls
-    .map((url) => {
-      const id = extractYouTubeId(url)
-      if (!id || seen.has(id)) return null
-      seen.add(id)
-      return {
-        id,
-        embedUrl: `https://www.youtube-nocookie.com/embed/${id}`,
-        watchUrl: `https://www.youtube.com/watch?v=${id}`,
-      }
-    })
-    .filter(Boolean)
-    .slice(0, 2)
-})
 
 const onKeyDown = (event) => {
   if (!props.modelValue) return
@@ -485,6 +296,7 @@ onMounted(() => {
 const onFileChange = (event) => {
   const file = event.target.files?.[0]
   if (!file) return
+
   if (!isAllowedEventImageType(file.type)) {
     localError.value = 'Formato no permitido. Usa JPEG, PNG, WEBP, GIF o AVIF.'
     form.value.imageFile = null
@@ -555,6 +367,7 @@ const onConfirmDelete = () => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDown)
   isBodyScrollLocked.value = false
+  clearLocalImagePreview()
 })
 </script>
 
@@ -596,459 +409,289 @@ onBeforeUnmount(() => {
         leave-from-class="opacity-100 translate-y-0 sm:scale-100"
         leave-to-class="opacity-0 translate-y-8 sm:translate-y-4 sm:scale-95"
       >
-        <div v-if="modelValue && event" class="relative flex max-h-[100dvh] w-full flex-col sm:max-h-[90vh]   sm:max-w-4xl sm:rounded-3xl border-0 sm:border border-slate-200 bg-white/75 shadow-2xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/75 overflow-hidden">
-
-          <!-- Header Sticky -->
-          <header class=" sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/50 bg-white/50 px-4 py-3 sm:px-6 sm:py-4 backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/50">
+        <div
+          v-if="modelValue && event"
+          class="relative flex max-h-[100dvh] w-full flex-col overflow-hidden border-0 border-slate-200 bg-white/75 shadow-2xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/75 sm:max-h-[90vh] sm:max-w-3xl sm:rounded-3xl sm:border"
+        >
+          <header
+            class="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/50 bg-white/50 px-4 py-3 backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/50 sm:px-6 sm:py-4"
+          >
             <div class="min-w-0 flex-1">
-              <p class="mb-0.5 text-[10px] font-bold uppercase tracking-[0.2em]" :style="categoryAccentStyle">{{ categoryName }}</p>
+              <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Editar evento</p>
               <h3 class="truncate font-headline text-lg font-black text-slate-900 dark:text-white sm:text-xl">{{ event.title }}</h3>
+              <p class="mt-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">Paso {{ editStep }} de {{ EDIT_TOTAL_STEPS }}</p>
 
-              <!-- Barra progreso modo edición -->
-              <div v-if="editMode && canManage" class="absolute bottom-0 left-0 h-[2px] w-full bg-slate-200/50 dark:bg-slate-800/50">
-                 <div
+              <div class="absolute bottom-0 left-0 h-[2px] w-full bg-slate-200/50 dark:bg-slate-800/50">
+                <div
                   v-if="isSaving || isDeleting"
                   class="h-full w-1/3 bg-tertiary-600 dark:bg-tertiary-400 animate-[progressbar_1.1s_ease-in-out_infinite]"
-                 ></div>
-                 <div
+                ></div>
+                <div
                   v-else
-                  class="h-full bg-tertiary-600 dark:bg-tertiary-400 origin-left transition-transform duration-300 ease-out"
+                  class="h-full origin-left bg-tertiary-600 transition-transform duration-300 ease-out dark:bg-tertiary-400"
                   :style="{ transform: `scaleX(${editProgressRatio})` }"
-                 ></div>
+                ></div>
               </div>
             </div>
+
             <div class="flex shrink-0 items-center gap-2">
               <button
                 v-if="canManage"
                 type="button"
-                class="rounded-full border border-slate-300/70 bg-white/50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 transition hover:bg-white/80 dark:border-slate-700/70 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800/80"
-                @click="editMode = !editMode"
+                class="rounded-full border border-rose-200/70 bg-rose-50/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-rose-700 transition hover:bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-300"
+                :disabled="isSaving || isDeleting"
+                @click="onDelete"
               >
-                {{ editMode ? 'Cancelar' : 'Editar' }}
+                Eliminar
               </button>
-              <button type="button" class="rounded-full bg-slate-100/50 p-1.5 text-slate-500 hover:bg-slate-200/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50 transition-colors" @click="closeModal">
+
+              <button
+                type="button"
+                class="rounded-full bg-slate-100/50 p-1.5 text-slate-500 transition-colors hover:bg-slate-200/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50"
+                :disabled="isSaving || isDeleting"
+                @click="closeModal"
+              >
                 <span class="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
           </header>
 
-          <div class="flex-1 overflow-y-auto overscroll-contain">
+          <div class="flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4 sm:px-6">
+            <form class="grid grid-cols-1 gap-4 md:grid-cols-2" @submit.prevent="onSave">
+              <template v-if="editStep === 1">
+                <label class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Titulo del evento
+                  <input
+                    v-model="form.title"
+                    type="text"
+                    name="event_title"
+                    maxlength="150"
+                    required
+                    class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
+                    placeholder="Taller de innovación 2026"
+                  />
+                  <FieldError :error="getFieldError('title')" />
+                </label>
 
-            <!-- Modo Detalle -->
-            <div v-if="!editMode" class="flex flex-col md:flex-row h-full  overscroll-contain p-2">
-              <!-- Hero Image (Desktop Left, Mobile Top) -->
+                <div class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <p>Descripcion</p>
+                  <div class="mt-1">
+                    <RichTextEditor
+                      v-model="form.description"
+                      placeholder="Comparte detalles del evento para ayudar a la comunidad a participar"
+                      min-height="120px"
+                      max-height="280px"
+                    />
+                  </div>
+                  <FieldError :error="getFieldError('description')" />
+                </div>
+              </template>
 
-              <div class="relative w-full md:w-5/12 shrink-0  ">
+              <template v-else-if="editStep === 2">
+                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Categoria
+                  <select
+                    v-model="form.category_id"
+                    name="event_category"
+                    required
+                    class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
+                  >
+                    <option value="" disabled>Selecciona una categoria</option>
+                    <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+                  </select>
+                  <FieldError :error="getFieldError('category_id')" />
+                </label>
 
-                <img
-                  :src="imagePreview || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80'"
-                  :alt="event.title"
-                  class="w-full object-cover items-center md:absolute md:inset-0"
-                />
-                <div class="absolute top-0  bg-gradient-to-b from-slate-900/80 via-slate-900/20 to-transparent md:bg-gradient-to-tr"></div>
+                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Ubicacion
+                  <input
+                    v-model="form.location"
+                    type="text"
+                    name="event_location"
+                    maxlength="200"
+                    required
+                    class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
+                    placeholder="Auditorio principal"
+                  />
+                  <FieldError :error="getFieldError('location')" />
+                </label>
+              </template>
 
-                <div class="absolute top-0 left-0 w-full p-4 sm:p-5 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider text-white">
-                  <span class="rounded-full bg-black/40 px-2.5 py-1 backdrop-blur-md flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[14px]">category</span>
-                    {{ categoryName }}
-                  </span>
-                  <span v-if="event.score" class="rounded-full bg-black/40 px-2.5 py-1 backdrop-blur-md flex items-center gap-1.5 text-amber-300">
-                    <span class="material-symbols-outlined text-[14px]">star</span>
-                    {{ event.score || 0 }}
-                  </span>
+              <template v-else-if="editStep === 3">
+                <div class="md:col-span-2">
+                  <SocialLinksStep
+                    v-model="form.social_links"
+                    v-model:visible-inputs="showSocialInput"
+                    :field-errors="fieldErrors"
+                    :placeholders="{
+                      whatsapp: 'https://wa.me/528112345678',
+                      facebook: 'https://facebook.com/tu-evento',
+                      instagram: 'https://instagram.com/tu-evento',
+                    }"
+                  />
+                </div>
+              </template>
+
+              <template v-else-if="editStep === 4">
+                <div class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <label class="block">Fecha del evento</label>
+                  <div class="relative mt-1">
+                    <input
+                      v-model="form.date"
+                      type="date"
+                      name="event_date"
+                      required
+                      class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
+                    />
+                  </div>
+                  <FieldError :error="getFieldError('start_datetime')" />
                 </div>
 
+                <div class="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    <span class="flex items-center gap-2 text-tertiary-600 dark:text-tertiary-400">Hora de inicio (opcional)</span>
+                    <input
+                      v-model="form.startTime"
+                      type="time"
+                      name="event_start_time"
+                      class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
+                    />
+                  </label>
 
-              </div>
+                  <label class="text-sm font-semibold text-slate-700 dark:text-slate-300" :class="form.allDay ? 'opacity-60' : ''">
+                    <span class="flex items-center gap-2 text-tertiary-600 dark:text-tertiary-400">Hora de fin (opcional)</span>
+                    <input
+                      v-model="form.endTime"
+                      type="time"
+                      name="event_end_time"
+                      :disabled="form.allDay"
+                      class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:disabled:bg-slate-900"
+                    />
+                    <FieldError :error="getFieldError('end_datetime')" />
+                  </label>
 
-              
+                  <label class="md:col-span-2 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    <input
+                      v-model="form.allDay"
+                      type="checkbox"
+                      name="event_all_day"
+                      class="h-4 w-4 rounded border-slate-300 text-tertiary-500 focus:ring-tertiary-500"
+                    />
+                    <span class="text-tertiary-600 dark:text-tertiary-400">Todo el dia</span>
+                  </label>
 
-              <!-- Content Panel -->
-              <div class="flex flex-1 flex-col p-4 sm:p-6 space-y-6 md:space-y-8 ">
+                  <label
+                    v-if="!form.allDay"
+                    class="md:col-span-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
+                  >
+                    <input v-model="form.hasEndDate" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-tertiary-500" />
+                    <span class="flex items-center gap-2 text-tertiary-600 dark:text-tertiary-400">Añadir fecha de finalizacion</span>
+                  </label>
 
-                <!-- Facts Panel -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-700 dark:text-slate-300">
-                  <div class="flex items-start gap-3 rounded-2xl bg-white/40 p-3 backdrop-blur-sm dark:bg-slate-950/40">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tertiary-100 text-tertiary-600 dark:bg-tertiary-900/30 dark:text-tertiary-300">
-                      <span class="material-symbols-outlined text-[18px]">schedule</span>
-                    </div>
-                    <div>
-                      <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Inicio</p>
-                      <p class="font-medium">{{ startLabel }}</p>
-                    </div>
-                  </div>
+                  <label v-if="!form.allDay && form.hasEndDate" class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Fecha de finalizacion
+                    <input
+                      v-model="form.endDate"
+                      type="date"
+                      class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
+                    />
+                  </label>
 
-                  <div class="flex items-start gap-3 rounded-2xl bg-white/40 p-3 backdrop-blur-sm dark:bg-slate-950/40">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tertiary-100 text-tertiary-600 dark:bg-tertiary-900/30 dark:text-tertiary-300">
-                      <span class="material-symbols-outlined text-[18px]">event</span>
-                    </div>
-                    <div>
-                      <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fin</p>
-                      <p class="font-medium">{{ endLabel }}</p>
-                    </div>
-                  </div>
+                  <div class="md:col-span-2">
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Imagen del evento</p>
 
-                  <div class="flex items-start gap-3 rounded-2xl bg-white/40 p-3 backdrop-blur-sm dark:bg-slate-950/40 sm:col-span-2">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tertiary-100 text-tertiary-600 dark:bg-tertiary-900/30 dark:text-tertiary-300">
-                      <span class="material-symbols-outlined text-[18px]">location_on</span>
-                    </div>
-                    <div>
-                      <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ubicación</p>
-                      <p class="font-medium">{{ event.location || 'Por confirmar' }}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Description -->
-                <div>
-                  <h4 class="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                    <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
-                    Acerca del evento
-                    <span class="h-px w-8 bg-slate-200 dark:bg-slate-800"></span>
-                  </h4>
-                  <div class="rounded-2xl bg-white/40 p-4 sm:p-5 backdrop-blur-sm dark:bg-slate-950/40 text-[15px] leading-relaxed text-slate-700 dark:text-slate-300">
-                    <div
-                      v-if="descriptionContent"
-                      class="relative"
+                    <label
+                      class="mt-2 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-600 transition hover:border-tertiary-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-tertiary-500 dark:hover:bg-slate-900"
                     >
-                      <div
-                        class="  pr-1"
-                        :class="descriptionExpanded ? 'max-h-none' : 'max-h-[28vh] sm:max-h-[32vh] md:max-h-[36vh]'"
+                      <input type="file" class="sr-only" :accept="ACCEPTED_IMAGE_TYPES" @change="onFileChange" />
+
+                      <span class="material-symbols-outlined text-3xl text-tertiary-600 dark:text-tertiary-400">upload</span>
+                      <span class="font-semibold text-slate-800 dark:text-slate-100">Sube una imagen para la portada</span>
+                      <span class="text-xs text-slate-500 dark:text-slate-400">JPEG, PNG, WEBP, GIF o AVIF. Recomendado: 1200×630</span>
+                      <span
+                        v-if="form.imageFile"
+                        class="mt-2 inline-flex items-center gap-2 rounded-full bg-tertiary-50 px-3 py-1 text-xs font-bold text-tertiary-700 dark:bg-slate-800 dark:text-tertiary-200"
                       >
-                        <RichTextRenderer :content="descriptionContent" :max-height="descriptionExpanded ? 'none' : '36vh'" />
-                      </div>
-
-                      <div
-                        v-if="hasLongDescription && !descriptionExpanded"
-                        class="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white/95 to-transparent dark:from-slate-900/95"
-                      ></div>
-
-                      <button
-                        v-if="hasLongDescription"
-                        type="button"
-                        class="mt-3 rounded-full border border-slate-300/70 bg-white/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-600 transition hover:bg-white dark:border-slate-700/70 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-800"
-                        @click="descriptionExpanded = !descriptionExpanded"
-                      >
-                        {{ descriptionExpanded ? 'Ver menos' : 'Ver descripción completa' }}
-                      </button>
-                    </div>
-                    <p v-else class="italic text-slate-500">Sin descripción disponible.</p>
-                  </div>
-                </div>
-
-                <div v-if="youtubeEmbeds.length" class="space-y-2">
-                  <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Preview multimedia</p>
-                  <div class="grid gap-3 sm:grid-cols-2">
-                    <article
-                      v-for="video in youtubeEmbeds"
-                      :key="video.id"
-                      class="rounded-2xl border border-slate-200/50 bg-white/50 p-2 backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-900/50"
-                    >
-                      <div class="aspect-video overflow-hidden rounded-xl bg-black/80">
-                        <iframe
-                          :src="video.embedUrl"
-                          class="h-full w-full"
-                          title="YouTube preview"
-                          loading="lazy"
-                          referrerpolicy="strict-origin-when-cross-origin"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowfullscreen
-                        ></iframe>
-                      </div>
-                      <a
-                        :href="video.watchUrl"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="mt-2 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-tertiary-600 hover:text-tertiary-700 dark:text-tertiary-300 dark:hover:text-tertiary-200"
-                      >
-                        Ver en YouTube
-                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-                      </a>
-                    </article>
-                  </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-                  <!-- Links -->
-                  <div v-if="socialLinks.length" class="flex-1">
-                    <p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Conectar</p>
-                    <div class="flex flex-wrap gap-2">
-                      <a
-                        v-for="link in socialLinks"
-                        :key="`${event.id}-modal-${link.key}`"
-                        :href="link.url"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1.5 text-xs font-bold text-slate-700 backdrop-blur-md transition hover:bg-white hover:text-primary-600 hover:shadow-sm dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-primary-400"
-                      >
-                        <SocialNetworkIcon :network="link.key" :size="14" class-name="text-current" />
-                        {{ link.label }}
-                      </a>
-                    </div>
-                  </div>
-
-                  <!-- Creator Inline Card -->
-                  <div class="relative shrink-0 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      class="flex w-full items-center gap-3 rounded-2xl bg-primary-50/50 p-2 pr-4 backdrop-blur-sm transition-colors hover:bg-primary-50 dark:bg-primary-900/20 dark:hover:bg-primary-900/40 sm:w-auto"
-                      @click="creatorCardOpen = !creatorCardOpen"
-                    >
-                      <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-xs font-black text-white shadow-sm dark:bg-primary-500 dark:text-primary-950">{{ creatorInitial }}</span>
-                      <span class="flex flex-col items-start leading-tight">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-primary-600/70 dark:text-primary-400/70">Organizado por</span>
-                        <span class="text-xs font-bold text-primary-900 dark:text-primary-100">{{ creatorSummary }}</span>
+                        <span class="material-symbols-outlined text-base">check_circle</span>
+                        {{ form.imageFile.name }}
                       </span>
-                      <span class="material-symbols-outlined ml-auto sm:ml-2 text-tertiary-500/80 dark:text-tertiary-300/80 text-[18px]">{{ creatorCardOpen ? 'expand_less' : 'expand_more' }}</span>
-                    </button>
+                    </label>
 
-                    <Transition
-                      enter-active-class="transition duration-200 ease-out"
-                      enter-from-class="opacity-0 translate-y-2 scale-95"
-                      enter-to-class="opacity-100 translate-y-0 scale-100"
-                      leave-active-class="transition duration-150 ease-in"
-                      leave-from-class="opacity-100 translate-y-0 scale-100"
-                      leave-to-class="opacity-0 translate-y-2 scale-95"
-                    >
-                      <div
-                        v-if="creatorCardOpen"
-                        class="absolute bottom-full left-0 z-20 mb-2 w-full min-w-[200px] rounded-2xl border border-slate-200/50 bg-white/90 p-3 text-xs shadow-xl backdrop-blur-md dark:border-slate-700/50 dark:bg-slate-900/90 sm:left-auto sm:right-0"
-                      >
-                        <p v-if="!creatorDetails.length" class="text-slate-500">Sin datos adicionales.</p>
-                        <div v-else class="space-y-2">
-                          <p v-for="item in creatorDetails" :key="item.label" class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                            <span class="material-symbols-outlined text-[16px] text-tertiary-500/80 dark:text-tertiary-300/80">{{ item.icon }}</span>
-                            <span class="font-medium text-[11px] uppercase tracking-wider text-slate-500 border-r border-slate-300 dark:border-slate-700 pr-2">{{ item.label }}</span>
-                            <span class="truncate">{{ item.value }}</span>
-                          </p>
-                        </div>
-                      </div>
-                    </Transition>
+                    <div class="mt-2 flex items-center justify-between gap-2">
+                      <label class="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <input v-model="form.removeImage" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-tertiary-500" @change="onToggleRemoveImage" />
+                        Quitar imagen actual
+                      </label>
+                      <FieldError :error="getFieldError('image_url')" />
+                    </div>
+                  </div>
+
+                  <div v-if="imagePreview" class="md:col-span-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <img :src="imagePreview" alt="Preview de imagen" class="h-56 w-full object-cover" />
                   </div>
                 </div>
+              </template>
 
+              <div class="md:col-span-2">
+                <Alert
+                  v-if="showFormError"
+                  :model-value="true"
+                  type="error"
+                  title=""
+                  :message="formErrorMessage"
+                  :dismissible="false"
+                  :duration="0"
+                  :auto-focus="false"
+                  :auto-scroll="true"
+                  :toast="false"
+                />
               </div>
-            </div>
 
-            <!-- Modo Edición -->
-            <div v-else class="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
-              <div class="mb-6 flex items-end justify-between gap-4">
-                <div>
-                  <h4 class="font-headline text-2xl font-black text-slate-900 dark:text-white">Editor</h4>
-                  <p class="mt-1 text-xs font-bold uppercase tracking-wider text-tertiary-600 dark:text-tertiary-400">Paso {{ editStep }} de {{ EDIT_TOTAL_STEPS }}</p>
-                </div>
+              <div class="md:col-span-2 mt-1 flex justify-between gap-2">
+                <button
+                  type="button"
+                  class="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  :disabled="isSaving || isDeleting"
+                  @click="closeModal"
+                >
+                  Cancelar
+                </button>
 
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex gap-2">
                   <button
                     v-if="editStep > 1"
                     type="button"
-                    class="rounded-full border border-slate-300/50 bg-white/50 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-slate-700 backdrop-blur-sm transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-700/80"
+                    class="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                     :disabled="isSaving || isDeleting"
                     @click="goEditPrev"
                   >
-                    Atrás
+                    Atras
                   </button>
+
                   <button
                     v-if="editStep < EDIT_TOTAL_STEPS"
                     type="button"
-                    class="rounded-full bg-tertiary-500 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-tertiary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="rounded-full bg-tertiary-500 px-5 py-2 text-sm font-bold text-white transition hover:bg-tertiary-600 disabled:cursor-not-allowed disabled:opacity-60"
                     :disabled="isSaving || isDeleting"
                     @click="goEditNext"
                   >
                     Siguiente
                   </button>
+
+                  <button
+                    v-else
+                    type="submit"
+                    class="rounded-full bg-tertiary-500 px-5 py-2 text-sm font-bold text-white transition hover:bg-tertiary-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="isSaving || isDeleting"
+                  >
+                    {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
+                  </button>
                 </div>
               </div>
-
-              <!-- Pasos de Edición con inputs en bg-white sólido -->
-              <div class="grid grid-cols-1 gap-5  rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-                <template v-if="editStep === 1">
-                  <label class="block">
-                    <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Título</span>
-                    <input
-                      v-model="form.title"
-                      type="text"
-                      name="event_title"
-                      maxlength="150"
-                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                    />
-                    <FieldError :error="getFieldError('title')" class="mt-1" />
-                  </label>
-
-                  <div class="block">
-                    <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Descripción</span>
-                    <div class="rounded-2xl   ">
-                      <RichTextEditor
-                        v-model="form.description"
-                        placeholder="Describe el evento..."
-                        min-height="120px"
-                        max-height="300px"
-                      />
-                    </div>
-                    <FieldError :error="getFieldError('description')" class="mt-1" />
-                  </div>
-                </template>
-
-                <template v-else-if="editStep === 2">
-                  <label class="block">
-                    <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Categoría</span>
-                    <select
-                      v-model="form.category_id"
-                      name="event_category"
-                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                    >
-                      <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
-                    </select>
-                    <FieldError :error="getFieldError('category_id')" class="mt-1" />
-                  </label>
-
-                  <label class="block">
-                    <span class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ubicación</span>
-                    <input
-                      v-model="form.location"
-                      type="text"
-                      name="event_location"
-                      maxlength="200"
-                      class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                    />
-                    <FieldError :error="getFieldError('location')" class="mt-1" />
-                  </label>
-                </template>
-
-                <template v-else-if="editStep === 3">
-                    <SocialLinksStep
-                      v-model="form.social_links"
-                      v-model:visible-inputs="showSocialInput"
-                      :field-errors="fieldErrors"
-                      :placeholders="{
-                        whatsapp: 'https://wa.me/...',
-                      facebook: 'https://facebook.com/...',
-                      instagram: 'https://instagram.com/...',
-                      }"
-                    />
-
-                </template>
-
-                <template v-else-if="editStep === 4">
-                  <div class="grid gap-5 rounded-2xl bg-white/40 p-5 backdrop-blur-sm dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-800/50">
-                    <label class="block">
-                      <span class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Fecha del evento</span>
-                      <input
-                        v-model="form.date"
-                        type="date"
-                        name="event_date"
-                        class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                      />
-                      <FieldError :error="getFieldError('start_datetime')" />
-                    </label>
-
-                    <label class="flex items-center gap-3">
-                      <input
-                        v-model="form.allDay"
-                        type="checkbox"
-                        class="h-5 w-5 rounded border-slate-300 text-tertiary-500 focus:ring-tertiary-500 bg-white dark:bg-slate-950 dark:border-slate-700"
-                      />
-                      <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Todo el día</span>
-                    </label>
-
-                    <div class="grid grid-cols-2 gap-4">
-                      <label class="block" :class="form.allDay ? 'opacity-50 pointer-events-none' : ''">
-                        <span class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Hora inicio</span>
-                        <input
-                          v-model="form.startTime"
-                          type="time"
-                          class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-                        />
-                      </label>
-                      <label class="block" :class="form.allDay ? 'opacity-50 pointer-events-none' : ''">
-                        <span class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Hora fin</span>
-                        <input
-                          v-model="form.endTime"
-                          type="time"
-                          class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition focus:border-tertiary-500 dark:border-slate-700 dark:bg-slate-950"
-                        />
-                      </label>
-                    </div>
-
-                    <label v-if="!form.allDay" class="flex items-center gap-2">
-                      <input v-model="form.hasEndDate" type="checkbox" class="h-4 w-4 rounded border-slate-300 bg-white dark:bg-slate-950 dark:border-slate-700" />
-                      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Añadir fecha fin</span>
-                    </label>
-
-                    <label v-if="!form.allDay && form.hasEndDate" class="block">
-                      <span class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Fecha fin</span>
-                      <input
-                        v-model="form.endDate"
-                        type="date"
-                        class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium dark:border-slate-700 dark:bg-slate-950"
-                      />
-                    </label>
-
-                    <div class="my-2 h-px bg-slate-200/50 dark:bg-slate-700/50"></div>
-
-                    <label class="block">
-                      <span class="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nueva imagen (opcional)</span>
-                      <input
-                        type="file"
-                        :accept="ACCEPTED_IMAGE_TYPES"
-                        class="w-full rounded-xl border border-dashed border-slate-300 bg-white/50 px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 dark:border-slate-700/80 dark:bg-slate-950/50 dark:text-slate-300"
-                        @change="onFileChange"
-                      />
-                      <FieldError :error="getFieldError('image_url')" />
-                    </label>
-
-                    <label class="flex items-center gap-3">
-                      <input v-model="form.removeImage" type="checkbox" class="h-4 w-4 rounded border-slate-300 bg-white dark:bg-slate-950" @change="onToggleRemoveImage" />
-                      <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Eliminar imagen actual</span>
-                    </label>
-                  </div>
-                </template>
-              </div>
-
-              <Alert
-                v-if="showFormError"
-                :model-value="true"
-                type="error"
-                title=""
-                :message="formErrorMessage"
-                :dismissible="false"
-                :duration="0"
-                :auto-focus="false"
-                :auto-scroll="true"
-                :toast="false"
-                class="mt-4"
-              />
-
-              <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <button
-                  v-if="editStep === EDIT_TOTAL_STEPS"
-                  type="button"
-                  class="w-full sm:w-auto rounded-full border border-error-300/50 bg-error-50/50 px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-error-600 transition hover:bg-error-100 disabled:opacity-50 dark:border-error-800/50 dark:bg-error-900/20 dark:text-error-400 dark:hover:bg-error-900/50"
-                  :disabled="isDeleting || isSaving"
-                  @click="onDelete"
-                >
-                  {{ isDeleting ? 'Eliminando...' : 'Eliminar' }}
-                </button>
-                <div v-else class="hidden sm:block"></div>
-
-                <button
-                  v-if="editStep === EDIT_TOTAL_STEPS"
-                  type="button"
-                  class="w-full sm:w-auto rounded-full bg-tertiary-500 px-8 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-md transition hover:bg-tertiary-600 disabled:opacity-50"
-                  :disabled="isSaving || isDeleting"
-                  @click="onSave"
-                >
-                  {{ isSaving ? 'Guardando...' : 'Finalizar y Guardar' }}
-                </button>
-              </div>
-            </div>
-
+            </form>
           </div>
-
         </div>
-
       </Transition>
-
     </div>
   </Transition>
 </template>
@@ -1062,7 +705,5 @@ onBeforeUnmount(() => {
     transform: translateX(300%);
   }
 }
-
-
 </style>
 

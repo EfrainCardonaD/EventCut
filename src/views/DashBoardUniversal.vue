@@ -10,6 +10,7 @@ import Alert from '@/components/util/Alert.vue'
 import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import EventCard from '@/components/events/EventCard.vue'
+import EventCardModal from '@/components/events/EventCardModal.vue'
 import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import CalendarWidget from '@/components/events/CalendarWidget.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
@@ -30,6 +31,7 @@ const createModalOpen = ref(false)
 const mobileSearchOpen = ref(false)
 const mobileScheduleOpen = ref(false)
 const eventModalOpen = ref(false)
+const eventEditModalOpen = ref(false)
 const activeEvent = ref(null)
 const hasEventModalHistoryEntry = ref(false)
 const isClosingEventModalFromHistory = ref(false)
@@ -184,8 +186,21 @@ const onToggleMobileSearch = () => {
 }
 
 const openEventModal = (event) => {
+  // Si el editor estaba abierto, cerrarlo y limpiar errores para evitar que “se quede pegado”
+  // cuando seleccionas otra card.
+  eventEditModalOpen.value = false
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
+
   activeEvent.value = event
   eventModalOpen.value = true
+}
+
+const onRequestEditEvent = () => {
+  if (!activeEvent.value) return
+  // NO limpiamos activeEvent: el editor depende de este.
+  eventModalOpen.value = false
+  eventEditModalOpen.value = true
 }
 
 const closeEventModal = () => {
@@ -226,7 +241,7 @@ const onUpdateEvent = async (payload) => {
   updateFieldErrors.value = {}
   const refreshedEvent = eventStore.events.find((event) => event.id === payload.eventId) || eventStore.favoriteEventSnapshots.find((event) => event.id === payload.eventId)
   if (refreshedEvent) activeEvent.value = refreshedEvent
-  eventModalOpen.value = false
+  eventEditModalOpen.value = false
   showToast('success', 'Evento actualizado', 'Se guardaron los cambios del evento.')
 }
 
@@ -238,6 +253,7 @@ const onDeleteEvent = async (eventId) => {
   }
 
   eventModalOpen.value = false
+  eventEditModalOpen.value = false
   activeEvent.value = null
   showToast('success', 'Evento eliminado', 'El evento fue retirado de la cartelera.')
 }
@@ -291,6 +307,17 @@ watch(eventModalOpen, (isOpen) => {
     return
   }
 
+  // Si estamos transicionando al modal de edición, NO borrar activeEvent.
+  if (eventEditModalOpen.value) {
+    // Limpieza mínima: history.
+    if (hasEventModalHistoryEntry.value && !isClosingEventModalFromHistory.value) {
+      hasEventModalHistoryEntry.value = false
+      window.history.back()
+    }
+    isClosingEventModalFromHistory.value = false
+    return
+  }
+
   if (hasEventModalHistoryEntry.value && !isClosingEventModalFromHistory.value) {
     hasEventModalHistoryEntry.value = false
     window.history.back()
@@ -298,6 +325,12 @@ watch(eventModalOpen, (isOpen) => {
 
   isClosingEventModalFromHistory.value = false
   activeEvent.value = null
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
+})
+
+watch(eventEditModalOpen, (isOpen) => {
+  if (isOpen) return
   updateSubmitError.value = ''
   updateFieldErrors.value = {}
 })
@@ -348,8 +381,17 @@ watch(featuredEvents, async () => {
       :field-errors="createFieldErrors"
       @submit="onCreateEvent"
     />
-    <EventCardModalEdit
+    <EventCardModal
       v-model="eventModalOpen"
+      :event="activeEvent"
+      :categories="categories"
+      :can-manage="isEventManageable"
+      @edit="onRequestEditEvent"
+      @toggle-favorite="onToggleFavorite"
+    />
+
+    <EventCardModalEdit
+      v-model="eventEditModalOpen"
       :event="activeEvent"
       :categories="categories"
       :can-manage="isEventManageable"

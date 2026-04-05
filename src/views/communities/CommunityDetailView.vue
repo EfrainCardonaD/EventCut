@@ -7,6 +7,7 @@ import { useCommunityStore } from '@/stores/community'
 import { useEventStore } from '@/stores/event'
 import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
+import EventCardModal from '@/components/events/EventCardModal.vue'
 import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import CreateCommunityModal from '@/components/communities/CreateCommunityModal.vue'
@@ -27,6 +28,7 @@ const { categories, isSavingEvent, isUpdatingEvent, isDeletingEvent } = storeToR
 
 const searchQuery = ref('')
 const eventModalOpen = ref(false)
+const eventEditModalOpen = ref(false)
 const activeEvent = ref(null)
 const createEventModalOpen = ref(false)
 const createCommunityModalOpen = ref(false)
@@ -303,7 +305,7 @@ const onUpdateEvent = async (payload) => {
     return
   }
 
-  eventModalOpen.value = false
+  eventEditModalOpen.value = false
   showToast('success', 'Evento actualizado', 'Cambios guardados correctamente.')
   await loadCommunity()
 }
@@ -428,6 +430,18 @@ watch(
   },
 )
 
+watch(eventModalOpen, (isOpen) => {
+  if (isOpen) return
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
+})
+
+watch(eventEditModalOpen, (isOpen) => {
+  if (isOpen) return
+  updateSubmitError.value = ''
+  updateFieldErrors.value = {}
+})
+
 const displayedMyCommunitiesCount = computed(() => displayedMyCommunities.value.length)
 
 const truncateWords = (value, limit = 3) => {
@@ -487,8 +501,16 @@ const truncateWords = (value, limit = 3) => {
       @delete="onDeleteCommunity"
     />
 
-    <EventCardModalEdit
+    <EventCardModal
       v-model="eventModalOpen"
+      :event="activeEvent"
+      :categories="categories"
+      :can-manage="isEventManageable"
+      @edit="() => { eventModalOpen = false; eventEditModalOpen = true }"
+    />
+
+    <EventCardModalEdit
+      v-model="eventEditModalOpen"
       :event="activeEvent"
       :categories="categories"
       :can-manage="isEventManageable"
