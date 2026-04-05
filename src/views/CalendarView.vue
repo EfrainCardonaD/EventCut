@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import CalendarWidgetCompact from '@/components/events/CalendarWidgetCompact.vue'
@@ -124,6 +124,23 @@ const closeMobilePanels = () => {
   monthEventsDrawerOpen.value = false
 }
 
+// History/back: en mobile el gesto Atrás debe cerrar el drawer abierto (agenda o mes).
+const hasMobilePanelHistoryEntry = ref(false)
+const isClosingMobilePanelFromHistory = ref(false)
+
+const onMobilePanelPopState = () => {
+  if (!mobileScheduleOpen.value && !monthEventsDrawerOpen.value) {
+    hasMobilePanelHistoryEntry.value = false
+    return
+  }
+
+  isClosingMobilePanelFromHistory.value = true
+  closeMobilePanels()
+
+  // Si el usuario dio back, consumimos esta entrada.
+  hasMobilePanelHistoryEntry.value = false
+}
+
 const openMobileSchedule = () => {
   monthEventsDrawerOpen.value = false
   mobileScheduleOpen.value = true
@@ -133,6 +150,29 @@ const openMobileMonthEvents = () => {
   mobileScheduleOpen.value = false
   monthEventsDrawerOpen.value = true
 }
+
+watch(
+  () => [mobileScheduleOpen.value, monthEventsDrawerOpen.value],
+  ([scheduleOpen, monthOpen]) => {
+    const anyOpen = scheduleOpen || monthOpen
+
+    if (anyOpen) {
+      if (!hasMobilePanelHistoryEntry.value) {
+        window.history.pushState({ modal: 'calendar-mobile-panel' }, '')
+        hasMobilePanelHistoryEntry.value = true
+      }
+      return
+    }
+
+    // Si cerramos por UI (no por popstate), revertimos la entrada en history.
+    if (hasMobilePanelHistoryEntry.value && !isClosingMobilePanelFromHistory.value) {
+      hasMobilePanelHistoryEntry.value = false
+      window.history.back()
+    }
+
+    isClosingMobilePanelFromHistory.value = false
+  },
+)
 
 const onLogout = async () => {
   isLoggingOut.value = true
@@ -244,6 +284,12 @@ onMounted(async () => {
 
   await eventStore.fetchEvents({ scope: 'all' })
   closeMobilePanels()
+
+  window.addEventListener('popstate', onMobilePanelPopState)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('popstate', onMobilePanelPopState)
 })
 
 watch(eventModalOpen, (isOpen) => {
@@ -382,6 +428,13 @@ watch(createModalOpen, (isOpen) => {
       <RouterLink to="/app/calendario" class="flex flex-col items-center justify-center p-2 text-primary-600 dark:text-primary-300">
         <span class="mb-1 rounded-full bg-primary-100 px-4 py-1 dark:bg-primary-500/20"><span class="material-symbols-outlined icon-filled">calendar_month</span></span>
         <span class="text-[10px] font-medium">Calendario</span>
+      </RouterLink>
+      <RouterLink
+        to="/app/comunidades"
+        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
+      >
+        <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">groups</span></span>
+        <span class="text-[10px] font-medium">Comunidades</span>
       </RouterLink>
       <button type="button" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300" @click="openMobileMonthEvents">
         <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">view_list</span></span>

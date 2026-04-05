@@ -305,7 +305,7 @@ onBeforeUnmount(() => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[85] flex items-center justify-center  p-4 " @click.self="onBackdropIntent">
+    <div v-if="modelValue" class="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @click.self="onBackdropIntent">
       <ConfirmModal
         v-model="deleteConfirmOpen"
         title-user="Eliminar comunidad"

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -25,6 +25,45 @@ const toast = ref({ show: false, type: 'info', title: '', message: '' })
 const createEventModalOpen = ref(false)
 const createCommunityModalOpen = ref(false)
 const mobileActionsOpen = ref(false)
+
+// Back: en mobile, el gesto Atrás debe cerrar el popup de acciones rápidas.
+// Nota: NO hacemos pushState/back aquí para evitar rebotes en algunos navegadores.
+// Solo reaccionamos a popstate si el popup está abierto.
+const lastMobileActionsOpenedAt = ref(0)
+
+const onMobileActionsPopState = () => {
+  // Edge-case: algunos navegadores móviles disparan popstate justo después de pushState.
+  // Si acabamos de abrir el popup, ignoramos este popstate.
+  if (Date.now() - lastMobileActionsOpenedAt.value < 250) return
+
+  if (!mobileActionsOpen.value) {
+    return
+  }
+
+  mobileActionsOpen.value = false
+}
+
+const openMobileActions = () => {
+  // El tap en mobile puede disparar más de un evento (pointer/touch/click).
+  // Usamos un cooldown corto para evitar abrir/cerrar de inmediato.
+  const now = Date.now()
+  if (now - lastMobileActionsOpenedAt.value < 400) return
+  lastMobileActionsOpenedAt.value = now
+
+  mobileActionsOpen.value = true
+}
+
+const closeMobileActions = () => {
+  mobileActionsOpen.value = false
+}
+
+const toggleMobileActions = () => {
+  if (mobileActionsOpen.value) {
+    closeMobileActions()
+    return
+  }
+  openMobileActions()
+}
 
 const createSubmitError = ref('')
 const createFieldErrors = ref({})
@@ -105,6 +144,12 @@ const displayedMyCommunities = computed(() => {
 
 const displayedMyCommunitiesCount = computed(() => displayedMyCommunities.value.length)
 
+const canManageCommunity = computed(() => {
+  if (!selectedCommunityId.value) return false
+  if (isAdmin.value) return true
+  return myList.value.some((community) => Number(community.id) === Number(selectedCommunityId.value))
+})
+
 const getEditableCategoryId = (community) => {
   if (!community?.id) return ''
   const draft = categoryDraftByCommunityId.value[community.id]
@@ -138,6 +183,12 @@ const onOpenCommunity = (communityId) => {
   if (!communityId) return
   communityStore.setSelectedCommunityId(communityId)
   router.push(`/app/comunidades/${communityId}`)
+}
+
+const onOpenManageCommunity = () => {
+  if (!selectedCommunityId.value) return
+  closeMobileActions()
+  router.push(`/app/comunidades/${selectedCommunityId.value}`)
 }
 
 const isCommunitySubscribed = (communityId) => {
@@ -245,6 +296,18 @@ onMounted(async () => {
   if (!selectedCommunityId.value && activeList.value.length) {
     communityStore.setSelectedCommunityId(activeList.value[0].id)
   }
+
+  window.addEventListener('popstate', onMobileActionsPopState)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('popstate', onMobileActionsPopState)
+})
+
+watch(mobileActionsOpen, (isOpen) => {
+  if (!isOpen) return
+  // Guard timestamp para ignorar popstate inmediato.
+  lastMobileActionsOpenedAt.value = Date.now()
 })
 
 watch(
@@ -270,7 +333,7 @@ watch(
 
   />
 
-  <main class="min-h-screen pb-24 pt-40  md:pb-8">
+  <main class="min-h-screen  pb-50 pt-20 xl:pb-24 xl:pt-40  md:pb-8">
 
 
     <SpinnerOverlay :show="isLoadingList || isLoadingMyList || isLoadingMySubscribedList" text="Cargando comunidades..." />
@@ -283,17 +346,6 @@ watch(
       :title="toast.title"
       :message="toast.message"
       :duration="4500"
-    />
-
-    <Alert
-      v-model="mobileActionsOpen"
-      toast
-      position="bottom-right"
-      type="info"
-      title="Accesos rapidos"
-      message="Usa el menu para crear o navegar rapidamente entre comunidades."
-      :duration="1"
-      class="hidden"
     />
 
     <CreateEventModal
@@ -523,34 +575,36 @@ watch(
         <span class="material-symbols-outlined">groups</span>
         <span class="text-[10px] font-medium">Comunidades</span>
       </RouterLink>
-      <button type="button" class="flex flex-col items-center p-2 text-slate-500 dark:text-slate-400" @click="mobileActionsOpen = !mobileActionsOpen">
+      <button type="button" class="flex flex-col items-center p-2 text-slate-500 dark:text-slate-400" @click="toggleMobileActions">
         <span class="material-symbols-outlined">add_circle</span>
-        <span class="text-[10px] font-medium">Popup</span>
+        <span class="text-[10px] font-medium">Acciones</span>
       </button>
     </nav>
 
+    <div
+      v-if="mobileActionsOpen"
+      class="fixed inset-x-0 top-0 bottom-20 z-[60] md:hidden"
+      @click="closeMobileActions"
+    ></div>
+
+
     <div v-if="mobileActionsOpen" class="fixed bottom-24 left-3 right-3 z-[70] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
       <div class="grid grid-cols-1 gap-2 text-sm">
-        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createCommunityModalOpen = true; mobileActionsOpen = false">
+        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createEventModalOpen = true; closeMobileActions()">
+          Crear evento para esta comunidad
+        </button>
+        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createCommunityModalOpen = true; closeMobileActions()">
           Crear comunidad
         </button>
-        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createEventModalOpen = true; mobileActionsOpen = false">
-          Crear evento para comunidad
-        </button>
         <button
-          class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700"
-          :disabled="!selectedCommunityId"
-          @click="onOpenCommunity(selectedCommunityId); mobileActionsOpen = false"
+            v-if="canManageCommunity"
+            class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700"
+            @click="onOpenManageCommunity"
         >
-          Ver detalle de comunidad
+          Gestionar comunidad
         </button>
-        <RouterLink
-          v-if="isAdmin"
-          to="/app/admin"
-          class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700"
-          @click="mobileActionsOpen = false"
-        >
-          Ir a panel admin
+        <RouterLink to="/app/comunidades" class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="closeMobileActions">
+          Volver al selector
         </RouterLink>
       </div>
     </div>

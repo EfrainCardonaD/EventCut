@@ -35,6 +35,22 @@ const createCommunityModalOpen = ref(false)
 const manageCommunityModalOpen = ref(false)
 const mobileActionsOpen = ref(false)
 
+const openMobileActions = () => {
+  mobileActionsOpen.value = true
+}
+
+const closeMobileActions = () => {
+  mobileActionsOpen.value = false
+}
+
+const toggleMobileActions = () => {
+  if (mobileActionsOpen.value) {
+    closeMobileActions()
+    return
+  }
+  openMobileActions()
+}
+
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
 const createSubmitError = ref('')
 const createFieldErrors = ref({})
@@ -741,28 +757,34 @@ const truncateWords = (value, limit = 3) => {
         <span class="material-symbols-outlined">groups</span>
         <span class="text-[10px] font-medium">Comunidades</span>
       </RouterLink>
-      <button type="button" class="flex flex-col items-center p-2 text-slate-500 dark:text-slate-400" @click="mobileActionsOpen = !mobileActionsOpen">
+      <button type="button" class="flex flex-col items-center p-2 text-slate-500 dark:text-slate-400" @click="toggleMobileActions">
         <span class="material-symbols-outlined">add_circle</span>
         <span class="text-[10px] font-medium">Acciones</span>
       </button>
     </nav>
 
+    <div
+      v-if="mobileActionsOpen"
+      class="fixed inset-x-0 top-0 bottom-20 z-[60] md:hidden"
+      @click="closeMobileActions"
+    ></div>
+
     <div v-if="mobileActionsOpen" class="fixed bottom-24 left-3 right-3 z-[70] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
       <div class="grid grid-cols-1 gap-2 text-sm">
-        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createEventModalOpen = true; mobileActionsOpen = false">
+        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createEventModalOpen = true; closeMobileActions()">
           Crear evento para esta comunidad
         </button>
-        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createCommunityModalOpen = true; mobileActionsOpen = false">
+        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createCommunityModalOpen = true; closeMobileActions()">
           Crear comunidad
         </button>
         <button
           v-if="canManageCommunity"
           class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700"
-          @click="onOpenManageCommunity(); mobileActionsOpen = false"
+          @click="onOpenManageCommunity(); closeMobileActions()"
         >
           Gestionar comunidad
         </button>
-        <RouterLink to="/app/comunidades" class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="mobileActionsOpen = false">
+        <RouterLink to="/app/comunidades" class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="closeMobileActions">
           Volver al selector
         </RouterLink>
       </div>
