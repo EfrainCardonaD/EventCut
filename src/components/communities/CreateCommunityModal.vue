@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useScrollLock } from '@vueuse/core'
 import { useAuthStore } from '@/stores/auth'
 import FieldError from '@/components/util/FieldError.vue'
@@ -136,6 +136,29 @@ const closeWithoutSaving = () => {
   emit('update:modelValue', false)
 }
 
+const onBackdropIntent = () => {
+  if (!props.modelValue) return
+  if (props.isSaving || isUploadingImage.value) return
+  if (closeConfirmOpen.value) return
+
+  // Tap fuera = intentar cerrar (si hay dirty, closeModal abre confirm).
+  closeModal()
+}
+
+const onBackIntent = () => {
+  if (!props.modelValue) return
+  if (props.isSaving || isUploadingImage.value) return
+  if (closeConfirmOpen.value) return
+
+  // Back/Escape = atrás por pasos.
+  if (currentStep.value === STEP_SOCIAL) {
+    goBack()
+    return
+  }
+
+  closeModal()
+}
+
 const resetForm = () => {
   form.value = {
     name: '',
@@ -174,7 +197,17 @@ watch(
   },
 )
 
+const onKeyDown = (event) => {
+  if (!props.modelValue) return
+  if (event.key === 'Escape') onBackIntent()
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
+})
+
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeyDown)
   isBodyScrollLocked.value = false
 })
 
@@ -342,7 +375,7 @@ const onSubmit = async () => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+    <div v-if="modelValue" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @click.self="onBackdropIntent">
       <ConfirmModal
         v-model="closeConfirmOpen"
         title-user="Descartar cambios"

@@ -276,6 +276,37 @@ const goEditNext = () => {
 }
 
 
+const onBackdropIntent = () => {
+  if (props.isSaving || props.isDeleting) return
+  // Si hay sub-modals/popovers abiertos, primero se quedan en ese flujo.
+  if (deleteModalOpen.value) return
+  if (creatorCardOpen.value) {
+    creatorCardOpen.value = false
+    return
+  }
+
+  // Tap fuera = cerrar modal.
+  closeModal()
+}
+
+const onBackIntent = () => {
+  if (props.isSaving || props.isDeleting) return
+  if (deleteModalOpen.value) return
+  if (creatorCardOpen.value) {
+    creatorCardOpen.value = false
+    return
+  }
+
+  // Back/Escape = atrás por pasos si está editando.
+  if (editMode.value && editStep.value > 1) {
+    goEditPrev()
+    return
+  }
+
+  closeModal()
+}
+
+
 const closeModal = () => {
   emit('update:modelValue', false)
 }
@@ -444,7 +475,7 @@ const youtubeEmbeds = computed(() => {
 
 const onKeyDown = (event) => {
   if (!props.modelValue) return
-  if (event.key === 'Escape') closeModal()
+  if (event.key === 'Escape') onBackIntent()
 }
 
 onMounted(() => {
@@ -540,7 +571,7 @@ onBeforeUnmount(() => {
     <div
       v-if="modelValue && event"
       class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-2 pt-5 backdrop-blur-md sm:p-4 md:p-6"
-      @click.self="closeModal"
+      @click.self="onBackdropIntent"
     >
       <SpinnerOverlay :show="isSaving || isDeleting" :text="isDeleting ? 'Eliminando evento...' : 'Guardando cambios...'" />
 

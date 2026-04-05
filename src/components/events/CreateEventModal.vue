@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useScrollLock } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { useCommunityStore } from '@/stores/community'
@@ -64,6 +64,8 @@ const { activeList: storeCommunities } = storeToRefs(communityStore)
 
 const TOTAL_STEPS = 4
 const step = ref(1)
+const hasModalHistoryEntry = ref(false)
+const isClosingFromHistory = ref(false)
 const showSocialInput = ref({
   whatsapp: false,
   facebook: false,
@@ -195,6 +197,39 @@ const closeWithoutSaving = () => {
   emit('update:modelValue', false)
 }
 
+const onBackdropIntent = () => {
+  if (!props.modelValue) return
+  if (props.isSaving) return
+
+  // Subflows: primero cerrar selector; el confirm lo dejamos controlar el flujo.
+  if (closeConfirmOpen.value) return
+  if (communitySelectorOpen.value) {
+    communitySelectorOpen.value = false
+    return
+  }
+
+  // Tap fuera = intentar cerrar (si hay dirty, closeModal abre confirm).
+  closeModal()
+}
+
+const onBackIntent = () => {
+  if (!props.modelValue) return
+  if (props.isSaving) return
+  if (closeConfirmOpen.value) return
+  if (communitySelectorOpen.value) {
+    communitySelectorOpen.value = false
+    return
+  }
+
+  // Back/Escape = atrás por pasos.
+  if (step.value > 1) {
+    goPrev()
+    return
+  }
+
+  closeModal()
+}
+
 const openCommunitySelector = async () => {
   communitySearch.value = ''
   if (!normalizedCommunities.value.length) {
@@ -248,12 +283,67 @@ watch(
   () => props.modelValue,
   (isOpen) => {
     isBodyScrollLocked.value = isOpen
-    if (!isOpen) resetForm()
-    if (isOpen) step.value = 1
+    if (!isOpen) {
+      resetForm()
+      // Si cerramos el modal por UI (no por popstate), revertir la entrada de history.
+      if (hasModalHistoryEntry.value && !isClosingFromHistory.value) {
+        hasModalHistoryEntry.value = false
+        window.history.back()
+      }
+      isClosingFromHistory.value = false
+      return
+    }
+
+    step.value = 1
+
+    // Back del navegador debe cerrar/retroceder pasos: agregamos una entrada en history.
+    if (!hasModalHistoryEntry.value) {
+      window.history.pushState({ modal: 'create-event' }, '')
+      hasModalHistoryEntry.value = true
+    }
   },
 )
 
+const onModalPopState = () => {
+  if (!props.modelValue) {
+    hasModalHistoryEntry.value = false
+    return
+  }
+
+  // En mobile: atrás = step atrás; si ya estás en el inicio, cerrar (con confirm si dirty).
+  if (step.value > 1) {
+    goPrev()
+    // Mantener el modal abierto implica volver a empujar el estado para capturar el siguiente back.
+    window.history.pushState({ modal: 'create-event' }, '')
+    hasModalHistoryEntry.value = true
+    return
+  }
+
+  isClosingFromHistory.value = true
+  closeModal()
+  // Si closeModal abre confirm por dirty, reinsertamos el state para que el modal siga capturando back.
+  if (closeConfirmOpen.value || props.modelValue) {
+    window.history.pushState({ modal: 'create-event' }, '')
+    hasModalHistoryEntry.value = true
+    isClosingFromHistory.value = false
+    return
+  }
+  hasModalHistoryEntry.value = false
+}
+
+const onKeyDown = (event) => {
+  if (!props.modelValue) return
+  if (event.key === 'Escape') onBackIntent()
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('popstate', onModalPopState)
+})
+
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('popstate', onModalPopState)
   isBodyScrollLocked.value = false
 })
 
@@ -420,7 +510,7 @@ const onSubmit = () => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+    <div v-if="modelValue" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @click.self="onBackdropIntent">
       <ConfirmModal
         v-model="closeConfirmOpen"
         title-user="Descartar cambios"

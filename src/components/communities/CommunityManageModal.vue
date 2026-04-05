@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useScrollLock } from '@vueuse/core'
 import FieldError from '@/components/util/FieldError.vue'
 import Alert from '@/components/util/Alert.vue'
@@ -252,6 +252,47 @@ const onClose = () => {
   if (props.isSaving || props.isDeleting) return
   emit('update:modelValue', false)
 }
+
+const onBackdropIntent = () => {
+  if (!props.modelValue) return
+  if (props.isSaving || props.isDeleting) return
+  if (deleteConfirmOpen.value) return
+
+  // Tap fuera = cerrar modal.
+  onClose()
+}
+
+const onBackIntent = () => {
+  if (!props.modelValue) return
+  if (props.isSaving || props.isDeleting) return
+  if (deleteConfirmOpen.value) return
+
+  // Back/Escape = atrás por pasos.
+  if (step.value > 1) {
+    goPrev()
+    return
+  }
+
+  onClose()
+}
+
+const onKeyDown = (event) => {
+  if (!props.modelValue) return
+  if (event.key === 'Escape') onBackIntent()
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeyDown)
+  isBodyScrollLocked.value = false
+  if (localImagePreview.value) {
+    URL.revokeObjectURL(localImagePreview.value)
+    localImagePreview.value = ''
+  }
+})
 </script>
 
 <template>
@@ -264,7 +305,7 @@ const onClose = () => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[85] flex items-center justify-center  p-4 ">
+    <div v-if="modelValue" class="fixed inset-0 z-[85] flex items-center justify-center  p-4 " @click.self="onBackdropIntent">
       <ConfirmModal
         v-model="deleteConfirmOpen"
         title-user="Eliminar comunidad"
