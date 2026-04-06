@@ -68,8 +68,12 @@ const showSocialInput = ref({
 })
 
 const deleteModalOpen = ref(false)
+const discardConfirmOpen = ref(false)
 const localError = ref('')
 const isBodyScrollLocked = useScrollLock(typeof document !== 'undefined' ? document.body : null)
+const modalContentRef = ref(null)
+const pointerStartedInsideModal = ref(false)
+const initialFormSnapshot = ref('')
 
 const form = ref({
   title: '',
@@ -123,6 +127,30 @@ const getFieldError = (field) => {
   return toFieldErrorText(props.fieldErrors?.[field])
 }
 
+const buildFormSnapshot = () => {
+  return JSON.stringify({
+    title: String(form.value.title || '').trim(),
+    description: String(form.value.description || '').trim(),
+    location: String(form.value.location || '').trim(),
+    category_id: String(form.value.category_id || ''),
+    date: String(form.value.date || ''),
+    allDay: Boolean(form.value.allDay),
+    startTime: String(form.value.startTime || ''),
+    endTime: String(form.value.endTime || ''),
+    hasEndDate: Boolean(form.value.hasEndDate),
+    endDate: String(form.value.endDate || ''),
+    removeImage: Boolean(form.value.removeImage),
+    hasImageFile: Boolean(form.value.imageFile),
+    social_links: {
+      whatsapp: String(form.value.social_links?.whatsapp || '').trim(),
+      facebook: String(form.value.social_links?.facebook || '').trim(),
+      instagram: String(form.value.social_links?.instagram || '').trim(),
+    },
+  })
+}
+
+const isDirty = computed(() => buildFormSnapshot() !== initialFormSnapshot.value)
+
 const syncFormFromEvent = () => {
   const schedule = dbToUiModel({
     start_datetime: props.event?.start_datetime,
@@ -153,7 +181,9 @@ const syncFormFromEvent = () => {
 
   clearLocalImagePreview()
   deleteModalOpen.value = false
+  discardConfirmOpen.value = false
   localError.value = ''
+  initialFormSnapshot.value = buildFormSnapshot()
 }
 
 watch(
@@ -164,6 +194,7 @@ watch(
     if (!isOpen) {
       editStep.value = 1
       deleteModalOpen.value = false
+      discardConfirmOpen.value = false
       localError.value = ''
       clearLocalImagePreview()
       return
@@ -263,18 +294,46 @@ const goEditNext = () => {
 
 const closeModal = () => {
   if (props.isSaving || props.isDeleting) return
+  if (isDirty.value) {
+    discardConfirmOpen.value = true
+    return
+  }
   emit('update:modelValue', false)
 }
 
+const closeWithoutSaving = () => {
+  discardConfirmOpen.value = false
+  emit('update:modelValue', false)
+}
+
+const hasSelectionInsideModal = () => {
+  if (typeof window === 'undefined' || !modalContentRef.value) return false
+  const selection = window.getSelection?.()
+  if (!selection || selection.isCollapsed) return false
+
+  const anchorNode = selection.anchorNode
+  const focusNode = selection.focusNode
+  return modalContentRef.value.contains(anchorNode) || modalContentRef.value.contains(focusNode)
+}
+
+const onOverlayPointerDown = (event) => {
+  pointerStartedInsideModal.value = Boolean(modalContentRef.value?.contains(event.target))
+}
+
 const onBackdropIntent = () => {
+  if (pointerStartedInsideModal.value || hasSelectionInsideModal()) {
+    pointerStartedInsideModal.value = false
+    return
+  }
+  pointerStartedInsideModal.value = false
   if (props.isSaving || props.isDeleting) return
-  if (deleteModalOpen.value) return
+  if (deleteModalOpen.value || discardConfirmOpen.value) return
   closeModal()
 }
 
 const onBackIntent = () => {
   if (props.isSaving || props.isDeleting) return
-  if (deleteModalOpen.value) return
+  if (deleteModalOpen.value || discardConfirmOpen.value) return
 
   if (editStep.value > 1) {
     goEditPrev()
@@ -384,6 +443,7 @@ onBeforeUnmount(() => {
     <div
       v-if="modelValue && event"
       class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-2 pt-5 backdrop-blur-md sm:p-4 md:p-6"
+      @pointerdown="onOverlayPointerDown"
       @click.self="onBackdropIntent"
     >
       <SpinnerOverlay :show="isSaving || isDeleting" :text="isDeleting ? 'Eliminando evento...' : 'Guardando cambios...'" />
@@ -400,6 +460,17 @@ onBeforeUnmount(() => {
         @confirm="onConfirmDelete"
       />
 
+      <ConfirmModal
+        v-model="discardConfirmOpen"
+        title-user="Descartar cambios"
+        message="Tienes cambios sin guardar en la edicion del evento."
+        description="Si cierras ahora, se perdera la informacion editada."
+        confirm-text="Descartar"
+        cancel-text="Seguir editando"
+        :danger="false"
+        @confirm="closeWithoutSaving"
+      />
+
       <Transition
         appear
         enter-active-class="transition duration-300 ease-out"
@@ -411,6 +482,7 @@ onBeforeUnmount(() => {
       >
         <div
           v-if="modelValue && event"
+          ref="modalContentRef"
           class="relative flex max-h-[100dvh] w-full flex-col overflow-hidden border-0 border-slate-200 bg-white/75 shadow-2xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/75 sm:max-h-[90vh] sm:max-w-3xl sm:rounded-3xl sm:border"
         >
           <header

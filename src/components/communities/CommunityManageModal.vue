@@ -60,8 +60,12 @@ const form = ref({
 
 const localError = ref('')
 const deleteConfirmOpen = ref(false)
+const discardConfirmOpen = ref(false)
 const localImagePreview = ref('')
 const imageInputRef = ref(null)
+const modalContentRef = ref(null)
+const pointerStartedInsideModal = ref(false)
+const initialFormSnapshot = ref('')
 const showSocialInput = ref({
   whatsapp: false,
   facebook: false,
@@ -80,6 +84,24 @@ const getFieldError = (field) => {
   return toFieldErrorText(props.fieldErrors?.[field])
 }
 
+const buildFormSnapshot = () => {
+  return JSON.stringify({
+    name: String(form.value.name || '').trim(),
+    description: String(form.value.description || '').trim(),
+    category_id: String(form.value.category_id || ''),
+    contact_email: String(form.value.contact_email || '').trim(),
+    imageAction: String(form.value.imageAction || 'keep'),
+    hasImageFile: Boolean(form.value.imageFile),
+    social_links: {
+      whatsapp: String(form.value.social_links?.whatsapp || '').trim(),
+      facebook: String(form.value.social_links?.facebook || '').trim(),
+      instagram: String(form.value.social_links?.instagram || '').trim(),
+    },
+  })
+}
+
+const isDirty = computed(() => buildFormSnapshot() !== initialFormSnapshot.value)
+
 const syncFormFromCommunity = () => {
   form.value = {
     name: props.community?.name || '',
@@ -96,6 +118,7 @@ const syncFormFromCommunity = () => {
   }
   localError.value = ''
   deleteConfirmOpen.value = false
+  discardConfirmOpen.value = false
   step.value = 1
   showSocialInput.value = {
     whatsapp: Boolean(form.value.social_links.whatsapp),
@@ -106,6 +129,7 @@ const syncFormFromCommunity = () => {
     URL.revokeObjectURL(localImagePreview.value)
     localImagePreview.value = ''
   }
+  initialFormSnapshot.value = buildFormSnapshot()
 }
 
 watch(
@@ -114,6 +138,7 @@ watch(
     isBodyScrollLocked.value = Boolean(isOpen)
     if (!isOpen) {
       deleteConfirmOpen.value = false
+      discardConfirmOpen.value = false
       localError.value = ''
       return
     }
@@ -250,13 +275,41 @@ const onConfirmDelete = () => {
 
 const onClose = () => {
   if (props.isSaving || props.isDeleting) return
+  if (isDirty.value) {
+    discardConfirmOpen.value = true
+    return
+  }
   emit('update:modelValue', false)
 }
 
+const closeWithoutSaving = () => {
+  discardConfirmOpen.value = false
+  emit('update:modelValue', false)
+}
+
+const hasSelectionInsideModal = () => {
+  if (typeof window === 'undefined' || !modalContentRef.value) return false
+  const selection = window.getSelection?.()
+  if (!selection || selection.isCollapsed) return false
+
+  const anchorNode = selection.anchorNode
+  const focusNode = selection.focusNode
+  return modalContentRef.value.contains(anchorNode) || modalContentRef.value.contains(focusNode)
+}
+
+const onOverlayPointerDown = (event) => {
+  pointerStartedInsideModal.value = Boolean(modalContentRef.value?.contains(event.target))
+}
+
 const onBackdropIntent = () => {
+  if (pointerStartedInsideModal.value || hasSelectionInsideModal()) {
+    pointerStartedInsideModal.value = false
+    return
+  }
+  pointerStartedInsideModal.value = false
   if (!props.modelValue) return
   if (props.isSaving || props.isDeleting) return
-  if (deleteConfirmOpen.value) return
+  if (deleteConfirmOpen.value || discardConfirmOpen.value) return
 
   // Tap fuera = cerrar modal.
   onClose()
@@ -265,7 +318,7 @@ const onBackdropIntent = () => {
 const onBackIntent = () => {
   if (!props.modelValue) return
   if (props.isSaving || props.isDeleting) return
-  if (deleteConfirmOpen.value) return
+  if (deleteConfirmOpen.value || discardConfirmOpen.value) return
 
   // Back/Escape = atrás por pasos.
   if (step.value > 1) {
@@ -305,7 +358,7 @@ onBeforeUnmount(() => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @click.self="onBackdropIntent">
+    <div v-if="modelValue" class="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @pointerdown="onOverlayPointerDown" @click.self="onBackdropIntent">
       <ConfirmModal
         v-model="deleteConfirmOpen"
         title-user="Eliminar comunidad"
@@ -317,7 +370,18 @@ onBeforeUnmount(() => {
         @confirm="onConfirmDelete"
       />
 
-      <div class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-200/75 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75">
+      <ConfirmModal
+        v-model="discardConfirmOpen"
+        title-user="Descartar cambios"
+        message="Tienes cambios sin guardar en la comunidad."
+        description="Si cierras ahora, se perderan las modificaciones hechas."
+        confirm-text="Descartar"
+        cancel-text="Seguir editando"
+        :danger="false"
+        @confirm="closeWithoutSaving"
+      />
+
+      <div ref="modalContentRef" class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-200/75 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75">
         <!-- Header fijo -->
         <div class="flex-shrink-0 p-6 pb-0">
         <div class="mb-4 flex items-start justify-between gap-3">

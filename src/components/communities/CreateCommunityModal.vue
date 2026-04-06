@@ -69,6 +69,8 @@ const showSocialInput = ref({
 
 const imageInputRef = ref(null)
 const imagePreviewUrl = ref('')
+const modalContentRef = ref(null)
+const pointerStartedInsideModal = ref(false)
 const isBodyScrollLocked = useScrollLock(typeof document !== 'undefined' ? document.body : null)
 
 const CONTACT_EMAIL_HELP = 'Usaremos el correo de tu cuenta para que el equipo de EventCut pueda contactarte.'
@@ -136,7 +138,26 @@ const closeWithoutSaving = () => {
   emit('update:modelValue', false)
 }
 
+const hasSelectionInsideModal = () => {
+  if (typeof window === 'undefined' || !modalContentRef.value) return false
+  const selection = window.getSelection?.()
+  if (!selection || selection.isCollapsed) return false
+
+  const anchorNode = selection.anchorNode
+  const focusNode = selection.focusNode
+  return modalContentRef.value.contains(anchorNode) || modalContentRef.value.contains(focusNode)
+}
+
+const onOverlayPointerDown = (event) => {
+  pointerStartedInsideModal.value = Boolean(modalContentRef.value?.contains(event.target))
+}
+
 const onBackdropIntent = () => {
+  if (pointerStartedInsideModal.value || hasSelectionInsideModal()) {
+    pointerStartedInsideModal.value = false
+    return
+  }
+  pointerStartedInsideModal.value = false
   if (!props.modelValue) return
   if (props.isSaving || isUploadingImage.value) return
   if (closeConfirmOpen.value) return
@@ -375,7 +396,7 @@ const onSubmit = async () => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @click.self="onBackdropIntent">
+    <div v-if="modelValue" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @pointerdown="onOverlayPointerDown" @click.self="onBackdropIntent">
       <ConfirmModal
         v-model="closeConfirmOpen"
         title-user="Descartar cambios"
@@ -387,7 +408,7 @@ const onSubmit = async () => {
         @confirm="closeWithoutSaving"
       />
 
-      <div class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/75 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75">
+      <div ref="modalContentRef" class="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/75 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75">
         <!-- Header fijo -->
         <div class="flex-shrink-0 p-6 pb-0">
         <div class="mb-4 flex items-start justify-between gap-3">

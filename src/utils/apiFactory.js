@@ -94,18 +94,45 @@ const stripRedundantErrorPrefix = (value) => {
   return value.replace(/^\s*error\s*[:\-]?\s*/i, '').trim();
 };
 
-// Axios deja `error.response` undefined cuando hay problemas de red/CORS/timeout.
+const classifyApiErrorKind = (error) => {
+  if (!error) return 'local';
+
+  const code = String(error.code || '').toUpperCase();
+  const message = String(error.message || '').toLowerCase();
+  const hasResponse = Boolean(error.response);
+  const hasRequest = Boolean(error.request);
+
+  if (code === 'ERR_CANCELED' || message.includes('canceled') || message.includes('cancelled')) {
+    return 'canceled';
+  }
+
+  if (code === 'ECONNABORTED' || message.includes('timeout')) {
+    return 'timeout';
+  }
+
+  if (hasResponse) {
+    return 'http';
+  }
+
+  if (
+    code === 'ERR_NETWORK' ||
+    message.includes('network error') ||
+    message.includes('connection refused') ||
+    message.includes('err_connection_refused') ||
+    message.includes('failed to fetch') ||
+    hasRequest
+  ) {
+    return 'network';
+  }
+
+  // Error local (validaciones/throw manual) antes de llegar al backend.
+  return 'local';
+};
+
+// Backward-compatible: conserva este helper para llamadas existentes.
 export const isNetworkOrConnectionError = (error) => {
-  if (!error) return false;
-  const code = error.code;
-  if (code === 'ECONNABORTED' || code === 'ERR_NETWORK') return true;
-
-  const message = (error.message || '').toLowerCase();
-  if (message.includes('network error')) return true;
-  if (message.includes('connection refused')) return true;
-  if (message.includes('err_connection_refused')) return true;
-
-  return !error.response;
+  const kind = classifyApiErrorKind(error);
+  return kind === 'network' || kind === 'timeout';
 };
 
 export const getFriendlyApiErrorMessage = (error, fallbackMessage) => {
@@ -113,7 +140,8 @@ export const getFriendlyApiErrorMessage = (error, fallbackMessage) => {
 };
 
 export const normalizeApiError = (error, fallbackMessage) => {
-  const networkFailure = isNetworkOrConnectionError(error);
+  const errorKind = classifyApiErrorKind(error);
+  const networkFailure = errorKind === 'network' || errorKind === 'timeout';
   const responseData = error?.response?.data;
   const status = Number(error?.response?.status || 0) || null;
   const code = getCodeFromErrorData(responseData);
@@ -128,9 +156,18 @@ export const normalizeApiError = (error, fallbackMessage) => {
     ? 'Revisa los campos marcados e intenta nuevamente.'
     : null;
 
-  const message = networkFailure
-    ? 'No se pudo conectar con el servidor. Verifica que el backend esté activo e inténtalo de nuevo.'
-    : conciseValidationMessage || backendMessage || fallbackMessage || 'Ocurrió un error inesperado.';
+  const timeoutMessage = 'El servidor tardó demasiado en responder. Inténtalo nuevamente.';
+  const networkMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté activo e inténtalo de nuevo.';
+  const canceledMessage = 'La solicitud fue cancelada antes de completarse.';
+
+  const message =
+    errorKind === 'timeout'
+      ? timeoutMessage
+      : errorKind === 'network'
+        ? networkMessage
+        : errorKind === 'canceled'
+          ? canceledMessage
+          : conciseValidationMessage || backendMessage || fallbackMessage || 'Ocurrió un error inesperado.';
 
   const sanitizedMessage = stripRedundantErrorPrefix(message) || 'Ocurrió un error inesperado.';
 
@@ -140,6 +177,7 @@ export const normalizeApiError = (error, fallbackMessage) => {
     details: getDetailsFromErrorData(responseData),
     traceId,
     status,
+    errorKind,
     isNetworkError: networkFailure,
   };
 };
@@ -155,6 +193,10 @@ export const toApiErrorResult = (error, fallbackMessage) => {
     details: normalized.details,
     traceId: normalized.traceId,
     status: normalized.status,
+    errorKind: normalized.errorKind,
+    isCanceled: normalized.errorKind === 'canceled',
+    isTimeout: normalized.errorKind === 'timeout',
+    isNetworkError: normalized.isNetworkError,
   };
 };
 

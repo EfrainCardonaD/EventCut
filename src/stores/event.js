@@ -605,8 +605,10 @@ export const useEventStore = defineStore('event', {
 
       try {
         const { response } = await createEventWithSignedImageUpload(payload)
+        const status = Number(response?.status || 0)
+        const isSuccessStatus = status >= 200 && status < 300
 
-        if (response.status === 201 || response.status === 200) {
+        if (isSuccessStatus) {
           await this.fetchEvents(this.lastEventsQuery || { scope: this.eventsScope })
           return { success: true }
         }

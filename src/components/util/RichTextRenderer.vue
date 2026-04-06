@@ -1,10 +1,19 @@
 <script setup>
 import { computed } from 'vue'
+import { buildEmbedFromUrl, extractUrlsFromText } from '@/utils/richTextEmbeds'
 
 const props = defineProps({
   content: {
     type: String,
     default: '',
+  },
+  hideUrlsAndMedia: {
+    type: Boolean,
+    default: false,
+  },
+  enableEmbeds: {
+    type: Boolean,
+    default: true,
   },
   lineClamp: {
     type: [Number, String],
@@ -15,8 +24,6 @@ const props = defineProps({
     default: null,
   },
 })
-
-const IMAGE_URL_PATTERN = /https?:\/\/[^\s<>"']+\.(?:jpg|jpeg|png|gif|webp|avif|svg)(?:\?[^\s<>"']*)?/gi
 
 const sanitizeHtml = (html) => {
   if (!html) return ''
@@ -54,10 +61,121 @@ const isPlainText = (content) => {
   return stripped === content.trim()
 }
 
-const convertImageUrls = (text) => {
-  return text.replace(IMAGE_URL_PATTERN, (url) => {
-    return `<img src="${url}" alt="Imagen" class="max-w-full rounded-lg my-2" loading="lazy" />`
+const toEscapedText = (text) => {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+const URL_TEXT_PATTERN = /https?:\/\/[^\s<>"']+/gi
+
+const stripUrlsFromText = (text) => {
+  return String(text || '').replace(URL_TEXT_PATTERN, '').replace(/\s{2,}/g, ' ').trim()
+}
+
+const stripUrlsAndMediaFromHtml = (html) => {
+  if (!html || typeof document === 'undefined') return html
+
+  const container = document.createElement('div')
+  container.innerHTML = html
+
+  container.querySelectorAll('img, video, audio, source, picture, iframe').forEach((node) => {
+    node.remove()
   })
+
+  container.querySelectorAll('a[href]').forEach((anchor) => {
+    const label = stripUrlsFromText(anchor.textContent || '')
+    if (!label) {
+      anchor.remove()
+      return
+    }
+
+    anchor.replaceWith(document.createTextNode(label))
+  })
+
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
+  const textNodes = []
+  while (walker.nextNode()) {
+    textNodes.push(walker.currentNode)
+  }
+
+  textNodes.forEach((textNode) => {
+    const cleaned = stripUrlsFromText(textNode.nodeValue || '')
+    textNode.nodeValue = cleaned
+  })
+
+  return container.innerHTML
+}
+
+const linkifyText = (text) => {
+  const urls = extractUrlsFromText(text)
+  if (!urls.length) return toEscapedText(text)
+
+  let output = toEscapedText(text)
+  urls.forEach((url) => {
+    const escaped = toEscapedText(url)
+    output = output.replaceAll(escaped, `<a href="${escaped}">${escaped}</a>`)
+  })
+
+  return output
+}
+
+const createEmbedNode = (embed) => {
+  if (!embed || typeof document === 'undefined') return null
+
+  if (embed.type === 'image') {
+    const wrapper = document.createElement('figure')
+    wrapper.className = 'rt-embed rt-embed-image'
+
+    const img = document.createElement('img')
+    img.src = embed.src
+    img.alt = 'Imagen compartida'
+    img.loading = 'lazy'
+    img.className = 'max-w-full rounded-lg my-2'
+    wrapper.appendChild(img)
+    return wrapper
+  }
+
+  if (embed.type === 'youtube') {
+    const wrapper = document.createElement('figure')
+    wrapper.className = 'rt-embed rt-embed-video'
+
+    const iframe = document.createElement('iframe')
+    iframe.src = embed.embedUrl
+    iframe.title = 'Video de YouTube'
+    iframe.loading = 'lazy'
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+    iframe.allowFullscreen = true
+    iframe.referrerPolicy = 'strict-origin-when-cross-origin'
+    iframe.className = 'w-full aspect-video rounded-lg border border-slate-200 dark:border-slate-700'
+
+    wrapper.appendChild(iframe)
+    return wrapper
+  }
+
+  return null
+}
+
+const enrichEmbeds = (html) => {
+  if (!html || typeof document === 'undefined') return html
+
+  const container = document.createElement('div')
+  container.innerHTML = html
+
+  container.querySelectorAll('a[href]').forEach((link) => {
+    const href = link.getAttribute('href') || ''
+    const embed = buildEmbedFromUrl(href)
+    const node = createEmbedNode(embed)
+    if (!node) return
+
+    const shouldReplace = !link.textContent || String(link.textContent).trim() === href
+    if (!shouldReplace) return
+
+    link.replaceWith(node)
+  })
+
+  return container.innerHTML
 }
 
 const processedContent = computed(() => {
@@ -68,14 +186,23 @@ const processedContent = computed(() => {
   // If it's plain text, wrap in paragraph and convert image URLs
   if (isPlainText(html)) {
     html = html.split('\n').filter(Boolean).map(line => {
-      const processed = convertImageUrls(line)
+      const processed = props.hideUrlsAndMedia
+        ? toEscapedText(stripUrlsFromText(line))
+        : linkifyText(line)
       return `<p>${processed}</p>`
     }).join('')
   } else {
     html = sanitizeHtml(html)
+    if (props.hideUrlsAndMedia) {
+      html = stripUrlsAndMediaFromHtml(html)
+    }
   }
-  
-  return html
+
+  if (props.hideUrlsAndMedia) return html
+
+  if (!props.enableEmbeds) return html
+
+  return enrichEmbeds(html)
 })
 
 const lineClampClass = computed(() => {
@@ -146,6 +273,30 @@ const containerStyle = computed(() => {
 
 :deep(a) {
   @apply text-primary-600 underline hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300;
+}
+
+:deep(.rt-color-pair-rose) {
+  @apply text-rose-600 dark:text-rose-300;
+}
+
+:deep(.rt-color-pair-blue) {
+  @apply text-blue-600 dark:text-blue-300;
+}
+
+:deep(.rt-color-pair-emerald) {
+  @apply text-emerald-600 dark:text-emerald-300;
+}
+
+:deep(.rt-color-pair-amber) {
+  @apply text-amber-600 dark:text-amber-300;
+}
+
+:deep(.rt-color-pair-violet) {
+  @apply text-violet-600 dark:text-violet-300;
+}
+
+:deep(.rt-color-pair-slate) {
+  @apply text-slate-700 dark:text-slate-200;
 }
 
 :deep(strong) {

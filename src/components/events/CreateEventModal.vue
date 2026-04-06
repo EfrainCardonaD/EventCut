@@ -97,6 +97,8 @@ const validationError = ref('')
 const closeConfirmOpen = ref(false)
 const communitySelectorOpen = ref(false)
 const communitySearch = ref('')
+const modalContentRef = ref(null)
+const pointerStartedInsideModal = ref(false)
 const isBodyScrollLocked = useScrollLock(typeof document !== 'undefined' ? document.body : null)
 
 const formErrorMessage = computed(() => {
@@ -197,7 +199,26 @@ const closeWithoutSaving = () => {
   emit('update:modelValue', false)
 }
 
+const hasSelectionInsideModal = () => {
+  if (typeof window === 'undefined' || !modalContentRef.value) return false
+  const selection = window.getSelection?.()
+  if (!selection || selection.isCollapsed) return false
+
+  const anchorNode = selection.anchorNode
+  const focusNode = selection.focusNode
+  return modalContentRef.value.contains(anchorNode) || modalContentRef.value.contains(focusNode)
+}
+
+const onOverlayPointerDown = (event) => {
+  pointerStartedInsideModal.value = Boolean(modalContentRef.value?.contains(event.target))
+}
+
 const onBackdropIntent = () => {
+  if (pointerStartedInsideModal.value || hasSelectionInsideModal()) {
+    pointerStartedInsideModal.value = false
+    return
+  }
+  pointerStartedInsideModal.value = false
   if (!props.modelValue) return
   if (props.isSaving) return
 
@@ -510,7 +531,7 @@ const onSubmit = () => {
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
   >
-    <div v-if="modelValue" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @click.self="onBackdropIntent">
+    <div v-if="modelValue" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" @pointerdown="onOverlayPointerDown" @click.self="onBackdropIntent">
       <ConfirmModal
         v-model="closeConfirmOpen"
         title-user="Descartar cambios"
@@ -533,6 +554,7 @@ const onSubmit = () => {
       >
           <div
             v-if="modelValue"
+            ref="modalContentRef"
             class="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/75 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/75"
           >
             <!-- Barra superior: progreso por pasos + indeterminado al guardar -->
