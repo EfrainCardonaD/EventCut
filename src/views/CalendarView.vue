@@ -313,7 +313,7 @@ watch(createModalOpen, (isOpen) => {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-slate-50 text-slate-700 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+  <div class="flex min-h-screen flex-col bg-slate-50 text-slate-700 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100 pt-6 md-18">
 
     <SpinnerOverlay :show="isLoadingEvents || isLoggingOut" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando calendario...'" />
 
@@ -351,7 +351,7 @@ watch(createModalOpen, (isOpen) => {
       @logout="logoutModalOpen = true"
     />
 
-    <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 pb-24 pt-20 md:gap-5 md:px-8 md:pb-6 md:pt-24 lg:pb-8">
+    <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 pb-24 pt-20 md:gap-5 md:px-8 md:pb-6 md:pt-24 lg:pb-8 lg:pt-40">
       <main class="grid grid-cols-1 gap-4 overflow-x-hidden lg:grid-cols-12 lg:items-start lg:gap-5">
         <aside class="hidden min-w-0 lg:col-span-3 lg:block">
           <div class="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
