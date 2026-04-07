@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import EventCutLogo from '@/components/icons/EventCutLogo.vue'
 import { toggleTheme } from '@/utils/theme'
-import HeroSvg from '@/assets/hero-abstract.svg'
+import HeroAbstract from '@/components/illustrations/HeroAbstract.vue'
 
 const themeIcon = ref('light_mode')
 
@@ -26,7 +26,7 @@ onMounted(() => {
   >
     <!-- ─── HEADER ─── -->
     <header
-      class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-2xl transition-colors duration-300 dark:bg-neutral-950/70"
+      class="fixed top-0 w-full z-50 bg-white/30 backdrop-blur-2xl transition-colors duration-300 dark:bg-neutral-950/30"
     >
       <div class="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
         <!-- Logo -->
@@ -40,11 +40,11 @@ onMounted(() => {
         <nav class="hidden md:flex gap-10 font-body text-[13px] font-medium tracking-wide uppercase">
           <a
             href="#caracteristicas"
-            class="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200"
+            class="text-neutral-400 hover:text-primary-600 dark:hover:text-primary-300 transition-colors duration-200"
           >Características</a>
           <a
             href="#comunidad"
-            class="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors duration-200"
+            class="text-neutral-400 hover:text-primary-600 dark:hover:text-primary-300 transition-colors duration-200"
           >Comunidad</a>
         </nav>
 
@@ -52,7 +52,7 @@ onMounted(() => {
         <div class="flex items-center gap-1">
           <button
             type="button"
-            class="size-9 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors duration-200"
+            class="size-9 flex items-center justify-center rounded-full text-neutral-400 hover:text-tertiary-500 dark:hover:text-tertiary-200 transition-colors duration-200"
             aria-label="Toggle Theme"
             @click="onToggleTheme"
           >
@@ -67,9 +67,9 @@ onMounted(() => {
           </RouterLink>
           <RouterLink
             to="/auth/register"
-            class="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-5 py-2 rounded-full text-[13px] font-semibold hover:opacity-80 active:scale-[0.97] transition-all duration-200"
+            class="bg-tertiary-400 dark:bg-tertiary-600 text-neutral-800 dark:text-primary-100 px-5 py-2 rounded-full text-[13px] font-semibold hover:opacity-80 active:scale-[0.97] transition-all duration-200"
           >
-            Registrarse
+            Registrate
           </RouterLink>
         </div>
       </div>
@@ -112,7 +112,7 @@ onMounted(() => {
             <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <RouterLink
                 to="/app"
-                class="group inline-flex items-center justify-center gap-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-8 py-3.5 rounded-full text-sm font-semibold hover:opacity-85 active:scale-[0.97] transition-all duration-200"
+                class="group inline-flex items-center justify-center gap-2 bg-primary-600 dark:bg-primary-200 text-white dark:text-neutral-900 px-8 py-3 rounded-full text-sm font-semibold hover:opacity-85 active:scale-[0.97] transition-all duration-200"
               >
                 Explorar Eventos
                 <span
@@ -129,37 +129,13 @@ onMounted(() => {
             </div>
 
             <!-- Social proof -->
-            <div class="mt-14 flex items-center justify-center lg:justify-start gap-4">
-              <div class="flex -space-x-2.5">
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5EmC1nL-LMgpd8yRLkg1dSHPv8LUPCho4gbBCbZyCJ3zxFUAqfJriAHIT2UHwhcZpPFGOzXNcWUCWGBfuIfkLl7Bim8ATC4qySNceUvwt6wJcYvjnNLk01Qj7wOhmkcZvdCLPwg9dekjn7zS-LyGH46FgrrVHIfk7rBbT4_772MfLvzCQRWlaDoOfAhc0I2HP4m7S9X4oxzHLT9bEa9OeUTR0pexYgxdwVWbmETMaPspZvZiHYjVxOW8KMTmqDajXfEJr6QIW"
-                  class="w-8 h-8 rounded-full border-2 border-neutral-50 dark:border-neutral-950 object-cover"
-                  alt="Estudiante"
-                />
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhSf-RIompDizabHYY8vXy6HJIAu3g-OPJVBlMAoM2zr-TJet4NIpb8ffc194qVOZ0K6GfROjl2T_8faDO5Tl3QULkSRUJIzpq1niV7Jxe7fhz906vfMdMuJIlGxowHn8pyK1tiyAGg9j7HJ4gOLCGzzk0y87ky9MMl7M8Fb-Ump9NRB90opNwmSpGSVzhBrOiY7Wo86i7vBVQezXvzdlk8DkaCDk2CULAkP7rh1ww6vMIbF5ZULtDQplOClXwWzP0rEf2HS9a"
-                  class="w-8 h-8 rounded-full border-2 border-neutral-50 dark:border-neutral-950 object-cover"
-                  alt="Estudiante"
-                />
-                <div
-                  class="w-8 h-8 rounded-full border-2 border-neutral-50 dark:border-neutral-950 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-bold text-neutral-500 dark:text-neutral-300"
-                >
-                  +2k
-                </div>
-              </div>
-              <p class="text-xs text-neutral-400 dark:text-neutral-500">
-                Estudiantes activos este semestre
-              </p>
-            </div>
+
+
           </div>
 
           <!-- Hero Visual -->
           <div class="relative flex justify-center lg:justify-end">
-            <img
-              :src="HeroSvg"
-              alt="EventCut Platform"
-              class="w-full max-w-[520px] h-auto drop-shadow-2xl"
-            />
+            <HeroAbstract class="w-full max-w-[520px] h-auto drop-shadow-2xl" />
           </div>
         </div>
       </div>
@@ -195,7 +171,7 @@ onMounted(() => {
               Descubrimiento inteligente
             </h3>
             <p class="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              Filtros potentes por facultad, tipo de evento o intereses.
+              Filtros potentes por dia, tipo de evento o intereses.
               Encuentra exactamente lo que buscas sin ruido.
             </p>
           </div>
@@ -212,8 +188,8 @@ onMounted(() => {
               Sincronización de agenda
             </h3>
             <p class="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              Añade eventos con un clic. Recibe notificaciones automáticas
-              y evita empalmes con tus clases.
+              Añade eventos con un clic. Consulta tu agenda cuando quieras
+              y evita perderte tus eventos favoritos.
             </p>
           </div>
 
@@ -226,11 +202,10 @@ onMounted(() => {
               >forum</span>
             </div>
             <h3 class="font-headline font-bold text-lg text-neutral-900 dark:text-white mb-2">
-              Networking integrado
+              Conexión comunitaria
             </h3>
             <p class="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              Conecta con perfiles de tu carrera, forma equipos
-              y amplía tu red profesional.
+              Acceso a comunidades enteras para no perderte de nada, redes sociales, eventos, añade tu evento a la comunidad oficial.
             </p>
           </div>
         </div>
@@ -248,7 +223,7 @@ onMounted(() => {
           La comunidad universitaria te espera.
         </h2>
         <p class="text-neutral-500 dark:text-neutral-400 text-base mb-20 max-w-xl mx-auto">
-          Resultados cuantificables en la adopción del campus.
+          Resultados esperados en la adopción del campus CUT.
         </p>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-12">
@@ -262,7 +237,7 @@ onMounted(() => {
           <div>
             <span
               class="block font-headline font-black text-6xl md:text-7xl tracking-tight bg-gradient-to-br from-secondary-500 to-secondary-700 bg-clip-text text-transparent dark:from-secondary-300 dark:to-secondary-500 mb-2"
-            >8k</span>
+            >2k</span>
             <span class="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-400 dark:text-neutral-500"
             >Usuarios activos</span>
           </div>
@@ -285,14 +260,14 @@ onMounted(() => {
         <h2
           class="font-headline font-extrabold text-3xl md:text-5xl tracking-tight text-neutral-900 dark:text-white mb-5"
         >
-          ¿Listo para optimizar tu tiempo?
+          ¿Listo para no perderte de nada?
         </h2>
         <p class="text-base text-neutral-500 dark:text-neutral-400 mb-10 leading-relaxed">
-          Únete hoy con tu correo institucional. Configura tus intereses en menos de un minuto.
+          Únete hoy con tu correo institucional. Crear tu primer evento en menos de un minuto.
         </p>
         <RouterLink
           to="/auth/register"
-          class="group inline-flex items-center justify-center gap-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-10 py-4 rounded-full text-base font-semibold hover:opacity-85 active:scale-[0.97] transition-all duration-200 shadow-xl shadow-neutral-900/10 dark:shadow-white/5"
+          class="group inline-flex items-center justify-center gap-2.5 bg-primary-700 dark:bg-primary-300 text-white dark:text-neutral-900 px-10 py-4 rounded-full text-base font-semibold hover:opacity-85 active:scale-[0.97] transition-all duration-200 shadow-xl shadow-neutral-900/10 dark:shadow-white/5"
         >
           Crear cuenta gratis
           <span
