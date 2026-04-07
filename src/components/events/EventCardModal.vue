@@ -238,10 +238,10 @@ const openEdit = () => {
               <p class="mb-0.5 text-[10px] font-bold uppercase tracking-[0.2em]" :style="categoryAccentStyle">{{ categoryName }}</p>
               <h3 class="truncate font-headline text-lg font-black text-slate-900 dark:text-white sm:text-xl">{{ event.title }}</h3>
             </div>
-            <div class="flex shrink-0 items-center gap-2">
+            <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
-                class="rounded-full text-slate-400 transition-colors hover:bg-tertiary-50 hover:text-tertiary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary-300/60 dark:hover:bg-tertiary-500/10"
+                class="flex items-center justify-center size-11 sm:size-auto sm:p-2 rounded-full text-slate-400 transition-colors hover:bg-tertiary-50 hover:text-tertiary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary-300/60 dark:hover:bg-tertiary-500/10"
                 :class="event.isFavorite ? 'text-tertiary-600 dark:text-tertiary-400' : 'dark:text-slate-500'"
                 aria-label="Marcar favorito"
                 @click="onToggleFavorite"
@@ -254,14 +254,14 @@ const openEdit = () => {
               <button
                 v-if="canManage"
                 type="button"
-                class="rounded-full border border-slate-300/70 bg-white/50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 transition hover:bg-white/80 dark:border-slate-700/70 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800/80"
+                class="rounded-full border border-slate-300/70 bg-white/50 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-slate-700 transition hover:bg-white/80 dark:border-slate-700/70 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800/80 sm:px-3 sm:py-1.5"
                 @click="openEdit"
               >
                 Editar
               </button>
               <button
                 type="button"
-                class="rounded-full bg-slate-100/50 p-1.5 text-slate-500 transition-colors hover:bg-slate-200/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50"
+                class="flex items-center justify-center size-11 sm:size-auto sm:p-2 rounded-full bg-slate-100/50 text-slate-500 transition-colors hover:bg-slate-200/50 dark:bg-slate-800/50 dark:hover:bg-slate-700/50"
                 @click="closeModal"
               >
                 <span class="material-symbols-outlined text-[20px]">close</span>
@@ -282,7 +282,7 @@ const openEdit = () => {
                   </span>
                   <span
                     v-if="event.score"
-                    class="flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-amber-300 backdrop-blur-md"
+                    class="flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-warning-300 backdrop-blur-md"
                   >
                     <span class="material-symbols-outlined text-[14px]">star</span>
                     {{ event.score || 0 }}

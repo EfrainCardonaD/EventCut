@@ -86,66 +86,50 @@ const onToggleFavorite = (event) => {
 
 <template>
   <article
-    class="bg-white dark:bg-slate-900 w-full max-w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-sm hover:shadow-md dark:hover:border-primary-500/50 transition-all flex group cursor-pointer active:scale-[0.99]"
-    :class="isCompact ? 'gap-2.5 p-2.5 md:p-3' : 'gap-4 p-4 md:gap-5 md:p-5'"
+    class="relative bg-white dark:bg-slate-900 w-full max-w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/80 shadow-sm hover:shadow-md dark:hover:border-primary-500/50 transition-all flex items-start group cursor-pointer active:scale-[0.99] border-l-4"
+    :class="isCompact ? 'gap-2.5 px-3 py-2.5' : 'gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4'"
+    :style="{ borderLeftColor: categoryAccentStyle.color || 'var(--color-primary-500)' }"
     @click="onSelect"
   >
-    <div class="shrink-0 flex flex-col" :class="isCompact ? 'w-16 gap-1.5' : 'w-16 gap-1.5 sm:w-20 md:w-24'">
-      <div class="w-full aspect-square overflow-hidden rounded-xl" :class="isCompact ? 'block' : 'block sm:mb-2'">
-        <img :src="cardImage" :alt="event.title" class="w-full h-full object-cover" />
-      </div>
-      <div
-        class="flex items-center justify-center rounded-xl border border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
-        :class="isCompact ? 'h-full py-1.5' : 'h-full py-2 sm:h-auto'"
-      >
-
-        <span class="text-primary-600 dark:text-primary-400 font-headline font-black leading-none" :class="isCompact ? 'text-base' : 'text-lg sm:text-xl md:text-2xl'">{{ dayLabel }}</span>
-        <span class="ml-1 text-slate-500 font-bold uppercase tracking-widest" :class="isCompact ? 'text-[9px]' : 'mt-1 text-[10px]'">{{ monthLabel }}</span>
+    <!-- Responsive Image with date overlay always visible -->
+    <div 
+      class="relative shrink-0 overflow-hidden rounded-lg transition-all" 
+      :class="isCompact ? 'size-12 sm:size-14 md:size-16' : 'size-14 sm:size-16 md:size-20'"
+    >
+      <img :src="cardImage" :alt="event.title" loading="lazy" class="w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+      <div class="absolute bottom-0 inset-x-0 flex flex-col items-center pb-1 sm:pb-1.5">
+        <span class="font-headline font-black leading-none text-white drop-shadow-md" :class="isCompact ? 'text-xs md:text-sm' : 'text-sm sm:text-base md:text-lg'">{{ dayLabel }}</span>
+        <span class="font-bold uppercase tracking-widest text-white/90 drop-shadow-md" :class="isCompact ? 'text-[6px] md:text-[7px]' : 'text-[7px] sm:text-[8px]'">{{ monthLabel }}</span>
       </div>
     </div>
 
-    <div class="min-w-0 flex flex-col flex-grow justify-center">
-      <span v-if="!isCompact" class="mb-1 font-bold uppercase tracking-widest" :class="isCompact ? 'text-[9px]' : 'text-[10px]'" :style="categoryAccentStyle">{{ event.category_name || 'Evento' }}</span>
+    <!-- Content -->
+    <div class="min-w-0 flex flex-col flex-grow justify-center pb-0.5" :class="isCompact ? 'pt-0' : 'pt-0.5'">
+      <span class="font-bold uppercase tracking-widest leading-none mb-1 text-[9px] sm:text-[10px]" :style="categoryAccentStyle">{{ event.category_name || 'Evento' }}</span>
       <h4
-        class="font-headline font-bold text-slate-800 dark:text-slate-100 mb-1.5 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"
-        :class="isCompact ? 'truncate text-sm' : 'text-base md:text-lg'"
+        class="font-headline font-bold text-slate-800 dark:text-slate-100 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate pr-8"
+        :class="isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base md:text-lg'"
       >
         {{ event.title }}
       </h4>
-      <div v-if="!isCompact" class="flex flex-col mt-auto" :class="isCompact ? 'gap-0.5' : 'gap-1'">
-        <div class="hidden items-center gap-1.5 text-slate-500 dark:text-slate-400 sm:flex" :class="isCompact ? 'text-[11px]' : 'text-xs'">
-          <span class="material-symbols-outlined text-[14px]">schedule</span>
+      <div class="flex items-center gap-2.5 mt-1 sm:mt-1.5">
+        <span class="flex items-center gap-1 text-slate-500 dark:text-slate-400 min-w-0" :class="isCompact ? 'text-[10px]' : 'text-[10px] sm:text-[11px]'">
+          <span class="material-symbols-outlined shrink-0 text-[12px]">location_on</span>
+          <span class="truncate">{{ event.location || 'Por confirmar' }}</span>
+        </span>
+        <span class="hidden items-center gap-1 text-slate-500 dark:text-slate-400 sm:flex min-w-0" :class="isCompact ? 'text-[10px]' : 'text-[11px]'">
+          <span class="material-symbols-outlined shrink-0 text-[12px]">schedule</span>
           <span class="truncate">{{ dateTimeLabel }}</span>
-        </div>
-        <div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400" :class="isCompact ? 'text-[11px]' : 'text-xs'">
-          <span class="material-symbols-outlined text-[14px]">location_on</span>
-          <span class="truncate">{{ event.location || 'Ubicacion por confirmar' }}</span>
-        </div>
-        <div v-if="ownerLabel && !isCompact" class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
-          <span class="material-symbols-outlined text-[14px]">person</span>
-          <span class="truncate">{{ ownerLabel }}</span>
-        </div>
-        <div v-if="socialLinks.length && !isCompact" class="hidden items-center gap-2 pt-1 sm:flex">
-          <a
-            v-for="link in socialLinks"
-            :key="`${event.id}-${link.key}`"
-            :href="link.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-500 transition hover:text-primary-600 dark:border-slate-700 dark:text-slate-300 dark:hover:text-primary-400"
-            :aria-label="`Abrir ${link.label}`"
-            @click.stop
-          >
-            <SocialNetworkIcon :network="link.key" :size="14" class-name="text-current" />
-          </a>
-        </div>
+        </span>
       </div>
     </div>
 
+    <!-- Favorite button strictly aligned to top right -->
     <button
-      class="self-start rounded-full text-slate-400 transition-colors hover:bg-tertiary-50 hover:text-tertiary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary-300/60 dark:hover:bg-tertiary-500/10"
+      class="absolute top-2 right-2 shrink-0 flex items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-tertiary-50 hover:text-tertiary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary-300/60 dark:hover:bg-tertiary-500/10"
       :class="[
-        isCompact ? 'p-1' : 'p-1.5',
+        isCompact ? 'size-7' : 'size-8 sm:size-9',
         event.isFavorite ? 'text-tertiary-600 dark:text-tertiary-400' : 'dark:text-slate-500',
       ]"
       aria-label="Marcar favorito"
@@ -153,7 +137,7 @@ const onToggleFavorite = (event) => {
     >
       <span
         class="material-symbols-outlined"
-        :class="event.isFavorite ? 'icon-filled' : ''"
+        :class="[isCompact ? 'text-base' : 'text-lg', event.isFavorite ? 'icon-filled' : '']"
       >{{ event.isFavorite ? 'bookmark' : 'bookmark_border' }}</span>
     </button>
   </article>

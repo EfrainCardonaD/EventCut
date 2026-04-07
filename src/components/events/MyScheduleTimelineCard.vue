@@ -38,7 +38,7 @@ const onSelect = (event) => {
 }
 
 const getConnectorClass = (isLast, isActive) => {
-  if (isLast) return 'h-[30px] bg-gradient-to-b from-slate-300 to-transparent dark:from-slate-700'
+  if (isLast) return 'h-6 bg-gradient-to-b from-slate-300 to-transparent dark:from-slate-700'
   return isActive ? 'bottom-[-6px] bg-primary-500 dark:bg-primary-300' : 'bottom-[-6px] bg-slate-300 dark:bg-slate-700'
 }
 
@@ -83,7 +83,7 @@ const getDateClass = (isActive) => {
           :class="getDotClass(event.isActive)"
         ></div>
 
-        <button class="w-full pl-8 text-left" @click="onSelect(event)">
+        <button class="w-full min-h-[44px] pl-8 text-left" @click="onSelect(event)">
           <span class="mb-1 block text-[12px] font-bold tracking-wide" :class="getDateClass(event.isActive)">
             {{ event.dateLabel }}
           </span>
@@ -95,7 +95,7 @@ const getDateClass = (isActive) => {
 
     <button
       type="button"
-      class="mt-5 w-full rounded-[1.25rem] border border-slate-300 bg-transparent py-3 text-sm font-bold tracking-wide text-slate-700 transition-colors duration-200 hover:bg-slate-50 active:scale-[0.98] dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-900"
+      class="mt-5 w-full rounded-[1.25rem] border border-slate-300 bg-transparent py-3.5 text-sm font-bold tracking-wide text-slate-700 transition-colors duration-200 hover:bg-slate-50 active:scale-[0.98] dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-900"
       @click="emit('sync')"
     >
       Sincronizar con Google Calendar

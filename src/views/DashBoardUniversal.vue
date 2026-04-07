@@ -349,7 +349,7 @@ watch(featuredEvents, async () => {
       @create-event="createModalOpen = true"
       @logout="logoutModalOpen = true"
   />
-  <div class="bg-slate-50 text-slate-700 dark:text-slate-100 transition-colors duration-300 selection:bg-tertiary-400/30 dark:bg-slate-950  p-4  ">
+  <div class="transition-colors duration-300 selection:bg-tertiary-400/30">
     <SpinnerOverlay :show="isLoggingOut || isLoadingEvents" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando eventos...'" />
 
     <Alert
@@ -404,8 +404,8 @@ watch(featuredEvents, async () => {
     />
 
 
-    <main class="min-h-screen pb-24 pt-20 md:pb-8 xl:pr-[22rem]">
-      <div class="p-4 md:p-8 lg:p-20">
+    <main class="min-h-screen pb-24 pt-14 sm:pt-16 md:pt-20 md:pb-8 xl:pr-[22rem]">
+      <div class="p-4 md:p-8 lg:p-12">
         <div class="mb-4">
           <div class="relative -mx-4 md:mx-0">
             <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-5 bg-gradient-to-r from-slate-50 to-transparent dark:from-slate-950 md:hidden"></div>
@@ -471,11 +471,11 @@ watch(featuredEvents, async () => {
             <article
                 v-for="(event, index) in featuredEvents"
                 :key="`featured-${event.id}`"
-                class="group relative h-[260px] w-[85%] shrink-0 snap-start cursor-pointer overflow-hidden rounded-3xl bg-slate-900 shadow-xl sm:w-[calc(50%-0.5rem)] md:h-[250px] lg:h-[280px] lg:w-[calc(33.333%-0.66rem)] xl:w-[calc(33.333%-0.66rem)]"
+                class="group relative h-[260px] w-[85%] shrink-0 snap-start cursor-pointer overflow-hidden rounded-3xl bg-neutral-900 shadow-xl sm:w-[calc(50%-0.5rem)] md:h-[250px] lg:h-[280px] lg:w-[calc(33.333%-0.66rem)]"
                 @click="openEventModal(event)"
             >
               <img :src="event.image_url" :alt="event.title" loading="lazy" class="h-full w-full object-cover opacity-60 transition duration-300 group-hover:scale-105" />
-              <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
+              <div class="absolute inset-0 bg-gradient-to-r from-neutral-900 via-neutral-900/80 to-transparent"></div>
 
               <div class="absolute inset-0 z-10 flex items-end p-5 md:p-6">
                 <div>
@@ -495,18 +495,18 @@ watch(featuredEvents, async () => {
 
         <section>
           <div class="mb-6 flex items-end justify-between">
-            <h2 class="font-headline text-xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-2xl">Proximos eventos</h2>
-            <RouterLink to="/app/calendario" class="micro-accent-link text-sm font-bold text-primary-600 hover:underline dark:text-primary-400">Ver calendario</RouterLink>
+            <h2 class="font-headline text-xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-2xl">Mis favoritos</h2>
+            <span class="rounded-full bg-tertiary-500/14 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-tertiary-700 dark:text-tertiary-300">{{ favoriteEvents.length }} guardados</span>
           </div>
 
-          <div v-if="upcomingEvents.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            No hay eventos proximos para los filtros seleccionados.
+          <div v-if="favoriteEvents.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            Aun no tienes eventos favoritos para los filtros actuales.
           </div>
 
-          <div v-else class="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
+          <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <EventCard
-              v-for="event in upcomingEvents.slice(0, 8)"
-              :key="event.id"
+              v-for="event in favoriteEvents"
+              :key="`fav-${event.id}`"
               :event="{ ...event, category_name: categories.find((category) => category.id === event.category_id)?.name }"
               @select="openEventModal"
               @toggle-favorite="onToggleFavorite"
@@ -516,18 +516,18 @@ watch(featuredEvents, async () => {
 
         <section class="mt-10">
           <div class="mb-6 flex items-end justify-between">
-            <h2 class="font-headline text-xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-2xl">Mis favoritos</h2>
-            <span class="micro-accent-chip rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider">{{ favoriteEvents.length }} guardados</span>
+            <h2 class="font-headline text-xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-2xl">Proximos eventos</h2>
+            <RouterLink to="/app/calendario" class="text-sm font-bold text-primary-600 transition-opacity hover:opacity-80 hover:underline dark:text-primary-400">Ver calendario</RouterLink>
           </div>
 
-          <div v-if="favoriteEvents.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            Aun no tienes eventos favoritos para los filtros actuales.
+          <div v-if="upcomingEvents.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            No hay eventos proximos para los filtros seleccionados.
           </div>
 
-          <div v-else class="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
+          <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <EventCard
-              v-for="event in favoriteEvents"
-              :key="`fav-${event.id}`"
+              v-for="event in upcomingEvents.slice(0, 6)"
+              :key="event.id"
               :event="{ ...event, category_name: categories.find((category) => category.id === event.category_id)?.name }"
               @select="openEventModal"
               @toggle-favorite="onToggleFavorite"
@@ -538,7 +538,7 @@ watch(featuredEvents, async () => {
     </main>
 
     <aside
-      class="fixed right-0 top-20 hidden h-[calc(100vh-5rem)] w-[22rem] flex-col overflow-y-auto overflow-x-hidden border-l border-slate-200 bg-slate-100 p-6 shadow-sm transition-colors duration-300 dark:border-slate-800/50 dark:bg-slate-900 dark:shadow-none xl:flex"
+      class="fixed right-0 top-14 hidden h-[calc(100vh-3.5rem)] w-[22rem] flex-col overflow-y-auto overflow-x-hidden border-l border-slate-200 bg-slate-100 p-6 shadow-sm transition-colors duration-300 sm:top-16 sm:h-[calc(100vh-4rem)] md:top-20 md:h-[calc(100vh-5rem)] dark:border-slate-800/50 dark:bg-slate-900 dark:shadow-none xl:flex"
     >
       <CalendarWidget :month-key="monthKey" :selected-date="selectedDate" :events-by-date="eventsByDate" @change-month="onChangeMonth" @select-date="onSelectDate" />
 
@@ -557,7 +557,7 @@ watch(featuredEvents, async () => {
           <div
             v-for="event in agendaEvents"
             :key="event.id"
-            class="micro-accent-surface cursor-pointer rounded-xl border-l-4 border-tertiary-400 bg-slate-50 p-3 transition-colors hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800"
+            class="cursor-pointer rounded-xl border-l-4 border-tertiary-400 bg-tertiary-500/8 p-3 transition-colors hover:bg-tertiary-500/14 dark:bg-tertiary-500/8 dark:hover:bg-tertiary-500/14"
             @click="openEventModal(event)"
           >
             <p class="mb-1 text-[10px] font-bold uppercase tracking-wider text-tertiary-700 dark:text-tertiary-300">
@@ -574,7 +574,7 @@ watch(featuredEvents, async () => {
     </aside>
 
     <nav
-      class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/90 md:hidden"
+      class="fixed bottom-0 left-0 z-50 flex h-[4.5rem] w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-1.5 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/90 md:hidden"
     >
       <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-primary-600 dark:text-primary-300">
         <div class="mb-1 rounded-full bg-primary-100 px-4 py-1 dark:bg-primary-500/20">
@@ -671,6 +671,14 @@ watch(featuredEvents, async () => {
       </div>
     </div>
 
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
     <div v-if="mobileScheduleOpen" class="fixed inset-0 z-[60] bg-slate-950/60 p-4 backdrop-blur-sm md:hidden">
       <div class="mx-auto flex h-full w-full max-w-md flex-col justify-center">
         <div class="mb-2 flex justify-end">
@@ -686,6 +694,7 @@ watch(featuredEvents, async () => {
         <MyScheduleTimelineCard :events="favoriteUpcomingEvents" @select="openEventModalFromMobileSchedule" @sync="onSyncSchedule" />
       </div>
     </div>
+    </Transition>
 
 
   </div>
