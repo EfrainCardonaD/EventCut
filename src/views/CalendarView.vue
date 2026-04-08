@@ -1,16 +1,13 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import AppHeader from '@/components/layout/AppHeader.vue'
 import CalendarWidgetCompact from '@/components/events/CalendarWidgetCompact.vue'
 import CategoryFilter from '@/components/events/CategoryFilter.vue'
-import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import EventCard from '@/components/events/EventCard.vue'
 import EventCardModal from '@/components/events/EventCardModal.vue'
 import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
 import MyScheduleTimelineCard from '@/components/events/MyScheduleTimelineCard.vue'
 import Alert from '@/components/util/Alert.vue'
-import ConfirmModal from '@/components/util/ConfirmModal.vue'
 import MobileDrawer from '@/components/util/MobileDrawer.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -29,17 +26,10 @@ const {
   monthKey,
   selectedDayEvents,
   isLoadingEvents,
-  isSavingEvent,
   isUpdatingEvent,
   isDeletingEvent,
   error,
 } = storeToRefs(eventStore)
-
-const isLoggingOut = ref(false)
-const logoutModalOpen = ref(false)
-const createModalOpen = ref(false)
-const createSubmitError = ref('')
-const createFieldErrors = ref({})
 
 const eventModalOpen = ref(false)
 const activeEvent = ref(null)
@@ -48,7 +38,6 @@ const monthEventsDrawerOpen = ref(false)
 const scheduleToastOpen = ref(false)
 const updateSubmitError = ref('')
 const updateFieldErrors = ref({})
-
 const eventEditModalOpen = ref(false)
 const favoriteToast = ref({ show: false, type: 'info', title: '', message: '' })
 
@@ -56,24 +45,9 @@ const showFavoriteToast = (type, title, message) => {
   favoriteToast.value = { show: true, type, title, message }
 }
 
-const searchQuery = computed({
-  get: () => eventStore.searchQuery,
-  set: (value) => eventStore.setSearchQuery(value),
-})
-
 const selectedCategoryId = computed({
   get: () => eventStore.selectedCategoryId,
   set: (value) => eventStore.setCategory(value),
-})
-
-const isAdminUser = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN']))
-
-const avatarInitial = computed(() => {
-  const firstName = authStore.user?.firstName || ''
-  const lastName = authStore.user?.lastName || ''
-  const fallback = authStore.username || ''
-  const source = `${firstName} ${lastName}`.trim() || fallback || 'U'
-  return source.charAt(0).toUpperCase()
 })
 
 const toastVisible = computed({
@@ -124,7 +98,6 @@ const closeMobilePanels = () => {
   monthEventsDrawerOpen.value = false
 }
 
-// History/back: en mobile el gesto Atrás debe cerrar el drawer abierto (agenda o mes).
 const hasMobilePanelHistoryEntry = ref(false)
 const isClosingMobilePanelFromHistory = ref(false)
 
@@ -136,8 +109,6 @@ const onMobilePanelPopState = () => {
 
   isClosingMobilePanelFromHistory.value = true
   closeMobilePanels()
-
-  // Si el usuario dio back, consumimos esta entrada.
   hasMobilePanelHistoryEntry.value = false
 }
 
@@ -164,7 +135,6 @@ watch(
       return
     }
 
-    // Si cerramos por UI (no por popstate), revertimos la entrada en history.
     if (hasMobilePanelHistoryEntry.value && !isClosingMobilePanelFromHistory.value) {
       hasMobilePanelHistoryEntry.value = false
       window.history.back()
@@ -173,15 +143,6 @@ watch(
     isClosingMobilePanelFromHistory.value = false
   },
 )
-
-const onLogout = async () => {
-  isLoggingOut.value = true
-  try {
-    await authStore.logout({ redirect: true })
-  } finally {
-    isLoggingOut.value = false
-  }
-}
 
 const onChangeMonth = async (key) => {
   await eventStore.setMonthKey(key)
@@ -199,23 +160,6 @@ const onToggleFavorite = async (event) => {
   }
 
   showFavoriteToast('success', result.favorited ? 'Favorito guardado' : 'Favorito removido', result.message)
-}
-
-const onCreateEvent = async (payload) => {
-  createSubmitError.value = ''
-  createFieldErrors.value = {}
-
-  const result = await eventStore.createEvent(payload)
-  if (!result.success) {
-    if (result.uxAction === 'SHOW_FIELD_ERRORS' || result.status === 422) {
-      createSubmitError.value = result.error || ''
-      createFieldErrors.value = normalizeFieldErrors(result.details)
-    }
-    showFavoriteToast('error', 'No se pudo crear el evento', result.error)
-    return
-  }
-
-  createModalOpen.value = false
 }
 
 const openEventModal = (event) => {
@@ -303,26 +247,17 @@ watch(eventEditModalOpen, (isOpen) => {
   updateSubmitError.value = ''
   updateFieldErrors.value = {}
 })
-
-watch(createModalOpen, (isOpen) => {
-  if (isOpen) return
-  createSubmitError.value = ''
-  createFieldErrors.value = {}
-})
-
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-slate-50 text-slate-700 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100 pt-6 md-18">
+  <div class="flex min-h-screen flex-col pt-6 md-18">
 
-    <SpinnerOverlay :show="isLoadingEvents || isLoggingOut" :text="isLoggingOut ? 'Cerrando sesion...' : 'Sincronizando calendario...'" />
+    <SpinnerOverlay :show="isLoadingEvents" text="Sincronizando calendario..." />
 
     <Alert v-model="toastVisible" toast position="top-right" type="error" title="No se pudo sincronizar" :message="error || 'Intenta nuevamente en unos segundos.'" :duration="5000" />
     <Alert v-model="scheduleToastOpen" toast position="top-right" type="info" title="Proximamente" message="La sincronizacion con Google Calendar estara disponible en una siguiente iteracion." :duration="4500" />
     <Alert v-model="favoriteToast.show" toast position="top-right" :type="favoriteToast.type" :title="favoriteToast.title" :message="favoriteToast.message" :duration="3500" />
 
-    <ConfirmModal v-model="logoutModalOpen" title-user="Cerrar sesion" message="Se cerrara tu sesion actual en EventCut." description="Si tienes cambios sin guardar en otra pestaña, podrian perderse." confirm-text="Si, cerrar sesion" cancel-text="Cancelar" :danger="false" @confirm="onLogout" />
-    <CreateEventModal v-model="createModalOpen" :categories="categories" :is-saving="isSavingEvent" :submit-error="createSubmitError" :field-errors="createFieldErrors" @submit="onCreateEvent" />
     <EventCardModal
       v-model="eventModalOpen"
       :event="activeEvent"
@@ -341,14 +276,6 @@ watch(createModalOpen, (isOpen) => {
       :field-errors="updateFieldErrors"
       @save="onUpdateEvent"
       @delete="onDeleteEvent"
-    />
-
-    <AppHeader
-      v-model="searchQuery"
-      :is-admin-user="isAdminUser"
-      :avatar-initial="avatarInitial"
-      @create-event="createModalOpen = true"
-      @logout="logoutModalOpen = true"
     />
 
     <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 pb-24 pt-20 md:gap-5 md:px-8 md:pb-6 md:pt-24 lg:pb-8 lg:pt-40">
@@ -420,31 +347,15 @@ watch(createModalOpen, (isOpen) => {
       </main>
     </div>
 
-    <nav class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-between border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl transition-colors duration-300 dark:border-slate-800 dark:bg-slate-950/90 lg:hidden">
-      <RouterLink to="/app" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300">
-        <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">event</span></span>
-        <span class="text-[10px] font-medium">Eventos</span>
-      </RouterLink>
-      <RouterLink to="/app/calendario" class="flex flex-col items-center justify-center p-2 text-primary-600 dark:text-primary-300">
-        <span class="mb-1 rounded-full bg-primary-100 px-4 py-1 dark:bg-primary-500/20"><span class="material-symbols-outlined icon-filled">calendar_month</span></span>
-        <span class="text-[10px] font-medium">Calendario</span>
-      </RouterLink>
-      <RouterLink
-        to="/app/comunidades"
-        class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300"
-      >
-        <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">groups</span></span>
-        <span class="text-[10px] font-medium">Comunidades</span>
-      </RouterLink>
-      <button type="button" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300" @click="openMobileMonthEvents">
-        <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">view_list</span></span>
-        <span class="text-[10px] font-medium">Mes</span>
+    <!-- Mobile-only context buttons (view-specific) -->
+    <div class="fixed bottom-20 right-4 z-40 flex flex-col gap-2 md:hidden lg:hidden">
+      <button type="button" class="flex size-12 items-center justify-center rounded-full bg-slate-800 text-white shadow-lg active:scale-95 dark:bg-slate-200 dark:text-slate-900" @click="openMobileMonthEvents">
+        <span class="material-symbols-outlined">view_list</span>
       </button>
-      <button type="button" class="flex flex-col items-center justify-center p-2 text-slate-500 transition-colors hover:text-tertiary-600 dark:text-slate-400 dark:hover:text-tertiary-300" @click="openMobileSchedule">
-        <span class="mb-1 rounded-full px-4 py-1"><span class="material-symbols-outlined">schedule</span></span>
-        <span class="text-[10px] font-medium">Agenda</span>
+      <button type="button" class="flex size-12 items-center justify-center rounded-full bg-slate-800 text-white shadow-lg active:scale-95 dark:bg-slate-200 dark:text-slate-900" @click="openMobileSchedule">
+        <span class="material-symbols-outlined">schedule</span>
       </button>
-    </nav>
+    </div>
 
     <MobileDrawer v-model="monthEventsDrawerOpen" title="Eventos del mes" subtitle="Explora y abre el detalle de cada evento" class="lg:hidden">
       <div v-if="monthEvents.length === 0" class="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -467,4 +378,3 @@ watch(createModalOpen, (isOpen) => {
     </MobileDrawer>
   </div>
 </template>
-

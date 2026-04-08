@@ -7,11 +7,9 @@ import { useCommunityStore } from '@/stores/community'
 import { useEventStore } from '@/stores/event'
 import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
-import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import CreateCommunityModal from '@/components/communities/CreateCommunityModal.vue'
 import RichTextRenderer from '@/components/util/RichTextRenderer.vue'
 import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
-import AppHeader from '@/components/layout/AppHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -19,37 +17,24 @@ const communityStore = useCommunityStore()
 const eventStore = useEventStore()
 
 const { activeList, selectedCommunityId, myList, mySubscribedList, isLoadingList, isLoadingMyList, isLoadingMySubscribedList, isSavingCommunity, isUpdatingCommunity, error } = storeToRefs(communityStore)
-const { categories, isSavingEvent } = storeToRefs(eventStore)
+const { categories } = storeToRefs(eventStore)
 
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
-const createEventModalOpen = ref(false)
 const createCommunityModalOpen = ref(false)
 const mobileActionsOpen = ref(false)
 
-// Back: en mobile, el gesto Atrás debe cerrar el popup de acciones rápidas.
-// Nota: NO hacemos pushState/back aquí para evitar rebotes en algunos navegadores.
-// Solo reaccionamos a popstate si el popup está abierto.
 const lastMobileActionsOpenedAt = ref(0)
 
 const onMobileActionsPopState = () => {
-  // Edge-case: algunos navegadores móviles disparan popstate justo después de pushState.
-  // Si acabamos de abrir el popup, ignoramos este popstate.
   if (Date.now() - lastMobileActionsOpenedAt.value < 250) return
-
-  if (!mobileActionsOpen.value) {
-    return
-  }
-
+  if (!mobileActionsOpen.value) return
   mobileActionsOpen.value = false
 }
 
 const openMobileActions = () => {
-  // El tap en mobile puede disparar más de un evento (pointer/touch/click).
-  // Usamos un cooldown corto para evitar abrir/cerrar de inmediato.
   const now = Date.now()
   if (now - lastMobileActionsOpenedAt.value < 400) return
   lastMobileActionsOpenedAt.value = now
-
   mobileActionsOpen.value = true
 }
 
@@ -65,14 +50,16 @@ const toggleMobileActions = () => {
   openMobileActions()
 }
 
-const createSubmitError = ref('')
-const createFieldErrors = ref({})
 const createCommunitySubmitError = ref('')
 const createCommunityFieldErrors = ref({})
 
 const isAdmin = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN']))
-const isAdminUser = computed(() => isAdmin.value)
-const searchQuery = ref('')
+
+const searchQuery = computed({
+  get: () => eventStore.searchQuery,
+  set: (value) => eventStore.setSearchQuery(value),
+})
+
 const selectedCategoryId = ref('')
 const myCommunitiesTab = ref('owned')
 const categoryDraftByCommunityId = ref({})
@@ -82,8 +69,6 @@ const ensureHttpUrl = (rawUrl) => {
   const trimmed = rawUrl.trim()
   if (!trimmed) return null
 
-  // El API a veces devuelve URLs sin protocolo (ej: r2.dev/...);
-  // en ese caso asumimos https para que el navegador la resuelva.
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
   if (trimmed.startsWith('//')) return `https:${trimmed}`
   if (trimmed.startsWith('/')) return trimmed
@@ -112,14 +97,6 @@ const truncateWords = (value, limit = 3) => {
   if (words.length <= limit) return words.join(' ')
   return `${words.slice(0, limit).join(' ')}...`
 }
-
-const avatarInitial = computed(() => {
-  const firstName = authStore.user?.firstName || ''
-  const lastName = authStore.user?.lastName || ''
-  const fallback = authStore.username || authStore.user?.email || ''
-  const source = `${firstName} ${lastName}`.trim() || fallback || 'U'
-  return source.charAt(0).toUpperCase()
-})
 
 const showToast = (type, title, message) => {
   toast.value = { show: true, type, title, message }
@@ -220,28 +197,6 @@ const onToggleSubscription = async (communityId) => {
   showToast('success', 'Suscripcion actualizada', result.message || 'Tu suscripcion fue actualizada correctamente.')
 }
 
-const onHeaderLogout = async () => {
-  await authStore.logout({ redirect: true })
-}
-
-const onCreateEvent = async (payload) => {
-  createSubmitError.value = ''
-  createFieldErrors.value = {}
-
-  const result = await eventStore.createEvent(payload)
-  if (!result.success) {
-    if (result.uxAction === 'SHOW_FIELD_ERRORS' || result.status === 422) {
-      createSubmitError.value = result.error || ''
-      createFieldErrors.value = normalizeFieldErrors(result.details)
-    }
-    showToast('error', 'No se pudo crear el evento', result.error)
-    return
-  }
-
-  createEventModalOpen.value = false
-  showToast('success', 'Evento creado', 'Tu evento fue enviado correctamente.')
-}
-
 const onCreateCommunity = async (payload) => {
   createCommunitySubmitError.value = ''
   createCommunityFieldErrors.value = {}
@@ -306,7 +261,6 @@ onBeforeUnmount(() => {
 
 watch(mobileActionsOpen, (isOpen) => {
   if (!isOpen) return
-  // Guard timestamp para ignorar popstate inmediato.
   lastMobileActionsOpenedAt.value = Date.now()
 })
 
@@ -323,18 +277,7 @@ watch(
 </script>
 
 <template>
-
-  <AppHeader
-    v-model="searchQuery"
-    :is-admin-user="isAdminUser"
-    :avatar-initial="avatarInitial"
-    @create-event="createEventModalOpen = true"
-    @logout="onHeaderLogout"
-
-  />
-
-  <main class="min-h-screen  pb-50 pt-20 xl:pb-24 xl:pt-40  md:pb-8">
-
+  <main class="min-h-screen pb-24 pt-20 xl:pb-24 xl:pt-24 md:pb-8">
 
     <SpinnerOverlay :show="isLoadingList || isLoadingMyList || isLoadingMySubscribedList" text="Cargando comunidades..." />
 
@@ -346,18 +289,6 @@ watch(
       :title="toast.title"
       :message="toast.message"
       :duration="4500"
-    />
-
-    <CreateEventModal
-      v-model="createEventModalOpen"
-      :categories="categories"
-      :communities="activeList"
-      :community-context-id="selectedCommunityId"
-      :allow-community-selection="true"
-      :is-saving="isSavingEvent"
-      :submit-error="createSubmitError"
-      :field-errors="createFieldErrors"
-      @submit="onCreateEvent"
     />
 
     <CreateCommunityModal
@@ -381,9 +312,6 @@ watch(
             <span v-if="isAdmin" class="rounded-full bg-primary-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">Admin</span>
             <button class="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-200 dark:border-slate-700 dark:hover:bg-slate-800" @click="createCommunityModalOpen = true">
               Crear comunidad
-            </button>
-            <button class="rounded-full bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700" @click="createEventModalOpen = true">
-              Crear evento
             </button>
           </div>
         </div>
@@ -466,8 +394,6 @@ watch(
             </div>
           </article>
         </div>
-
-
       </section>
 
       <section v-if="authStore.isAuthenticated" class="mt-6">
@@ -566,20 +492,16 @@ watch(
       </section>
     </div>
 
-    <nav class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 md:hidden">
-      <RouterLink to="/app" class="flex flex-col items-center p-2 text-slate-500 dark:text-slate-400">
-        <span class="material-symbols-outlined">event</span>
-        <span class="text-[10px] font-medium">Eventos</span>
-      </RouterLink>
-      <RouterLink to="/app/comunidades" class="flex flex-col items-center p-2 text-primary-600 dark:text-primary-300">
-        <span class="material-symbols-outlined">groups</span>
-        <span class="text-[10px] font-medium">Comunidades</span>
-      </RouterLink>
-      <button type="button" class="flex flex-col items-center p-2 text-slate-500 dark:text-slate-400" @click="toggleMobileActions">
-        <span class="material-symbols-outlined">add_circle</span>
-        <span class="text-[10px] font-medium">Acciones</span>
+    <!-- Mobile-only: context actions (view-specific) -->
+    <div class="fixed bottom-20 right-4 z-40 md:hidden">
+      <button
+        type="button"
+        class="flex size-14 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg active:scale-95 dark:bg-primary-500 dark:text-primary-950"
+        @click="toggleMobileActions"
+      >
+        <span class="material-symbols-outlined text-2xl">{{ mobileActionsOpen ? 'close' : 'add' }}</span>
       </button>
-    </nav>
+    </div>
 
     <div
       v-if="mobileActionsOpen"
@@ -587,19 +509,15 @@ watch(
       @click="closeMobileActions"
     ></div>
 
-
-    <div v-if="mobileActionsOpen" class="fixed bottom-24 left-3 right-3 z-[70] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
+    <div v-if="mobileActionsOpen" class="fixed bottom-36 right-4 z-[70] w-64 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
       <div class="grid grid-cols-1 gap-2 text-sm">
-        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createEventModalOpen = true; closeMobileActions()">
-          Crear evento para esta comunidad
-        </button>
         <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createCommunityModalOpen = true; closeMobileActions()">
           Crear comunidad
         </button>
         <button
-            v-if="canManageCommunity"
-            class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700"
-            @click="onOpenManageCommunity"
+          v-if="canManageCommunity"
+          class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700"
+          @click="onOpenManageCommunity"
         >
           Gestionar comunidad
         </button>
@@ -622,4 +540,3 @@ watch(
     />
   </main>
 </template>
-

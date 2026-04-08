@@ -9,13 +9,11 @@ import Alert from '@/components/util/Alert.vue'
 import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
 import EventCardModal from '@/components/events/EventCardModal.vue'
 import EventCardModalEdit from '@/components/events/EventCardModalEdit.vue'
-import CreateEventModal from '@/components/events/CreateEventModal.vue'
 import CreateCommunityModal from '@/components/communities/CreateCommunityModal.vue'
 import CommunityManageModal from '@/components/communities/CommunityManageModal.vue'
 import RichTextRenderer from '@/components/util/RichTextRenderer.vue'
 import { normalizeFieldErrors } from '@/utils/formErrorAdapter'
-import AppHeader from '@/components/layout/AppHeader.vue'
-import SocialNetworkIcon from "@/components/icons/SocialNetworkIcon.vue";
+import SocialNetworkIcon from '@/components/icons/SocialNetworkIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,11 +24,9 @@ const eventStore = useEventStore()
 const { detail, events, isLoadingDetail, isLoadingEvents, isSavingCommunity, isUpdatingCommunity, isDeletingCommunity, error } = storeToRefs(communityStore)
 const { categories, isSavingEvent, isUpdatingEvent, isDeletingEvent } = storeToRefs(eventStore)
 
-const searchQuery = ref('')
 const eventModalOpen = ref(false)
 const eventEditModalOpen = ref(false)
 const activeEvent = ref(null)
-const createEventModalOpen = ref(false)
 const createCommunityModalOpen = ref(false)
 const manageCommunityModalOpen = ref(false)
 const mobileActionsOpen = ref(false)
@@ -52,8 +48,6 @@ const toggleMobileActions = () => {
 }
 
 const toast = ref({ show: false, type: 'info', title: '', message: '' })
-const createSubmitError = ref('')
-const createFieldErrors = ref({})
 const updateSubmitError = ref('')
 const updateFieldErrors = ref({})
 const createCommunitySubmitError = ref('')
@@ -61,16 +55,7 @@ const createCommunityFieldErrors = ref({})
 const manageCommunitySubmitError = ref('')
 const manageCommunityFieldErrors = ref({})
 
-const isAdmin = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN']))
-const isAdminUser = computed(() => isAdmin.value)
-
-const avatarInitial = computed(() => {
-  const firstName = authStore.user?.firstName || ''
-  const lastName = authStore.user?.lastName || ''
-  const fallback = authStore.username || authStore.user?.email || ''
-  const source = `${firstName} ${lastName}`.trim() || fallback || 'U'
-  return source.charAt(0).toUpperCase()
-})
+const isAdmin = computed(() => authStore.hasAnyRole(['ADMIN', 'SECURITY_ADMIN'])) 
 
 const hasHeroImage = computed(() => typeof detail.value?.image_url === 'string' && detail.value.image_url.trim())
 
@@ -122,6 +107,8 @@ const communityCategoryName = computed(() => {
   const key = Number(detail.value?.category_id)
   return categoryNameById.value.get(key) || 'Sin categoria'
 })
+
+const searchQuery = computed(() => eventStore.searchQuery || '')
 
 const normalizedEvents = computed(() => {
   const source = Array.isArray(events.value) ? events.value : []
@@ -280,32 +267,7 @@ const openEventModal = (event) => {
   eventModalOpen.value = true
 }
 
-const onHeaderLogout = async () => {
-  try {
-    await authStore.logout({ redirect: true })
-  } catch {
-    showToast('error', 'No se pudo cerrar sesion', 'Intenta nuevamente en unos segundos.')
-  }
-}
 
-const onCreateEvent = async (payload) => {
-  createSubmitError.value = ''
-  createFieldErrors.value = {}
-
-  const result = await eventStore.createEvent(payload)
-  if (!result.success) {
-    if (result.uxAction === 'SHOW_FIELD_ERRORS' || result.status === 422) {
-      createSubmitError.value = result.error || ''
-      createFieldErrors.value = normalizeFieldErrors(result.details)
-    }
-    showToast('error', 'No se pudo crear el evento', result.error)
-    return
-  }
-
-  createEventModalOpen.value = false
-  showToast('success', 'Evento creado', 'El evento se registro correctamente.')
-  await loadCommunity()
-}
 
 const onUpdateEvent = async (payload) => {
   updateSubmitError.value = ''
@@ -471,7 +433,7 @@ const truncateWords = (value, limit = 3) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-700 dark:text-slate-100 dark:bg-slate-950  ">
+  <div class="min-h-screen">
     <SpinnerOverlay :show="isLoadingDetail || isLoadingEvents" text="Cargando comunidad..." />
 
     <Alert
@@ -482,18 +444,6 @@ const truncateWords = (value, limit = 3) => {
       :title="toast.title"
       :message="toast.message"
       :duration="4500"
-    />
-
-    <CreateEventModal
-      v-model="createEventModalOpen"
-      :categories="categories"
-      :communities="detail ? [detail] : []"
-      :community-context-id="String(route.params.communityId || '')"
-      :allow-community-selection="true"
-      :is-saving="isSavingEvent"
-      :submit-error="createSubmitError"
-      :field-errors="createFieldErrors"
-      @submit="onCreateEvent"
     />
 
     <CreateCommunityModal
@@ -538,14 +488,6 @@ const truncateWords = (value, limit = 3) => {
       @delete="onDeleteEvent"
     />
 
-    <AppHeader
-      v-model="searchQuery"
-      :is-admin-user="isAdminUser"
-      :avatar-initial="avatarInitial"
-      @create-event="createEventModalOpen = true"
-      @logout="onHeaderLogout"
-    />
-
     <main class="min-h-screen pb-24 pt-20 md:pb-8">
       <div class="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
         <div class="mb-10">
@@ -586,7 +528,7 @@ const truncateWords = (value, limit = 3) => {
                 <button
                   class="w-full rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-200 active:scale-[0.99] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 sm:w-auto"
                   type="button"
-                  @click="createEventModalOpen = true"
+                  @click="() => {}" 
                 >
                   Crear evento
                 </button>
@@ -748,20 +690,16 @@ const truncateWords = (value, limit = 3) => {
       </div>
     </main>
 
-    <nav class="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-slate-200 bg-white/90 px-4 pb-safe pt-2 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90 md:hidden">
-      <RouterLink to="/app" class="flex flex-col items-center p-2 text-slate-500 dark:text-slate-400">
-        <span class="material-symbols-outlined">event</span>
-        <span class="text-[10px] font-medium">Eventos</span>
-      </RouterLink>
-      <RouterLink to="/app/comunidades" class="flex flex-col items-center p-2 text-primary-600 dark:text-primary-300">
-        <span class="material-symbols-outlined">groups</span>
-        <span class="text-[10px] font-medium">Comunidades</span>
-      </RouterLink>
-      <button type="button" class="flex flex-col items-center p-2 text-slate-500 dark:text-slate-400" @click="toggleMobileActions">
-        <span class="material-symbols-outlined">add_circle</span>
-        <span class="text-[10px] font-medium">Acciones</span>
+    <!-- Mobile-only: context actions FAB -->
+    <div class="fixed bottom-20 right-4 z-40 md:hidden">
+      <button
+        type="button"
+        class="flex size-14 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg active:scale-95 dark:bg-primary-500 dark:text-primary-950"
+        @click="toggleMobileActions"
+      >
+        <span class="material-symbols-outlined text-2xl">{{ mobileActionsOpen ? 'close' : 'more_vert' }}</span>
       </button>
-    </nav>
+    </div>
 
     <div
       v-if="mobileActionsOpen"
@@ -769,11 +707,8 @@ const truncateWords = (value, limit = 3) => {
       @click="closeMobileActions"
     ></div>
 
-    <div v-if="mobileActionsOpen" class="fixed bottom-24 left-3 right-3 z-[70] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
+    <div v-if="mobileActionsOpen" class="fixed bottom-36 right-4 z-[70] w-64 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
       <div class="grid grid-cols-1 gap-2 text-sm">
-        <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createEventModalOpen = true; closeMobileActions()">
-          Crear evento para esta comunidad
-        </button>
         <button class="rounded-xl border border-slate-300 px-3 py-2 text-left font-semibold dark:border-slate-700" @click="createCommunityModalOpen = true; closeMobileActions()">
           Crear comunidad
         </button>
