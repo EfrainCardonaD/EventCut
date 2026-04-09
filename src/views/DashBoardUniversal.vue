@@ -280,7 +280,7 @@ watch(eventEditModalOpen, (isOpen) => {
               v-for="category in categories"
               :key="category.id"
               class="snap-start whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-600 transition-colors hover:bg-slate-200 sm:px-5 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-              :class="selectedCategory === category.id ? '!bg-primary-600 !text-white dark:!bg-primary-500 dark:!text-primary-950' : ''"
+              :class="selectedCategory === category.id ? 'bg-primary-600! text-white! dark:bg-primary-500! dark:text-primary-950!' : ''"
               @click="selectedCategory = category.id"
             >
               {{ category.name }}

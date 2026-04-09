@@ -100,18 +100,18 @@ onMounted(async () => {
       <article
         v-for="event in events"
         :key="`featured-${event.id}`"
-        class="group relative h-[260px] w-[85%] shrink-0 snap-start cursor-pointer overflow-hidden rounded-3xl bg-neutral-900 shadow-xl sm:w-[calc(50%-0.5rem)] md:h-[250px] lg:h-[280px] lg:w-[calc(33.333%-0.66rem)]"
+        class="group relative h-[200px] w-[75%] shrink-0 snap-start cursor-pointer overflow-hidden rounded-3xl bg-neutral-900 shadow-xl sm:w-[calc(50%-0.5rem)] md:h-[250px] lg:h-[300px] lg:w-[calc(33.333%-0.66rem)]"
         @click="emit('select', event)"
       >
         <img :src="event.image_url" :alt="event.title" loading="lazy" class="h-full w-full object-cover opacity-60 transition duration-300 group-hover:scale-105" />
         <div class="absolute inset-0 bg-gradient-to-r from-neutral-900 via-neutral-900/80 to-transparent"></div>
 
-        <div class="absolute inset-0 z-10 flex items-end p-5 md:p-6">
+        <div class="absolute inset-0 z-10 flex flex-col justify-between p-5 md:p-6">
+          <div class="flex items-center gap-2">
+            <span class="rounded-full bg-primary-300 px-1.5 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-600 shadow-lg">Score {{ event.score }}</span>
+            <span class="text-[11px] font-semibold text-primary-100">{{ formatDateTime(event) }}</span>
+          </div>
           <div>
-            <div class="mb-2 flex items-center gap-2 md:mb-3">
-              <span class="rounded-full bg-primary-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg">Score {{ event.score }}</span>
-              <span class="text-[11px] font-semibold text-primary-100">{{ formatDateTime(event) }}</span>
-            </div>
             <h3 class="mb-2 line-clamp-2 font-headline text-xl font-black leading-tight text-white md:text-2xl">{{ event.title }}</h3>
             <div class="line-clamp-2 max-w-md text-xs text-slate-200 md:text-sm">
               <RichTextRenderer :content="event.description" :line-clamp="2" :enable-embeds="false" :hide-urls-and-media="true" />
