@@ -5,7 +5,9 @@ import { useAuthStore } from '@/stores/auth'
 import AuthViewHeader from '@/components/auth/AuthViewHeader.vue'
 import Alert from '@/components/util/Alert.vue'
 import FieldError from '@/components/util/FieldError.vue'
-import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
+import AuthLoadingBar from '@/components/auth/AuthLoadingBar.vue'
+import PasswordInput from '@/components/auth/PasswordInput.vue'
+import PasswordStrength from '@/components/auth/PasswordStrength.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,13 +41,19 @@ const isStrongPassword = (password) => {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/.test(password)
 }
 
+const passwordsMatch = computed(() => {
+  return form.confirmPassword.length > 0 && form.newPassword === form.confirmPassword
+})
+
+const confirmDirty = computed(() => form.confirmPassword.length > 0)
+
 const validate = () => {
   errors.token = form.token.trim() ? '' : 'Ingresa el token recibido en tu correo.'
   errors.newPassword = isStrongPassword(form.newPassword)
     ? ''
-    : 'Usa 8+ caracteres con mayuscula, minuscula, numero y simbolo.'
+    : 'La contraseña no cumple los requisitos de seguridad.'
   errors.confirmPassword =
-    form.confirmPassword === form.newPassword ? '' : 'La confirmacion no coincide con la contraseña.'
+    form.confirmPassword === form.newPassword ? '' : 'Las contraseñas no coinciden.'
 
   return Object.values(errors).every((value) => !value)
 }
@@ -73,7 +81,7 @@ const submit = async () => {
 
 <template>
   <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-100 dark:bg-slate-950">
-    <SpinnerOverlay :show="loading" text="Actualizando contrasena..." />
+
     <Alert
       v-model="toast.show"
       toast
@@ -84,7 +92,8 @@ const submit = async () => {
       :duration="6000"
     />
 
-    <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div class="relative overflow-hidden w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <AuthLoadingBar :show="loading" />
       <AuthViewHeader
         title="Nueva contraseña"
         subtitle="Ingresa el token de recuperacion y define una nueva clave segura."
@@ -106,36 +115,42 @@ const submit = async () => {
           <FieldError :error="errors.token" />
         </label>
 
-        <label class="block">
+        <div class="block">
           <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Nueva contraseña</span>
-          <input
+          <PasswordInput
             v-model="form.newPassword"
-            type="password"
             autocomplete="new-password"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-            placeholder="••••••••"
           />
+          <PasswordStrength :password="form.newPassword" />
           <FieldError :error="errors.newPassword" />
-        </label>
+        </div>
 
-        <label class="block">
+        <div class="block">
           <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Confirmar contraseña</span>
-          <input
+          <PasswordInput
             v-model="form.confirmPassword"
-            type="password"
             autocomplete="new-password"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-            placeholder="••••••••"
+            :show-check="confirmDirty"
+            :valid="passwordsMatch"
           />
+          <p
+            v-if="confirmDirty"
+            class="mt-1 text-xs transition-colors duration-200"
+            :class="passwordsMatch
+              ? 'text-success-600 dark:text-success-400'
+              : 'text-tertiary-600 dark:text-tertiary-400'"
+          >
+            {{ passwordsMatch ? 'Las contraseñas coinciden.' : 'Las contraseñas no coinciden.' }}
+          </p>
           <FieldError :error="errors.confirmPassword" />
-        </label>
+        </div>
 
         <button
           type="submit"
           :disabled="loading"
           class="flex w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {{ loading ? 'Actualizando...' : 'Actualizar contraseña' }}
+          {{ loading ? 'Procesando...' : 'Actualizar contraseña' }}
         </button>
       </form>
 
@@ -148,4 +163,3 @@ const submit = async () => {
     </div>
   </section>
 </template>
-

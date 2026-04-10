@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import AuthViewHeader from '@/components/auth/AuthViewHeader.vue'
 import Alert from '@/components/util/Alert.vue'
 import FieldError from '@/components/util/FieldError.vue'
-import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
+import AuthLoadingBar from '@/components/auth/AuthLoadingBar.vue'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -74,7 +74,7 @@ onMounted(async () => {
 
 <template>
   <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-100 dark:bg-slate-950">
-	<SpinnerOverlay :show="loading" text="Validando token..." />
+
 	<Alert
 	  v-if="!isTokenFromUrl"
 	  v-model="toast.show"
@@ -86,7 +86,8 @@ onMounted(async () => {
 	  :duration="6000"
 	/>
 
-	<div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+	<div class="relative overflow-hidden w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+	  <AuthLoadingBar :show="loading" />
 	  <AuthViewHeader
 		title="Confirmar verificacion"
 		subtitle="Valida tu correo para habilitar el acceso a la plataforma."
@@ -109,7 +110,7 @@ onMounted(async () => {
 		  :disabled="loading"
 		  class="flex w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70"
 		>
-		  {{ loading ? 'Verificando...' : 'Confirmar email' }}
+		  {{ loading ? 'Procesando...' : 'Confirmar email' }}
 		</button>
 	  </form>
 

@@ -1,18 +1,19 @@
-﻿<script setup>
+<script setup>
 import { computed, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthViewHeader from '@/components/auth/AuthViewHeader.vue'
 import Alert from '@/components/util/Alert.vue'
 import FieldError from '@/components/util/FieldError.vue'
-import SpinnerOverlay from '@/components/util/SpinnerOverlay.vue'
+import AuthLoadingBar from '@/components/auth/AuthLoadingBar.vue'
+import PasswordInput from '@/components/auth/PasswordInput.vue'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 
 const form = reactive({ username: '', password: '' })
-const loading = ref(false)
+const loading = ref(true)
 const errors = reactive({ username: '', password: '' })
 const toast = reactive({ show: false, type: 'info', title: '', message: '' })
 
@@ -78,7 +79,7 @@ const submit = async () => {
 
 <template>
   <section class="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-100 dark:bg-slate-950">
-    <SpinnerOverlay :show="loading" text="Validando credenciales..." />
+
     <Alert
       v-model="toast.show"
       toast
@@ -89,7 +90,8 @@ const submit = async () => {
       :duration="5000"
     />
 
-    <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div class="relative overflow-hidden w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <AuthLoadingBar :show="loading" />
       <AuthViewHeader title="Iniciar sesion" subtitle="Accede con tu usuario o correo institucional." />
 
       <form class="space-y-4 " @submit.prevent="submit">
@@ -107,12 +109,9 @@ const submit = async () => {
 
         <label class="block">
           <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Contraseña</span>
-          <input
+          <PasswordInput
             v-model="form.password"
-            type="password"
             autocomplete="current-password"
-            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-            placeholder="••••••••"
           />
           <FieldError :error="errors.password" />
         </label>
@@ -122,7 +121,7 @@ const submit = async () => {
           :disabled="loading"
           class="flex w-full items-center justify-center rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {{ loading ? 'Validando...' : 'Entrar' }}
+          {{ loading ? 'Procesando...' : 'Entrar' }}
         </button>
       </form>
 
