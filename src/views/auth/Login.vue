@@ -13,7 +13,7 @@ const route = useRoute()
 const auth = useAuthStore()
 
 const form = reactive({ username: '', password: '' })
-const loading = ref(true)
+const loading = ref(false)
 const errors = reactive({ username: '', password: '' })
 const toast = reactive({ show: false, type: 'info', title: '', message: '' })
 
