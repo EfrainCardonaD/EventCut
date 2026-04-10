@@ -1,31 +1,63 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 
-defineProps({
+const props = defineProps({
   modelValue: { type: String, default: '' },
   placeholder: { type: String, default: '••••••••' },
   autocomplete: { type: String, default: 'current-password' },
+  name: { type: String, default: '' },
+  id: { type: String, default: '' },
+  required: { type: Boolean, default: false },
   showCheck: { type: Boolean, default: false },
   valid: { type: Boolean, default: false },
 })
 
-defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue'])
 
 const visible = ref(false)
+const inputRef = ref(null)
+
+const isNewPassword = computed(() => props.autocomplete === 'new-password')
+
+const emitValue = (event) => {
+  emit('update:modelValue', event.target.value)
+}
+
+const syncAutofillValue = () => {
+  if (!inputRef.value) return
+  if (inputRef.value.value !== props.modelValue) {
+    emit('update:modelValue', inputRef.value.value)
+  }
+}
+
+onMounted(() => {
+  // Algunos navegadores aplican autofill sin disparar `input`.
+  nextTick(syncAutofillValue)
+  window.setTimeout(syncAutofillValue, 250)
+})
 </script>
 
 <template>
   <div class="relative">
     <input
+      ref="inputRef"
       :value="modelValue"
       :type="visible ? 'text' : 'password'"
+      :id="id || undefined"
+      :name="name || undefined"
       :autocomplete="autocomplete"
       :placeholder="placeholder"
-      :minlength="autocomplete === 'new-password' ? 8 : undefined"
-      :pattern="autocomplete === 'new-password' ? '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*~\\-]).{8,}' : undefined"
-      :passwordrules="autocomplete === 'new-password' ? 'minlength: 8; required: upper; required: lower; required: digit; required: [!@#$%^&*~\\-];' : undefined"
+      :required="required"
+      :minlength="isNewPassword ? 8 : undefined"
+      :maxlength="isNewPassword ? 128 : undefined"
+      :pattern="isNewPassword ? '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z\\d]).{8,128}' : undefined"
+      :passwordrules="isNewPassword ? 'minlength: 8; maxlength: 128; required: upper; required: lower; required: digit; required: special;' : undefined"
+      autocapitalize="none"
+      spellcheck="false"
       class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
-      @input="$emit('update:modelValue', $event.target.value)"
+      @input="emitValue"
+      @change="emitValue"
+      @blur="syncAutofillValue"
     />
 
     <div class="absolute inset-y-0 right-3 flex items-center gap-1.5">

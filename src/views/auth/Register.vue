@@ -136,6 +136,7 @@ const submit = async () => {
           <input
             v-model="form.username"
             type="text"
+            name="username"
             class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="juan.perez"
           />
@@ -147,6 +148,7 @@ const submit = async () => {
           <input
             v-model="form.email"
             type="email"
+            name="email"
             autocomplete="email"
             class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             placeholder="juan.perez@alumnos.udg.mx"
@@ -158,6 +160,7 @@ const submit = async () => {
           <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Contraseña de seguridad</span>
           <PasswordInput
             v-model="form.password"
+            name="new-password"
             autocomplete="new-password"
           />
           <PasswordStrength :password="form.password" />
@@ -168,6 +171,7 @@ const submit = async () => {
           <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Confirmar contraseña</span>
           <PasswordInput
             v-model="form.confirmPassword"
+            name="confirm-new-password"
             autocomplete="new-password"
             :show-check="confirmDirty"
             :valid="passwordsMatch"

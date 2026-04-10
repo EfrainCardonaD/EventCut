@@ -119,6 +119,7 @@ const submit = async () => {
           <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Nueva contraseña</span>
           <PasswordInput
             v-model="form.newPassword"
+            name="new-password"
             autocomplete="new-password"
           />
           <PasswordStrength :password="form.newPassword" />
@@ -129,6 +130,7 @@ const submit = async () => {
           <span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Confirmar contraseña</span>
           <PasswordInput
             v-model="form.confirmPassword"
+            name="confirm-new-password"
             autocomplete="new-password"
             :show-check="confirmDirty"
             :valid="passwordsMatch"
