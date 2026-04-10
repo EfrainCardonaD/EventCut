@@ -21,7 +21,9 @@ const visible = ref(false)
       :type="visible ? 'text' : 'password'"
       :autocomplete="autocomplete"
       :placeholder="placeholder"
-      :passwordrules="autocomplete === 'new-password' ? 'minlength: 8; required: upper; required: lower; required: digit; required: special;' : undefined"
+      :minlength="autocomplete === 'new-password' ? 8 : undefined"
+      :pattern="autocomplete === 'new-password' ? '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*~\\-]).{8,}' : undefined"
+      :passwordrules="autocomplete === 'new-password' ? 'minlength: 8; required: upper; required: lower; required: digit; required: [!@#$%^&*~\\-];' : undefined"
       class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm outline-none transition focus:border-tertiary-500 focus:ring-2 focus:ring-tertiary-400/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
       @input="$emit('update:modelValue', $event.target.value)"
     />
