@@ -327,7 +327,7 @@ watch(eventEditModalOpen, (isOpen) => {
         </div>
 
         <div v-if="upcomingEvents.length === 0" class="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-          No hay eventos proximos para los filtros seleccionados.
+          No hay eventos próximos para los filtros seleccionados.
         </div>
 
         <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
