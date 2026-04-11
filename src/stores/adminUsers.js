@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/utils/api'
+import { getAdminApi } from '@/utils/getAdminApi'
 import { getApiMessage, getApiPayload, toApiErrorResult, mapApiCodeToUxAction } from '@/utils/apiFactory'
 
 const toStoreErrorResult = (error, fallbackMessage) => {
@@ -143,8 +144,7 @@ export const useAdminUsersStore = defineStore('adminUsers', {
       this.isFetchingBanStatus = true
 
       try {
-        // Import adminApi for Events Service endpoint
-        const adminApi = (await import('@/utils/adminApi')).default
+        const adminApi = await getAdminApi()
         const response = await adminApi.get(`/api/v1/admin/users/${userId}/ban-status`)
         const payload = getApiPayload(response)
 

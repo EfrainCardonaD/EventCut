@@ -31,7 +31,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="relative mb-6 text-center flex flex-col items-center pb-6 border-b border-tertiary-200 dark:border-tertiary-900">
+  <div class="relative mb-8 text-center flex flex-col items-center pb-3  border-b border-tertiary-200 dark:border-tertiary-900">
     <button
       type="button"
       class="  absolute right-0 top-0   inline-flex size-9 items-center justify-center rounded-full p-2 text-slate-500 transition-all hover:bg-slate-100 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-800 sm:size-10"

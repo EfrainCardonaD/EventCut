@@ -2,29 +2,29 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useEventStore } from '@/stores/event'
 
-import LandingPageLayout from '@/layouts/LandingPageLayout.vue'
-import AuthLayout from '@/layouts/AuthLayout.vue'
-import MainLayout from '@/layouts/MainLayout.vue'
-import AdminLayout from '@/layouts/AdminLayout.vue'
+const LandingPageLayout = () => import('@/layouts/LandingPageLayout.vue')
+const AuthLayout = () => import('@/layouts/AuthLayout.vue')
+const MainLayout = () => import('@/layouts/MainLayout.vue')
+const AdminLayout = () => import('@/layouts/AdminLayout.vue')
 
-import LandingView from '@/views/LandingView.vue'
-import DashBoardUniversal from '@/views/DashBoardUniversal.vue'
-import CalendarView from '@/views/CalendarView.vue'
-import CommunitiesIndex from '@/views/communities/CommunitiesIndex.vue'
-import CommunityDetailView from '@/views/communities/CommunityDetailView.vue'
-import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
-import UsersDirectoryView from '@/views/admin/UsersDirectoryView.vue'
-import BansRegistryView from '@/views/admin/BansRegistryView.vue'
-import CommunitiesModerationView from '@/views/admin/CommunitiesModerationView.vue'
-import EventsAuditView from '@/views/admin/EventsAuditView.vue'
-import CategoriesCatalogView from '@/views/admin/CategoriesCatalogView.vue'
-import Login from '@/views/auth/Login.vue'
-import Register from '@/views/auth/Register.vue'
-import ForgotPassword from '@/views/auth/ForgotPassword.vue'
-import ResetPassword from '@/views/auth/ResetPassword.vue'
-import ResendVerification from '@/views/auth/ResendVerification.vue'
-import VerifyEmail from '@/views/auth/VerifyEmail.vue'
-import NotFound from '@/components/error/NotFound.vue'
+const LandingView = () => import('@/views/LandingView.vue')
+const DashBoardUniversal = () => import('@/views/DashBoardUniversal.vue')
+const CalendarView = () => import('@/views/CalendarView.vue')
+const CommunitiesIndex = () => import('@/views/communities/CommunitiesIndex.vue')
+const CommunityDetailView = () => import('@/views/communities/CommunityDetailView.vue')
+const AdminDashboardView = () => import('@/views/admin/AdminDashboardView.vue')
+const UsersDirectoryView = () => import('@/views/admin/UsersDirectoryView.vue')
+const BansRegistryView = () => import('@/views/admin/BansRegistryView.vue')
+const CommunitiesModerationView = () => import('@/views/admin/CommunitiesModerationView.vue')
+const EventsAuditView = () => import('@/views/admin/EventsAuditView.vue')
+const CategoriesCatalogView = () => import('@/views/admin/CategoriesCatalogView.vue')
+const Login = () => import('@/views/auth/Login.vue')
+const Register = () => import('@/views/auth/Register.vue')
+const ForgotPassword = () => import('@/views/auth/ForgotPassword.vue')
+const ResetPassword = () => import('@/views/auth/ResetPassword.vue')
+const ResendVerification = () => import('@/views/auth/ResendVerification.vue')
+const VerifyEmail = () => import('@/views/auth/VerifyEmail.vue')
+const NotFound = () => import('@/components/error/NotFound.vue')
 
 const routes = [
   {

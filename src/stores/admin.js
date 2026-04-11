@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import adminApi from '@/utils/adminApi'
+import { getAdminApi } from '@/utils/getAdminApi'
 import { getApiMessage, getApiPayload, mapApiCodeToUxAction, toApiErrorResult } from '@/utils/apiFactory'
 
 const toStoreErrorResult = (error, fallbackMessage) => {
@@ -56,6 +56,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
 
       try {
+        const adminApi = await getAdminApi()
         const hasStatusParam = Object.prototype.hasOwnProperty.call(params, 'status')
         const resolvedStatus = hasStatusParam ? params.status : this.communitiesStatusFilter
 
@@ -95,6 +96,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
 
       try {
+        const adminApi = await getAdminApi()
         const response = await adminApi.patch(`/api/v1/admin/communities/${communityId}/status`, payload)
         const updated = getApiPayload(response)
         const nextStatusByAction = {
@@ -138,6 +140,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
 
       try {
+        const adminApi = await getAdminApi()
         const response = await adminApi.get('/api/v1/admin/users/banned', {
           params: {
             limit: normalizeLimit(params.limit, 20),
@@ -169,6 +172,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
 
       try {
+        const adminApi = await getAdminApi()
         const response = await adminApi.post(`/api/v1/admin/users/${userId}/ban`, { reason })
         return {
           success: true,
@@ -192,6 +196,7 @@ export const useAdminStore = defineStore('admin', {
       this.error = null
 
       try {
+        const adminApi = await getAdminApi()
         const response = await adminApi.delete(`/api/v1/admin/users/${userId}/ban`)
         this.bannedUsers = this.bannedUsers.filter((item) => item.user_id !== userId)
         this.bannedUsersTotal = this.bannedUsers.length
@@ -215,6 +220,7 @@ export const useAdminStore = defineStore('admin', {
       if (!userId) return { success: false, error: 'Debes indicar el usuario.' }
 
       try {
+        const adminApi = await getAdminApi()
         const response = await adminApi.get(`/api/v1/admin/users/${userId}/ban-status`)
         return { success: true, data: getApiPayload(response), message: getApiMessage(response) }
       } catch (error) {

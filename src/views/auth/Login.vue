@@ -92,7 +92,7 @@ const submit = async () => {
 
     <div class="relative overflow-hidden w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <AuthLoadingBar :show="loading" />
-      <AuthViewHeader title="Iniciar sesion" subtitle="Accede con tu usuario o correo institucional." />
+      <AuthViewHeader title="Iniciar sesión" subtitle="Accede con tu usuario o correo institucional." />
 
       <form class="space-y-4 " @submit.prevent="submit">
         <label class="block">
