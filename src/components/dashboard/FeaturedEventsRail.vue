@@ -104,7 +104,7 @@ onMounted(async () => {
         @click="emit('select', event)"
       >
         <img :src="event.image_url" :alt="event.title" loading="lazy" class="h-full w-full object-cover opacity-60 transition duration-300 group-hover:scale-105" />
-        <div class="absolute inset-0 bg-gradient-to-r from-neutral-900 via-neutral-900/80 to-transparent"></div>
+        <div class="absolute inset-0 bg-linear-to-r from-neutral-900 via-neutral-900/30 to-transparent"></div>
 
         <div class="absolute inset-0 z-10 flex flex-col justify-between p-5 md:p-6">
           <div class="flex items-center gap-2">
