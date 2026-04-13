@@ -23,6 +23,10 @@ const props = defineProps({
     type: String,
     default: null,
   },
+  variant: {
+    type: String,
+    default: 'default',
+  },
 })
 
 const sanitizeHtml = (html) => {
@@ -217,12 +221,17 @@ const containerStyle = computed(() => {
     overflowY: 'auto',
   }
 })
+
+const variantClass = computed(() => {
+  if (props.variant === 'featured-overlay') return 'rt-variant-featured-overlay'
+  return ''
+})
 </script>
 
 <template>
   <div
     class="rich-text-renderer prose prose-sm dark:prose-invert max-w-none"
-    :class="[lineClampClass, { 'description-scroll': maxHeight }]"
+    :class="[lineClampClass, variantClass, { 'description-scroll': maxHeight }]"
     :style="containerStyle"
     v-html="processedContent"
   ></div>
@@ -233,6 +242,24 @@ const containerStyle = computed(() => {
 
 .rich-text-renderer {
   @apply text-sm text-slate-700 dark:text-slate-300;
+}
+
+.rich-text-renderer.rt-variant-featured-overlay {
+  @apply text-slate-200;
+}
+
+.rich-text-renderer.rt-variant-featured-overlay :deep(h1),
+.rich-text-renderer.rt-variant-featured-overlay :deep(h2),
+.rich-text-renderer.rt-variant-featured-overlay :deep(h3) {
+  @apply text-white;
+}
+
+.rich-text-renderer.rt-variant-featured-overlay :deep(a) {
+  @apply text-primary-100 hover:text-white;
+}
+
+.rich-text-renderer.rt-variant-featured-overlay :deep(blockquote) {
+  @apply border-primary-200 text-slate-200;
 }
 
 :deep(h1) {
@@ -345,7 +372,7 @@ const containerStyle = computed(() => {
   background: rgb(148 163 184 / 0.7);
 }
 
-.dark .description-scroll::-webkit-scrollbar-thumb {
+.description-scroll:where(.dark, .dark *)::-webkit-scrollbar-thumb {
   background: rgb(100 116 139 / 0.8);
 }
 </style>

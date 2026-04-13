@@ -564,11 +564,15 @@ const insertEmoji = (emoji) => {
 }
 
 :deep(.tiptap p.is-editor-empty:first-child::before) {
-  @apply text-slate-400 dark:text-slate-500;
+  @apply text-slate-400;
   content: attr(data-placeholder);
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+:deep(.tiptap p.is-editor-empty:first-child):where(.dark, .dark *)::before {
+  @apply text-slate-700;
 }
 
 :deep(.tiptap h1) {

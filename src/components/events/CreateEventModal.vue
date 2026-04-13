@@ -623,11 +623,11 @@ const onSubmit = () => {
           </label>
 
           <div class="md:col-span-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
-            <p>Descripcion</p>
+            <p>Descripción</p>
             <div class="mt-1">
               <RichTextEditor
                 v-model="form.description"
-                placeholder="Maraton de desarrollo colaborativo para estudiantes y egresados"
+                placeholder="Maratón de desarrollo colaborativo para estudiantes y egresados"
                 min-height="100px"
                 max-height="250px"
               />
@@ -729,7 +729,7 @@ const onSubmit = () => {
                 name="event_all_day"
                 class="h-4 w-4 rounded border-slate-300 text-tertiary-500 focus:ring-tertiary-500"
               />
-              <span class="text-tertiary-600 dark:text-tertiary-400">Todo el dia</span>
+              <span class="text-tertiary-600 dark:text-tertiary-400">Todo un dia</span>
             </label>
 
             <label

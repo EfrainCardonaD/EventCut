@@ -114,7 +114,13 @@ onMounted(async () => {
           <div>
             <h3 class="mb-2 line-clamp-2 font-headline text-xl font-black leading-tight text-white md:text-2xl">{{ event.title }}</h3>
             <div class="line-clamp-2 max-w-md text-xs text-slate-200 md:text-sm">
-              <RichTextRenderer :content="event.description" :line-clamp="2" :enable-embeds="false" :hide-urls-and-media="true" />
+              <RichTextRenderer
+                :content="event.description"
+                :line-clamp="2"
+                :enable-embeds="false"
+                :hide-urls-and-media="true"
+                variant="featured-overlay"
+              />
             </div>
           </div>
         </div>
